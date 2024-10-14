@@ -43,7 +43,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar D:\Genomes\Hydra_vulgaris\ kmer=
 
 ### Large genome usage:
 ```
-java -jar -Xms16g -Xmx64g \dist\TotalRepeats.jar input_Folder_path kmer=20 sln=100
+java -jar -Xms16g -Xmx64g \dist\TotalRepeats.jar input_Folder_path kmer=21 sln=100
 
 java -jar -Xms16g -Xmx64g C:\MyPrograms\Java\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Hordeum_marinum\
 ```
@@ -60,11 +60,9 @@ java -jar -Xms16g -Xmx32g C:\MyPrograms\Java\TotalRepeats\dist\TotalRepeats.jar 
 **Common options:**
 
 ```
-ssr=true analysing only the SSR/telomers loci (default ssr=false)
-
 kmer=18	 minimal kmer=18 (default kmer=19)
 
-sln=90	 string length (default sln=90) used for quick=false
+sln=90	 repeat block length (default sln=90)
 
 image=10000x300 (by default, the dimensionality of the image is automatically determined)
 
