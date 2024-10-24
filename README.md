@@ -94,7 +94,7 @@ Generic Feature Format Version 3 (GFF3)
 https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
 1. seqid - a cluster.
 2. source - The program that generated this feature.
-3. type - "repeat".
+3. type - SSR (perfect and imperfect microsatellite repeats, and any short or long tandem repeat); UCRP- a group of repeats that did not form clusters; CRP - a group of repeats that formed individual clusters.
 4. start - The starting position of the feature in the sequence. The first base is numbered 1.
 5. stop - The ending position of the feature (inclusive).
 6. score - length 
