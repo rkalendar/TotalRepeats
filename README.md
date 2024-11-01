@@ -45,7 +45,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar D:\Genomes\Hydra_vulgaris\ kmer=
 
 ### Large genome usage:
 ```
-java -jar -Xms16g -Xmx64g \dist\TotalRepeats.jar input_Folder_path kmer=21 sln=100
+java -jar -Xms16g -Xmx64g \dist\TotalRepeats.jar input_Folder_path kmer=21 sln=90
 
 java -jar -Xms16g -Xmx64g C:\MyPrograms\Java\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Hordeum_marinum\
 ```
@@ -65,6 +65,8 @@ java -jar -Xms16g -Xmx32g C:\MyPrograms\Java\TotalRepeats\dist\TotalRepeats.jar 
 kmer=18	 minimal kmer=18 (default kmer=19)
 
 sln=90	 repeat block length (default sln=90)
+
+nsize=1 Speed and sensitivity of sequence clustering. Value nsize=1, use when ignoring clustering. Values nsize=10...30 are the most optimal. Maximum value for nsize=240, for more accurate classification (not applicable in practice).
 
 image=10000x300 (by default, the dimensionality of the image is automatically determined)
 
