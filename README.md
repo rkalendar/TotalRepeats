@@ -104,5 +104,5 @@ https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
 6. Length - length of the repeat element.
 7. Strand - Valid entries include '+' (forward direction), '-' (complement direction).
 8. Phase -  is not analysed for the presence of a reading frame; therefore, this value is '.'
-9. - Sequence
+9. Sequence (if parameter used: seqshow=true)
    
