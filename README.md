@@ -20,7 +20,7 @@ How do I set or change [the Java path system variable](https://www.java.com/en/d
 
 
 To run the project from the command line. Command-line options, separated by spaces. 
-The executive file is in the ```dist``` directory, which can be copied to any location. 
+The executive file ```TotalRepeats.jar``` is in the ```dist``` directory, which can be copied to any location. 
 Go to the target folder and type the following; an individual file or a file folder can be specified:
 
 ```java -jar TotalRepeats.jar <target_file_path/Folder_path>```
@@ -102,5 +102,5 @@ https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
 6. Length - length of the repeat element.
 7. Strand - Valid entries include '+' (forward direction), '-' (complement direction).
 8. Phase -  is not analysed for the presence of a reading frame; therefore, this value is '.'
-9. - 
+9. - Sequence
    
