@@ -62,13 +62,13 @@ java -jar -Xms16g -Xmx32g C:\MyPrograms\Java\TotalRepeats\dist\TotalRepeats.jar 
 **Common options:**
 
 ```
-kmer=18	 minimal kmer=18 (default kmer=19)
+kmer=18	kmer size (default kmer=19)
 
-sln=90	 repeat block length (default sln=90)
+sln=90	repeat block length (default sln=90)
 
-nsize=1 Speed and sensitivity of sequence clustering. Value nsize=1, use when ignoring clustering. Values nsize=10...30 are the most optimal. Maximum value for nsize=240, for more accurate classification (not applicable in practice).
+nsize=1 speed and sensitivity of sequence clustering: value nsize=1, use when ignoring clustering. Values nsize=10...30 are the most optimal. Maximum value for nsize=240, for more accurate classification (not applicable in practice).
 
-image=10000x300 (by default, the dimensionality of the image is automatically determined)
+image=10000x300 the dimensionality of the image (by default, the dimensionality of the image is automatically determined)
 
 flanks=100 extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0)
 
