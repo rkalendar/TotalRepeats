@@ -1,11 +1,11 @@
 ## TotalRepeats
-## Genome-wide tool for quick de novo identification, classification and visualisation of repeats
+## Genome-wide tool for quick de novo identification, classification, and visualisation of repeats
 
 ## Author
 Ruslan Kalendar 
 email: ruslan.kalendar@helsinki.fi
 
-[Web](http://primerdigital.com/tools/repeat.html)
+[Web](http://primerdigital.com/tools/repeats.html)
 
 ## Availability and requirements:
 
