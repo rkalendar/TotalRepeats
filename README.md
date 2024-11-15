@@ -66,9 +66,9 @@ sln=	repeat block length (default sln=60)
 
 nsize=	speed and sensitivity of sequence clustering: value nsize=1 used for ignoring clustering. Values nsize=12...36 are the most optimal; maximum value nsize=242, for more accurate classification (not applicable in practice).
 
-image=	the dimensionality of the image (by default, the dimensionality of the image is automatically determined)
+image=	the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300
 
-imgx=	figure length compression, minimum value of imgx=1 (maximum compression), and a value of imgx=10 for the longest figure length
+imgx=	figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=10 for the most extended figure width
 
 flanks=	extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0)
 
