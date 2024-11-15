@@ -66,9 +66,11 @@ kmer=	kmer size (default kmer=19)
 
 sln=	repeat block length (default sln=90)
 
-nsize= speed and sensitivity of sequence clustering: value nsize=1, used when ignoring clustering. Values nsize=10...30 are the most optimal—maximum value for nsize=240, for more accurate classification (not applicable in practice).
+nsize= speed and sensitivity of sequence clustering: value nsize=1, used when ignoring clustering. Values nsize=10...30 are the most optimal—maximum value for nsize=242, for more accurate classification (not applicable in practice).
 
 image= the dimensionality of the image (by default, the dimensionality of the image is automatically determined)
+
+imgx=1 figure length compression, minimum value of imgx=1 (maximum compression), and a value of imgx=10 for the longest figure length
 
 flanks= extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0)
 
