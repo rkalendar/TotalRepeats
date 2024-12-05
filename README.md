@@ -45,7 +45,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar D:\Genomes\Hydra_vulgaris\ kmer=
 
 ### Large genome usage:
 ```
-java -jar -Xms16g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=21 sln=90 imgx=20 
+java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=21 sln=90 imgx=20 
 ```
 
 Analysing all files in the folder:
