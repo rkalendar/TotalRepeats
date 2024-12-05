@@ -64,7 +64,7 @@ kmer=	kmer size (default kmer=19)
 
 sln=	repeat block length (default sln=60)
 
-nsize=	speed and sensitivity of sequence clustering: nsize=0 - very fast clustering without chain direction detection; nsize=1 - used when ignoring clustering; nsize=2 - complete clustering
+nsize=	speed and sensitivity of sequence clustering: nsize=0 - ignoring clustering; nsize=1 - very fast clustering without chain direction detection; nsize=2 - complete clustering
 
 image=	the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300
 
