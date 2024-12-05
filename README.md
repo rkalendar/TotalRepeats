@@ -64,11 +64,11 @@ kmer=	kmer size (default kmer=19)
 
 sln=	repeat block length (default sln=60)
 
-nsize=	speed and sensitivity of sequence clustering: value nsize=1 used for ignoring clustering. Values nsize=12...36 are the most optimal; maximum value nsize=242, for more accurate classification (not applicable in practice).
+nsize=	speed and sensitivity of sequence clustering: nsize=0 - very fast clustering without chain direction detection; nsize=1 - used when ignoring clustering; nsize=2 - complete clustering
 
 image=	the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300
 
-imgx=	figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=10 for the most extended figure width
+imgx=	figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most extended figure width
 
 flanks=	extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0)
 
@@ -93,7 +93,7 @@ One or more lines containing the sequence itself. A file in FASTA format may com
 
 ## The output is saved in a GFF3 file: a nine-column, tab-delimited, plain text file. 
  
-GFF format General Feature Format describes genes and other features associated with DNA, RNA and Protein sequences. GFF lines have nine tab-separated fields:
+GFF format General Feature Format describes genes and other features associated with DNA, RNA, and Protein sequences. GFF lines have nine tab-separated fields:
 Generic Feature Format Version 3 (GFF3) 
 https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
 1. Seqid - The file name.
