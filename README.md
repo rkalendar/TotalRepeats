@@ -35,7 +35,7 @@ Go to the target folder and type the following; an individual file or a file fol
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\4.txt mask=false gff=false
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ kmer=18 sln=90 image=5000x300 mask=false seqshow=true
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ kmer=18 sln=60 image=5000x300 mask=false seqshow=true
 
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\2.txt ssr=true seqshow=true flanks=100
 
@@ -45,7 +45,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar D:\Genomes\Hydra_vulgaris\ kmer=
 
 ### Large genome usage:
 ```
-java -jar -Xms16g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Cycas_panzhihuaensis\ kmer=21 sln=90 nsize=12 imgx=3 
+java -jar -Xms16g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Cycas_panzhihuaensis\ kmer=21 sln=90 nsize=1 imgx=10 
 ```
 
 Analysing all files in the folder:
