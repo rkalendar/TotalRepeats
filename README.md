@@ -5,7 +5,7 @@
 Ruslan Kalendar 
 email: ruslan.kalendar@helsinki.fi
 
-[Web](http://primerdigital.com/tools/repeats.html)
+[TotalRepeats online](http://primerdigital.com/tools/repeats.html)
 
 ## Availability and requirements:
 
