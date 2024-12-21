@@ -5,7 +5,8 @@
 Ruslan Kalendar 
 email: ruslan.kalendar@helsinki.fi
 
-[TotalRepeats online](http://primerdigital.com/tools/repeats.html)
+## TotalRepeats online: 
+http://primerdigital.com/tools/repeats.html
 
 ## Availability and requirements:
 
@@ -13,11 +14,9 @@ Operating system(s): Platform independent
 
 Programming language: Java 23 or higher
 
-[Java Downloads](https://www.oracle.com/java/technologies/downloads/)
+Java Downloads: https://www.oracle.com/java/technologies/downloads/
 
-
-How do I set or change [the Java path system variable](https://www.java.com/en/download/help/path.html)
-
+How do I set or change the Java path system variable: https://www.java.com/en/download/help/path.html
 
 To run the project from the command line. Command-line options, separated by spaces. 
 The executive file ```TotalRepeats.jar``` is in the ```dist``` directory, which can be copied to any location. 
