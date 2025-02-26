@@ -1,5 +1,5 @@
 ## TotalRepeats
-## Genome-wide tool for quick de novo identification, classification, comparative analysis, and visualisation of repeats
+## Genome-wide tool for rapid de novo identification, classification, comparative analysis, and visualization of repeats
 
 ## Author
 Ruslan Kalendar 
