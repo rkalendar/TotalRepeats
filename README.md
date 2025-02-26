@@ -67,15 +67,15 @@ nsize=	speed and sensitivity of sequence clustering: nsize=0 - ignoring clusteri
 
 image=	the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300
 
-imgx=	figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most extended figure width
+imgx=3	figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most extended figure width
 
-flanks=	extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0)
+flanks=100	extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0)
 
 mask=true/false	generate a new file with masking repeats (default mask=true)
 
 gff=true/false	generate a GFF file (default gff=true)
 
-seqshow=true/false	extract repeat sequences (default seqshow=false)
+seqshow=true	extract repeat sequences (default seqshow=false)
 
 combine=true multiple sequences can be analysed as one entire sequence (default combine=false)
 
