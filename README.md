@@ -81,6 +81,9 @@ combine=true multiple sequences can be analysed as one entire sequence (default 
 
 ```
 
+## combine=true:
+This option can be used to analyse homologous sequences, or chromosomes from the same or different species, for long sequences after ONT sequencing. All target sequences should be collected under one directory and the full path to this directory should be given to the application. When studying homologous sequences, it is possible to detect heterogeneity and polymorphism without using a full-genome alignment. In this case, all repetitive sequences, including exones and introns, will be considered as repeats, but will be clustered together and polymorphism will be detected. It is possible to analyse chromosomes from the same species but different strains, such as bacteria or fungi. As well as chromosome fragments from different genomic assemblies, the range of application of this option, is unlimited.
+
 ## Sequence Entry:
 
 Sequence data files are prepared using a text editor and saved in ASCII as text/plain format (.txt) or in .fasta or without file extensions (a file extension is not obligatory). The program takes a single sequence or accepts multiple DNA sequences in FASTA format. The template length is not limited.
