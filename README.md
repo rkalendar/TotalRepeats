@@ -77,6 +77,8 @@ gff=true/false	generate a GFF file (default gff=true)
 
 seqshow=true/false	extract repeat sequences (default seqshow=false)
 
+combine=true multiple sequences can be analysed as one entire sequence (default combine=false)
+
 ```
 
 ## Sequence Entry:
