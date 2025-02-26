@@ -59,11 +59,11 @@ java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 **Common options:**
 
 ```
-kmer=	kmer size (default kmer=19)
+kmer=19	kmer size (default kmer=19)
 
-sln=	repeat block length (default sln=60)
+sln=60	repeat block length (default sln=60)
 
-nsize=	speed and sensitivity of sequence clustering: nsize=0 - ignoring clustering; nsize=1 - very fast clustering without chain direction detection; nsize=2 - complete clustering
+nsize=7	speed and sensitivity of sequence clustering: nsize=0 - ignoring clustering; nsize=1 - very fast clustering without chain direction detection; nsize=2 - complete clustering
 
 image=	the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300
 
