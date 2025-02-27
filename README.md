@@ -96,7 +96,7 @@ java -jar -Xms16g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats
 ```
 
 ## nsize=
-A rather important parameter for the classification of sequences. Values 0 and 1 are used to ignore classification. Values 2 and higher are used for classification (nsize=0 - ignore clustering; nsize=1 - very fast clustering without sequence chain direction detection). The higher the value, the slower the algorithm will run, but the sequences will be effectively classified. However, the default values are 7 to 12, which in reality is ideal in terms of efficiency and speed.
+A rather important parameter for the classification of sequences. Values 0 and 1 are used to ignore classification (nsize=0 - ignore clustering; nsize=1 - very fast clustering without determining the direction of sequences). Values 2 and higher are used for classification. The higher the value, the slower the algorithm will run, but the sequences will be effectively classified. However, the default values are 7 to 12, which in reality is ideal in terms of efficiency and speed.
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ nsize=12
 ```
