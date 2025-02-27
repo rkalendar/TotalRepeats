@@ -34,11 +34,11 @@ Go to the target folder and type the following; an individual file or a file fol
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\4.txt -nomask -nogff nsize=1
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ kmer=18 sln=60 image=5000x300 -seqshow
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ kmer=12 sln=30 
 
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\2.txt -seqshow flanks=100
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar D:\Genomes\Hydra_vulgaris\ kmer=20 sln=100 image=10000x300
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar D:\Genomes\Hydra_vulgaris\ image=10000x300
 
 ```
 
@@ -82,6 +82,9 @@ flanks=100	extend the flanks of the repeat with an appropriate length (100 nt) (
 ```
 ## kmer=
 minimum value for the repeat ‘growth’ initialisation sequence. The value can be as low as 9, but for short repeats, this value can be used, but for chromosomes a value of 19 is recommended as a minimum. But it is also possible to use this value of 18.  
+```
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=21 
+```
 
 ## sln=
 The minimum length of the sequence that is next to be used in the analysis. Some repeats are about 100 nucleotides long, such as Alu, so this value can be either above 100 to ignore short repeats or equal to 60-80 to detect short repeats like Alu. 
@@ -99,6 +102,12 @@ java -jar -Xms16g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats
 A rather important parameter for the classification of sequences. Values 0 and 1 are used to ignore classification (nsize=0 - ignore clustering; nsize=1 - very fast clustering without determining the direction of sequences). Values 2 and higher are used for classification. The higher the value, the slower the algorithm will run, but the sequences will be effectively classified. However, the default values are 7 to 12, which in reality is ideal in terms of efficiency and speed.
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ nsize=12
+```
+
+## imgx=
+The resulting image can be stretched in width if more detailed analysis is required. This value determines the length of the image, the higher the value, the longer the image will be. The minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most extended figure width.
+```
+java -jar -Xms16g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ imgx=30	
 ```
 
 ## Sequence Entry:
