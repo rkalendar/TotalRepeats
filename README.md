@@ -107,7 +107,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ nsize=12
 ## imgx=
 The resulting image can be stretched in width if more detailed analysis is required. This value determines the width of the image, the higher the value, the longer the width. The minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most stretched image width.
 ```
-java -jar -Xms16g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ imgx=30	
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ imgx=30	
 ```
 
 ## Sequence Entry:
