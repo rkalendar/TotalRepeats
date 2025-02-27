@@ -32,11 +32,11 @@ Go to the target folder and type the following; an individual file or a file fol
 
 ### Examples:
 ```
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\4.txt mask=false gff=false nsize=1
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\4.txt -nomask -nogff nsize=1
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ kmer=18 sln=60 image=5000x300 mask=false seqshow=true
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ kmer=18 sln=60 image=5000x300 -seqshow
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\2.txt ssr=true seqshow=true flanks=100
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\2.txt -seqshow flanks=100
 
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar D:\Genomes\Hydra_vulgaris\ kmer=20 sln=100 image=10000x300
 
@@ -71,13 +71,13 @@ imgx=3	figure width compression, the minimum value of imgx=1 (maximum compressio
 
 flanks=100	extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0)
 
-mask=true/false	generate a new file with masking repeats (default mask=true)
+-nomask	generate a new file with masking repeats (default performed)
 
-gff=true/false	generate a GFF file (default gff=true)
+-nogff generate a GFF file (default performed)
 
-seqshow=true	extract repeat sequences (default seqshow=false)
+-seqshow	extract repeat sequences (default not performed)
 
-combine=true multiple sequences can be analysed as one entire sequence (default combine=false)
+-combine multiple sequences can be analysed as one entire sequence (default not performed)
 
 ```
 ## kmer:
@@ -99,7 +99,6 @@ Sequence data files are prepared using a text editor and saved in ASCII as text/
 A sequence in FASTA format consists of the following:
 One line starts with a ">" sign and a sequence identification code. A textual description of the sequence optionally follows it. Since it is not part of the official format description, software can ignore it when it is present.
 One or more lines containing the sequence itself. A file in FASTA format may comprise more than one sequence.
-
 
 
 ## The output is saved in a GFF3 file: a nine-column, tab-delimited, plain text file. 
