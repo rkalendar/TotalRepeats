@@ -63,7 +63,7 @@ kmer=19	kmer size (default kmer=19)
 
 sln=60	repeat block length (default sln=60)
 
-nsize=12 Speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >2 - efficient clustering.
+nsize=7 Speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >2 - efficient clustering.
 
 image=	the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300
 
@@ -85,12 +85,21 @@ minimum value for the repeat ‘growth’ initialisation sequence. The value can
 
 ## sln:
 The minimum length of the sequence that is next to be used in the analysis. Some repeats are about 100 nucleotides long, such as Alu, so this value can be either above 100 to ignore short repeats or equal to 60-80 to detect short repeats like Alu. 
+```
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=90 
+```
 
 ## combine=true:
-This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species for long sequences following ONT sequencing.In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences, inclusive of exons and introns, are regarded as repeats and subsequently clustered, leading to the identification of polymorphism. Additionally, the analysis of chromosomes from the same species but different strains, such as bacteria or fungi, is possible. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies.It is imperative that all target sequences are collected under one directory, and the full path to this directory must be provided to the application.
+This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species for long sequences following ONT sequencing.In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences, inclusive of exons and introns, are regarded as repeats and subsequently clustered, leading to the identification of polymorphism. Additionally, the analysis of chromosomes from the same species but different strains, such as bacteria or fungi, is possible. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies.It is imperative that all target sequences are collected under one directory, and the full path to this directory must be provided to the application. It is allowed to analyze one file containing more than one record in FASTA format. 
+```
+java -jar -Xms16g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ -combine
+```
 
 ## nsize:
 A rather important parameter for the classification of sequences. Values 0 and 1 are used to ignore classification. Values 2 and higher are used for classification (nsize=0 - ignore clustering; nsize=1 - very fast clustering without sequence chain direction detection). The higher the value, the slower the algorithm will run, but the sequences will be effectively classified. However, the default values are 7 to 12, which in reality is ideal in terms of efficiency and speed.
+```
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ nsize=12
+```
 
 ## Sequence Entry:
 Sequence data files are prepared using a text editor and saved in ASCII as text/plain format (.txt) or in .fasta or without file extensions (a file extension is not obligatory). The program takes a single sequence or accepts multiple DNA sequences in FASTA format. The template length is not limited.
