@@ -80,22 +80,22 @@ flanks=100	extend the flanks of the repeat with an appropriate length (100 nt) (
 -combine multiple sequences can be analysed as one entire sequence (default not performed)
 
 ```
-## kmer:
+## kmer=
 minimum value for the repeat ‘growth’ initialisation sequence. The value can be as low as 9, but for short repeats, this value can be used, but for chromosomes a value of 19 is recommended as a minimum. But it is also possible to use this value of 18.  
 
-## sln:
+## sln=
 The minimum length of the sequence that is next to be used in the analysis. Some repeats are about 100 nucleotides long, such as Alu, so this value can be either above 100 to ignore short repeats or equal to 60-80 to detect short repeats like Alu. 
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=90 
 ```
 
-## combine=true:
+## -combine
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species for long sequences following ONT sequencing.In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences, inclusive of exons and introns, are regarded as repeats and subsequently clustered, leading to the identification of polymorphism. Additionally, the analysis of chromosomes from the same species but different strains, such as bacteria or fungi, is possible. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies.It is imperative that all target sequences are collected under one directory, and the full path to this directory must be provided to the application. It is allowed to analyze one file containing more than one record in FASTA format. 
 ```
 java -jar -Xms16g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ -combine
 ```
 
-## nsize:
+## nsize=
 A rather important parameter for the classification of sequences. Values 0 and 1 are used to ignore classification. Values 2 and higher are used for classification (nsize=0 - ignore clustering; nsize=1 - very fast clustering without sequence chain direction detection). The higher the value, the slower the algorithm will run, but the sequences will be effectively classified. However, the default values are 7 to 12, which in reality is ideal in terms of efficiency and speed.
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ nsize=12
