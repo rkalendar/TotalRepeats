@@ -1,4 +1,3 @@
-
 import java.io.IOException;
 import java.io.File;
 import java.nio.file.Files;
@@ -15,13 +14,13 @@ public class TotalRepeats {
             String infile = args[0]; // file path or Folder
             String s = String.join(" ", args).toLowerCase() + " ";
             int kmer = 19;     //quick search: optimal rules: kmer=19-21 seqlen=30...100, gap=kmer kmer=12-18 for short seqyences
-            int seqlen = 90;
+            int seqlen = 60;
             int gap = kmer;
             int width = 0;
             int hight = 0;
-            int imaged = 10;     //1...30
+            int imaged = 10;   //1...30
             int flanksshow = 0;
-            int nkmer = 12;      //0..2-230  nsize=0 - very fast clustering without chain direction detection; nsize=1 - used when ignoring clustering; nsize=2 - complete clustering        
+            int nkmer = 12;    //0..2-230  nsize=0 - very fast clustering without chain direction detection; nsize=1 - used when ignoring clustering; nsize=2 - complete clustering        
             boolean combine = false;
             boolean maskshow = true;
             boolean seqshow = false;
@@ -135,10 +134,12 @@ public class TotalRepeats {
                         SaveResult2(filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
                     } else {
                         for (String nfile : filelist) {
-                            try {
-                                SaveResult(nfile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
-                            } catch (Exception e) {
-                                System.err.println("Failed to open file: " + nfile);
+                            if (nfile != null) {
+                                try {
+                                    SaveResult(nfile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                                } catch (Exception e) {
+                                    System.err.println("Failed to open file: " + nfile);
+                                }
                             }
                         }
                     }
@@ -199,25 +200,27 @@ public class TotalRepeats {
         List<String> fnames = new ArrayList<>();
 
         for (String nfile : filelist) {
-            try {
-                byte[] binaryArray = Files.readAllBytes(Paths.get(nfile));
-                ReadingSequencesFiles rf = new ReadingSequencesFiles(binaryArray);
+            if (nfile != null) {
+                try {
+                    byte[] binaryArray = Files.readAllBytes(Paths.get(nfile));
+                    ReadingSequencesFiles rf = new ReadingSequencesFiles(binaryArray);
 
-                if (rf.getNseq() > 0) {
-                    System.out.println("Target FASTA sequences = " + rf.getNseq());
-                    names.addAll(Arrays.asList(rf.getNames()));
-                    seqs.addAll(Arrays.asList(rf.getSequences()));
-                    fnames.add(nfile);
+                    if (rf.getNseq() > 0) {
+                        System.out.println("Target FASTA sequences = " + rf.getNseq());
+                        names.addAll(Arrays.asList(rf.getNames()));
+                        seqs.addAll(Arrays.asList(rf.getSequences()));
+                        fnames.add(nfile);
+                    }
+                    if (rf.getNseq() == 0) {
+                        System.out.println("There is no sequence(s).");
+                        System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
+                        System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
+                    } else {
+                        System.out.println("Target file: " + nfile);
+                    }
+                } catch (IOException e) {
+                    System.err.println("Failed to open file: " + nfile);
                 }
-                if (rf.getNseq() == 0) {
-                    System.out.println("There is no sequence(s).");
-                    System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
-                    System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
-                } else {
-                    System.out.println("Target file: " + nfile);
-                }
-            } catch (IOException e) {
-                System.err.println("Failed to open file: " + nfile);
             }
         }
 
