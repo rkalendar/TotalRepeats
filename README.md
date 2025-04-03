@@ -103,6 +103,7 @@ A rather important parameter for the classification of sequences. Value nsize=0 
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ nsize=1
 ```
+In the TotalRepeats online version (https://primerdigital.com/tools/repeats.html), the default setting is to classify sequences with a parameter (nsize=1).
 
 ## imgx=
 The resulting image can be stretched in width if more detailed analysis is required. This value determines the width of the image, the higher the value, the longer the width. The minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most stretched image width.
