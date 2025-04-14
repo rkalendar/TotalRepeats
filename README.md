@@ -139,7 +139,7 @@ GFF format General Feature Format describes genes and other features associated 
 Generic Feature Format Version 3 (GFF3) 
 https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
 1. Seqid - The file name.
-2. Repeat - SSR (perfect and imperfect microsatellite repeats, and any short or long tandem repeat); UCRP - a group of repeats that did not form clusters; CRP - a group of repeats that formed interspersed clusters.
+2. Repeat - SSR (perfect and imperfect microsatellite repeats, and any short or long tandem repeat); UCRP - sequences with no identified classification; CRP - sequences with a specific classification.
 3. ClusterID - a cluster ID.
 4. Start - The initial position of the repeat element in the sequence. The first base has the number 1.
 5. Stop - The ending position of the repeat element (inclusive).
