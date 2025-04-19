@@ -13,7 +13,7 @@ public class TotalRepeats {
         if (args.length > 0) {
             String infile = args[0]; // file path or Folder
             String s = String.join(" ", args).toLowerCase() + " ";
-            int kmer = 19;     //quick search: optimal rules: kmer=19-21 seqlen=30...100, gap=kmer kmer=12-18 for short seqyences
+            int kmer = 19;         //quick search: optimal rules: kmer=19-21 seqlen=30...100, gap=kmer kmer=12-18 for short seqyences
             int seqlen = 60;
             int gap = kmer;
             int width = 0;
@@ -21,7 +21,7 @@ public class TotalRepeats {
             int imaged = 10;   //1...30
             int flanksshow = 0;
             int nkmer = 12;    //0..2-230  nsize=0 - very fast clustering without chain direction detection; nsize=1 - used when ignoring clustering; nsize=2 - complete clustering        
-            boolean combine = false;
+            int combine = 0;
             boolean maskshow = true;
             boolean seqshow = false;
             boolean gffshow = true;
@@ -33,7 +33,10 @@ public class TotalRepeats {
             System.out.println("Target file or Folder: " + infile);
 
             if (s.contains("combine")) {
-                combine = true;
+                combine = 1;
+            }
+            if (s.contains("combine2")) {
+                combine = 2;
             }
             if (s.contains("nomask")) {
                 maskshow = false;
@@ -123,6 +126,10 @@ public class TotalRepeats {
             if (folder.exists() && (folder.isDirectory() || folder.isFile())) {
                 if (folder.isDirectory()) {
                     File[] files = folder.listFiles();
+                    if (files.length == 0) {
+                        System.err.println("No files: " + folder.toString());
+                        return;
+                    }
                     int k = -1;
                     String[] filelist = new String[files.length];
                     for (File file : files) {
@@ -130,8 +137,8 @@ public class TotalRepeats {
                             filelist[++k] = file.getAbsolutePath();
                         }
                     }
-                    if (combine) {
-                        SaveResult2(filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                    if (combine > 0) {
+                        SaveResult2(combine, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
                     } else {
                         for (String nfile : filelist) {
                             if (nfile != null) {
@@ -163,7 +170,8 @@ public class TotalRepeats {
             System.out.println("-nogff\tgenerate a GFF file (default performed)");
             System.out.println("-maskpic\tgenerate a image file with masking repeats (default not performed)");
             System.out.println("-seqshow\textract repeat sequences (default not performed)");
-            System.out.println("-combine\tmultiple sequences can be analysed as one entire sequence (default not performed)");
+            System.out.println("-combine\tthis option is employed in genome-wide comparative analyses (each sequence is analyzed for repeats individually) (default not performed)");
+            System.out.println("-combine2\tthis option is employed in genome-wide comparative analyses (all sequences are analyzed together) (default not performed)");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> ssr=true seqshow=true flanks=100");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> kmer=18 sln=100 mask=false seqshow=true flanks=100\n");
             System.out.println("Large genome settings:");
@@ -193,7 +201,7 @@ public class TotalRepeats {
         return (Integer.parseInt(r.toString()));
     }
 
-    private static void SaveResult2(String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity) throws IOException {
+    private static void SaveResult2(int combine, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity) throws IOException {
         long startTime = System.nanoTime();
         List<String> seqs = new ArrayList<>();
         List<String> names = new ArrayList<>();
@@ -258,7 +266,13 @@ public class TotalRepeats {
             if (width > 0 && hight > 0) {
                 s2.SetImage(width, hight);
             }
-            s2.Run2(imgx, nkmer, sensitivity);
+            if (combine == 1) {
+                s2.Run2(imgx, nkmer, sensitivity);
+            }
+            if (combine == 2) {
+                s2.Run3(imgx, nkmer, sensitivity);
+            }
+
         }
         long duration = (System.nanoTime() - startTime) / 1000000000;
         System.out.println("Time taken: " + duration + " seconds\n");
