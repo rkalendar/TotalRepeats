@@ -18,9 +18,6 @@ Programming language: Java 23 or higher
 
 Java Downloads: https://www.oracle.com/java/technologies/downloads/
 
-Alternatively, install GraalVM for JDK, which is faster and more memory-efficient:
-https://www.oracle.com/java/technologies/downloads/#graalvmjava24
-
 How do I set or change the Java path system variable: https://www.java.com/en/download/help/path.html
 
 To run the project from the command line. Command-line options, separated by spaces. 
