@@ -64,28 +64,19 @@ java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 
 **Common options:**
 
-```
-kmer=19	kmer size (default kmer=19)
-
-sln=60	repeat block length (default sln=60)
-
-nsize=12 Speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >2 - efficient clustering.
-
-image=	the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300
-
-imgx=3	figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most extended figure width
-
-flanks=100	extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0)
-
--nomask	generate a new file with masking repeats (default performed)
-
--nogff generate a GFF file (default performed)
-
--seqshow	extract repeat sequences (default not performed)
-
--combine multiple sequences can be analysed as one entire sequence (default not performed)
-
-```
+| Command | Description |
+| --- | --- |
+| kmer=19	 | kmer size (default kmer=19) |
+| sln=60	 | repeat block length (default sln=90) |
+| nsize=12 |  Speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >2 - efficient clustering. |
+|image=  | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
+| imgx=3 | figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most extended figure width |
+| flanks=100 | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
+| -nomask	 | generate a new file with masking repeats (default performed) |
+| -nogff | generate a GFF file (default performed) |
+| -seqshow | extract repeat sequences (default not performed) |
+| -combine | multiple sequences can be analysed as one entire sequence (default not performed) |
+	
 ## kmer=
 minimum value for the repeat ‘growth’ initialisation sequence. The value can be as low as 9, but for short repeats, this value can be used, but for chromosomes a value of 19 is recommended as a minimum. But it is also possible to use this value of 18.  
 ```
