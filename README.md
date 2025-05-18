@@ -14,7 +14,7 @@ https://primerdigital.com/tools/repeats.html
 
 Operating system(s): Platform independent
 
-Programming language: Java 23 or higher
+Programming language: Java 24 or higher
 
 Java Downloads: https://www.oracle.com/java/technologies/downloads/
 
