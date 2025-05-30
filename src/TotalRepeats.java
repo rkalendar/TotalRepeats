@@ -1,3 +1,4 @@
+
 import java.io.IOException;
 import java.io.File;
 import java.nio.file.Files;
@@ -20,7 +21,7 @@ public class TotalRepeats {
             int hight = 0;
             int imaged = 20;    //1...40
             int flanksshow = 0;
-            int nkmer = 16;     //0..2-230  nsize=0 - very fast clustering without chain direction detection; nsize=1 - used when ignoring clustering; nsize=2 - complete clustering        
+            int nkmer = 12;     //0..2-230  nsize=0 - very fast clustering without chain direction detection; nsize=1 - used when ignoring clustering; nsize=2 - complete clustering        
             int combine = 0;
             boolean maskshow = true;
             boolean seqshow = false;
@@ -161,7 +162,7 @@ public class TotalRepeats {
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile>/<inputfolderpath> <optional_commands>");
             System.out.println("Common options:");
             System.out.println("kmer=19\tminimal kmer=12 (default kmer=19)");
-            System.out.println("sln=60\trepeat block length (default sln=90), it can be equal to 'kmer'");
+            System.out.println("sln=60\trepeat block length (default sln=60), it can be equal to 'kmer'");
             System.out.println("nsize=12\tspeed and sensitivity of sequence clustering: nsize=0 - ignoring clustering;  nsize=1 - very fast clustering without chain direction detection; nsize=12 - default for complete clustering.");
             System.out.println("flangs=100\textend the flanks of the repeat with an appropriate length (100 nt) (default flangs=0)");
             System.out.println("image=10000x300\t (by default, the dimensionality of the image is automatically determined)");
