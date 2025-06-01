@@ -1,4 +1,3 @@
-
 import java.io.IOException;
 import java.io.File;
 import java.nio.file.Files;
@@ -13,6 +12,7 @@ public class TotalRepeats {
     public static void main(String[] args) throws IOException {
         if (args.length > 0) {
             String infile = args[0]; // file path or Folder
+            String reffile = "";
             String s = String.join(" ", args).toLowerCase() + " ";
             int kmer = 19;   //quick search: optimal rules: kmer=19-21 seqlen=30...100, gap=kmer kmer=12-18 for short seqyences
             int seqlen = 90;
@@ -21,7 +21,7 @@ public class TotalRepeats {
             int hight = 0;
             int imaged = 20;    //1...40
             int flanksshow = 0;
-            int nkmer = 12;     //0..2-230  nsize=0 - very fast clustering without chain direction detection; nsize=1 - used when ignoring clustering; nsize=2 - complete clustering        
+            int nkmer = 20;     //0..2-230  nsize=1 - very fast clustering without chain direction detection; nsize=0 - used when ignoring clustering; nsize >2 - complete clustering        
             int combine = 0;
             boolean maskshow = true;
             boolean seqshow = false;
@@ -32,6 +32,12 @@ public class TotalRepeats {
             System.out.println("Current Directory: " + System.getProperty("user.dir"));
             System.out.println("Command-line arguments:");
             System.out.println("Target file or Folder: " + infile);
+
+            if (s.contains("ref=")) {
+                int j = s.indexOf("ref=");
+                int x = s.indexOf(" ", j);
+                reffile = s.substring(j + 4, x);
+            }
 
             if (s.contains("combine")) {
                 combine = 1;
@@ -139,12 +145,12 @@ public class TotalRepeats {
                         }
                     }
                     if (combine > 0) {
-                        SaveResult2(combine, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                        SaveResult2(combine, reffile, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
                     } else {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    SaveResult(nfile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                                    SaveResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -153,7 +159,7 @@ public class TotalRepeats {
                     }
 
                 } else {
-                    SaveResult(infile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                    SaveResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
                 }
             }
         } else {
@@ -202,7 +208,7 @@ public class TotalRepeats {
         return (Integer.parseInt(r.toString()));
     }
 
-    private static void SaveResult2(int combine, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity) throws IOException {
+    private static void SaveResult2(int combine, String reffile, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity) throws IOException {
         long startTime = System.nanoTime();
         List<String> seqs = new ArrayList<>();
         List<String> names = new ArrayList<>();
@@ -279,7 +285,7 @@ public class TotalRepeats {
         System.out.println("Time taken: " + duration + " seconds\n");
     }
 
-    private static void SaveResult(String infile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity) {
+    private static void SaveResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity) {
         try {
             long startTime = System.nanoTime();
             byte[] binaryArray = Files.readAllBytes(Paths.get(infile));
@@ -290,6 +296,7 @@ public class TotalRepeats {
                 System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
                 return;
             }
+
             System.out.println("Running...");
             System.out.println("kmer=" + kmer);
             System.out.println("Classification index (0-230)=" + nkmer);
@@ -305,6 +312,7 @@ public class TotalRepeats {
 
             TotalRepeatsSearching s2 = new TotalRepeatsSearching();
             s2.SetSequences(rf.getSequences(), rf.getNames());
+
             s2.SetRepeatLen(kmer, seqlen, gap);
             s2.SetShowSeq(seqshow);
             s2.SetFlanks(flanksshow);
@@ -315,6 +323,13 @@ public class TotalRepeats {
             if (width > 0 && hight > 0) {
                 s2.SetImage(width, hight);
             }
+
+            if (reffile.length() > 0) {
+                OpenSeqFiles ffiles = new OpenSeqFiles(reffile);
+                System.out.println("Reference file=" + reffile);
+                s2.SetRefSequences(ffiles.getSeqs(), ffiles.getNames());
+            }
+
             s2.Run(imgx, nkmer, sensitivity);
 
             long duration = (System.nanoTime() - startTime) / 1000000000;
