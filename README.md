@@ -66,7 +66,7 @@ java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 **Common options:**
 
 | Command | Description |
-| --- | --- |
+| ------ | --- |
 | kmer=	| kmer size (default kmer=19) |
 | sln=	| repeat block length (default sln=90) |
 | nsize= |  Speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >2 - efficient clustering (default nsize=12) |
