@@ -63,20 +63,19 @@ java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 
 
 **Common options:**
-
-| Command       | Description |
-| ------ | --- |
-| kmer=	| kmer size (default kmer=19) |
-| sln=	| repeat block length (default sln=90) |
-| nsize= |  Speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >2 - efficient clustering (default nsize=12) |
-| image= | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
-| imgx= | figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most extended figure width |
-| flanks= | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
-| -nomask	| generate a new file with masking repeats (default performed) |
-| -nogff | generate a GFF file (default performed) |
-| -seqshow | extract repeat sequences (default not performed) |
-| -combine | multiple sequences can be analysed as one entire sequence (default not performed) |
-| -ref=target_file_path | uses a database of known repeats to enable annotation of repeats (default not performed) |
+| Command                             | Description                                   |
+| ----------------------------------- | --------------------------------------------- |
+| kmer=	                              | kmer size (default kmer=19)                   |
+| sln=	                              | repeat block length (default sln=90)          |
+| nsize=                              |  Speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >2 - efficient clustering (default nsize=12) |
+| image=                              | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
+| imgx=                               | figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most extended figure width |
+| flanks=                             | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
+| -nomask	                      | generate a new file with masking repeats (default performed) |
+| -nogff                              | generate a GFF file (default performed)          |
+| -seqshow                            | extract repeat sequences (default not performed) |
+| -combine                            | multiple sequences can be analysed as one entire sequence (default not performed) |
+| -ref=target_file_path               | uses a database of known repeats to enable annotation of repeats (default not performed) |
 
 	
 ## kmer=
