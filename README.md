@@ -77,7 +77,7 @@ java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 | -nogff | generate a GFF file (default performed) |
 | -seqshow | extract repeat sequences (default not performed) |
 | -combine | multiple sequences can be analysed as one entire sequence (default not performed) |
-| -ref=target_file_path | the application enables annotation of repeats using a database of known repeats(default not performed) |
+| -ref=target_file_path | the application enables annotation of repeats using a database of known repeats/genes (default not performed) |
 
 	
 ## kmer=
