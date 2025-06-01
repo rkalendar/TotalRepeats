@@ -64,7 +64,7 @@ java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 
 **Common options:**
 
-| Command | Description |
+| Command       | Description |
 | ------ | --- |
 | kmer=	| kmer size (default kmer=19) |
 | sln=	| repeat block length (default sln=90) |
