@@ -1,8 +1,7 @@
 ## TotalRepeats
 ## Genome-wide tool for rapid de novo identification, classification, annotation, comparative analysis, and visualization of repeats
 
-Novel and universal tool for de novo identification, classification, visualization, and comparison of DNA profiles of repetitive elements at the genomic scale. This tool efficiently detects diverse repetitive elements, including microsatellites, tandem and satellite repeats of all lengths, and genomic rearrangements. The software is not limited only to the purpose of identifying any repetitive sequences and their rapid classification, but also to the comparative analysis of any target sequences, including interspecific analysis for the detection of polymorphisms without using genomic alignment.
-The application enables annotation of repeats using a database of known repeats.
+Novel and universal tool for de novo identification, classification, visualization, and comparison of DNA profiles of repetitive elements at the genomic scale. This tool efficiently detects diverse repetitive elements, including microsatellites, tandem and satellite repeats of all lengths, and genomic rearrangements. The software is not limited only to the purpose of identifying any repetitive sequences and their rapid classification, but also to the comparative analysis of any target sequences, including interspecific analysis for the detection of polymorphisms without using genomic alignment. The tool uses a database of known repeats to enable annotation of repeats.
 
 ## Author
 Ruslan Kalendar 
@@ -77,7 +76,7 @@ java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 | -nogff | generate a GFF file (default performed) |
 | -seqshow | extract repeat sequences (default not performed) |
 | -combine | multiple sequences can be analysed as one entire sequence (default not performed) |
-| -ref=target_file_path | the application enables annotation of repeats using a database of known repeats/genes (default not performed) |
+| -ref=target_file_path | uses a database of known repeats to enable annotation of repeats (default not performed) |
 
 	
 ## kmer=
