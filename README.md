@@ -1,7 +1,8 @@
 ## TotalRepeats
-## Genome-wide tool for rapid de novo identification, classification, comparative analysis, and visualization of repeats
+## Genome-wide tool for rapid de novo identification, classification, annotation, comparative analysis, and visualization of repeats
 
 Novel and universal tool for de novo identification, classification, visualization, and comparison of DNA profiles of repetitive elements at the genomic scale. This tool efficiently detects diverse repetitive elements, including microsatellites, tandem and satellite repeats of all lengths, and genomic rearrangements. The software is not limited only to the purpose of identifying any repetitive sequences and their rapid classification, but also to the comparative analysis of any target sequences, including interspecific analysis for the detection of polymorphisms without using genomic alignment.
+The application enables annotation of repeats using a database of known repeats.
 
 ## Author
 Ruslan Kalendar 
@@ -76,6 +77,8 @@ java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 | -nogff | generate a GFF file (default performed) |
 | -seqshow | extract repeat sequences (default not performed) |
 | -combine | multiple sequences can be analysed as one entire sequence (default not performed) |
+| -ref=<target_file_path> | he application enables annotation of repeats using a database of known repeats(default not performed) |
+
 	
 ## kmer=
 minimum value for the repeat ‘growth’ initialisation sequence. The value can be as low as 9, but for short repeats, this value can be used, but for chromosomes a value of 19 is recommended as a minimum. But it is also possible to use this value of 18.  
