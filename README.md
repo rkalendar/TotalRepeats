@@ -1,5 +1,5 @@
 ## TotalRepeats
-## Genome-wide tool for rapid de novo identification, classification, annotation, comparative analysis, and visualization of repeats
+## Genome-wide tool for rapid *de novo* identification, classification, annotation, comparative analysis, and visualization of repeats
 
 Novel and universal tool for de novo identification, classification, visualization, and comparison of DNA profiles of repetitive elements at the genomic scale. This tool efficiently detects diverse repetitive elements, including microsatellites, tandem and satellite repeats of all lengths, and genomic rearrangements. The software is not limited only to the purpose of identifying any repetitive sequences and their rapid classification, but also to the comparative analysis of any target sequences, including interspecific analysis for the detection of polymorphisms without using genomic alignment. The tool uses a database of known repeats to enable annotation of repeats.
 
