@@ -77,7 +77,7 @@ java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 | -nogff | generate a GFF file (default performed) |
 | -seqshow | extract repeat sequences (default not performed) |
 | -combine | multiple sequences can be analysed as one entire sequence (default not performed) |
-| -ref=<target_file_path> | he application enables annotation of repeats using a database of known repeats(default not performed) |
+| -ref=target_file_path | the application enables annotation of repeats using a database of known repeats(default not performed) |
 
 	
 ## kmer=
@@ -90,6 +90,12 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=2
 The minimum length of the sequence that is next to be used in the analysis. Some repeats are about 100 nucleotides long, such as Alu, so this value can be either above 100 to ignore short repeats or equal to 60-80 to detect short repeats like Alu. 
 ```
 java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=90 
+```
+
+## ref=target_file_path 
+If it is indicated to the program the path to the file (FASTA) with the database of existing repeats, then each cluster will be annotated.
+```
+java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -ref=C:\TotalRepeats\test\humsub.ref
 ```
 
 ## -combine
