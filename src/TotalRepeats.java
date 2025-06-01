@@ -273,6 +273,13 @@ public class TotalRepeats {
             if (width > 0 && hight > 0) {
                 s2.SetImage(width, hight);
             }
+
+            if (reffile.length() > 0) {
+                OpenSeqFiles fastafile = new OpenSeqFiles(reffile);
+                System.out.println("Reference file=" + reffile);
+                s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
+            }
+
             if (combine == 1) {
                 s2.Run2(imgx, nkmer, sensitivity);
             }
@@ -325,9 +332,9 @@ public class TotalRepeats {
             }
 
             if (reffile.length() > 0) {
-                OpenSeqFiles ffiles = new OpenSeqFiles(reffile);
+                OpenSeqFiles fastafile = new OpenSeqFiles(reffile);
                 System.out.println("Reference file=" + reffile);
-                s2.SetRefSequences(ffiles.getSeqs(), ffiles.getNames());
+                s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
             }
 
             s2.Run(imgx, nkmer, sensitivity);
