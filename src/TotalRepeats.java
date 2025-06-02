@@ -24,7 +24,7 @@ public class TotalRepeats {
             int nkmer = 20;     //0..2-230  nsize=1 - very fast clustering without chain direction detection; nsize=0 - used when ignoring clustering; nsize >2 - complete clustering        
             int combine = 0;
             boolean maskshow = true;
-            boolean seqshow = false;
+            boolean seqshow = true;
             boolean gffshow = true;
             boolean maskpicture = false;
             boolean sensitivity = false;
@@ -179,8 +179,10 @@ public class TotalRepeats {
             System.out.println("-seqshow\textract repeat sequences (default not performed)");
             System.out.println("-combine\tthis option is employed in genome-wide comparative analyses (each sequence is analyzed for repeats individually) (default not performed)");
             System.out.println("-combine2\tthis option is employed in genome-wide comparative analyses (all sequences are analyzed together) (default not performed)");
+            System.out.println("-ref=target_file_path\tthe application enables annotation of repeats using a database of known repeats/genes (default not performed)");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> ssr=true seqshow=true flanks=100");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> kmer=18 sln=100 mask=false seqshow=true flanks=100\n");
+            System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\ -ref=C:\\TotalRepeats\\test\\humsub.ref\n");
             System.out.println("Large genome settings:");
             System.out.println("java -jar -Xms16g -Xmx64g \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> kmer=21 sln=90 \n");
             System.out.println("Analysing all files in the directory:");
@@ -243,10 +245,6 @@ public class TotalRepeats {
         System.out.println("kmer=" + kmer);
         System.out.println("Classification index (0-230)=" + nkmer);
         System.out.println("Repeat block length =" + seqlen);
-        System.out.println("Shown repeated sequence is " + seqshow);
-        if (flanksshow > 0) {
-            System.out.println("Flanks around sequence is " + flanksshow);
-        }
 
         String[] nms = names.toArray(String[]::new);
         String[] sqs = seqs.toArray(String[]::new);
@@ -311,10 +309,6 @@ public class TotalRepeats {
             System.out.println("Target file: " + infile);
             if (rf.getNseq() > 1) {
                 System.out.println("Target FASTA sequences = " + rf.getNseq());
-            }
-            System.out.println("Shown repeated sequence is " + seqshow);
-            if (flanksshow > 0) {
-                System.out.println("Flanks around sequence is " + flanksshow);
             }
 
             TotalRepeatsSearching s2 = new TotalRepeatsSearching();
