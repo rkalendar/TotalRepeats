@@ -93,7 +93,7 @@ java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ## ref=reference_file_path 
 If the program is directed to the FASTA file containing the database of existing repeats, each cluster will be annotated in accordance with this database.
 The user can compile a local database containing specific elements for a specific species, or use files from the Repbase database:
-[https://www.girinst.org/repbase/update/browse.php](https://www.girinst.org/)
+[https://www.girinst.org/](https://www.girinst.org/)
 
 ```
 java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -ref=C:\TotalRepeats\test\humsub.ref
