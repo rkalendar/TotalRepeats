@@ -3,22 +3,10 @@ public final class tables {
 
     static final public byte[] dx2 = new byte[128];
     static final public byte[] cdna = new byte[128];
-    static final public byte[] cdnat2 = new byte[5];
     static final public byte[] cdn = new byte[128];
     static final public byte[] dx = new byte[128];
     
     static {
-// "M=(A/C) R=(A/G) W=(A/T) S=(G/C) Y=(C/T) K=(G/T) V=(A/G/C) H=(A/C/T) D=(A/G/T) B=(C/G/T) N=(A/G/C/T), U=T and I"
-//        a  CGT  c  AGT  a   c   g   ACT g   g   GT  t   AC  ATGC AG  GC  t  t   AGC AT   CT
-//        a   b   c   d   e   f   g   h   i   j   k   l   m    n   r   s   t  u   v   w    y
-//        97  98  99  100 101 102 103 104 105 106 107 108 109 110 114 115 116 117 118 119 121
-        //antisense 
-        cdnat2[0] = 1;
-        cdnat2[1] = 0;
-        cdnat2[2] = 3;
-        cdnat2[3] = 2;
-        cdnat2[4] = 4;
-
 //' sp   -     a   b   c   d   e   f   g   h   i   j   k   l   m    n   r   s   t  u   v   w    y
 //' 32  45    97  98  99  100 101 102 103 104 105 106 107 108 109 110 114 115 116 117 118 119 121
 //' 0    0     1   2   3   4   5   6   7   8   9   10  11  12  13  14  18  19  20  21  22  23  25
