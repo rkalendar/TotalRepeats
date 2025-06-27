@@ -21,10 +21,10 @@ public class TotalRepeats {
             int hight = 0;
             int imaged = 20;    //1...40
             int flanksshow = 0;
-            int nkmer = 20;     //0..2-230  nsize=1 - very fast clustering without chain direction detection; nsize=0 - used when ignoring clustering; nsize >2 - complete clustering        
+            int nkmer = 20;     //0,1,2-230: nsize=0: Used when ignoring clustering; Use size=1 for very fast clustering without chain direction detection; nsize >1: Used for clustering.        
             int combine = 0;
             boolean maskshow = true;
-            boolean seqshow = true;
+            boolean seqshow = false;
             boolean gffshow = true;
             boolean maskpicture = false;
             boolean sensitivity = false;
@@ -168,7 +168,7 @@ public class TotalRepeats {
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile>/<inputfolderpath> <optional_commands>");
             System.out.println("Common options:");
             System.out.println("kmer=19\tminimal kmer=12 (default kmer=19)");
-            System.out.println("sln=60\trepeat block length (default sln=60), it can be equal to 'kmer'");
+            System.out.println("sln=90\trepeat block length (default sln=60), it can be equal to 'kmer'");
             System.out.println("nsize=12\tspeed and sensitivity of sequence clustering: nsize=0 - ignoring clustering;  nsize=1 - very fast clustering without chain direction detection; nsize=12 - default for complete clustering.");
             System.out.println("flangs=100\textend the flanks of the repeat with an appropriate length (100 nt) (default flangs=0)");
             System.out.println("image=10000x300\t (by default, the dimensionality of the image is automatically determined)");
@@ -183,8 +183,10 @@ public class TotalRepeats {
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> ssr=true seqshow=true flanks=100");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> kmer=18 sln=100 mask=false seqshow=true flanks=100\n");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\ -ref=C:\\TotalRepeats\\test\\humsub.ref\n");
-            System.out.println("Large genome settings:");
-            System.out.println("java -jar -Xms16g -Xmx64g \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> kmer=21 sln=90 \n");
+            System.out.println("Large genome usage (you will have to show the program to use more RAM, for example as listed here, up to 64 Gb memory: -Xms16g -Xmx64g):");
+            System.out.println("java -jar -Xms16g -Xmx64g C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\ nsize=1 kmer=21 sln=90 \n");
+            System.out.println("For chromosomes larger than 500 Mb you will need to use more memory, 128 Gb:");
+            System.out.println("java -jar -Xms32g -Xmx128g C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\ nsize=1 kmer=21 sln=90\n");
             System.out.println("Analysing all files in the directory:");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar \\TotalRepeats\\test\\\n");
         }
