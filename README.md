@@ -46,11 +46,11 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar D:\Genomes\Hydra_vulgaris\
 
 ### Large genome usage (you will have to show the program to use more RAM, for example as listed here, up to 64 Gb memory: -Xms16g -Xmx64g):
 ```
-java -jar -Xms16g *-Xmx64g* C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
+java -jar -Xms16g __-Xmx64g__ C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
 ```
 For chromosomes larger than 500 Mb you will need to use more memory, 128-256 Gb (-Xmx128g or -Xmx256g):
 ```
-java -jar -Xms32g *-Xmx128g* C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Cycas_panzhihuaensis\ 
+java -jar -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Cycas_panzhihuaensis\ 
 ```
 
 Analysing all files in the folder:
