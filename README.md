@@ -42,6 +42,8 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\2.txt -seqs
 
 java -jar -Xms8g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
 
+java -jar -Xms8g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -nomask -nogff 
+
 ```
 
 ### Large genome usage (you will have to show the program to use more RAM, for example as listed here, up to 64 Gb memory: -Xms16g **-Xmx64g**):
