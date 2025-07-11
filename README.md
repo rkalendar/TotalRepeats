@@ -30,7 +30,7 @@ Go to the target folder and type the following; an individual file or a file fol
 
 ### Basic usage:
 
-```java -jar <TotalRepeatsPath>\TotalRepeats.jar <target_file_path> optional_commands```
+```java -jar -Xms4g -Xmx16g <TotalRepeatsPath>\TotalRepeats.jar <target_file_path> optional_commands```
 
 
 ### Examples:
