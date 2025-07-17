@@ -68,7 +68,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
 | sln=	                | repeat block length (default sln=90) |
 | nsize=                | speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >1 - efficient clustering (default nsize=12) |
 | image=                | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
-| imgx=                 | figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most extended figure width |
+| imgx=                 | figure width compression, the minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most extended figure width |
 | flanks=               | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
 | -nomask               | generate a new file with masking repeats (default performed) |
 | -nogff                | generate a GFF file (default performed)|
@@ -101,13 +101,13 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -ref=C
 ## -combine
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species, or long sequences following ONT sequencing. In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences are detected individually for each sequence. However, repeat clustering is performed for all sequences simultaneously, resulting in the identification of repeat polymorphism. In addition, this analysis is recommended for chromosomes of the same (or different) species but different strains, e.g., bacteria or fungi, or for chromosomes from different assemblies of eukaryotes or prokaryotes. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies. The range of application of this analysis is not limited. It is necessary that all target sequences are collected in one directory, and the full path to this directory must be provided to the application. It is acceptable to analyse a file containing more than one FASTA format record. If the comparative analysis is performed for large chromosomes (>400 Mb), it is recommended to use more RAM for the application (possibly even up to 128 GB).
 ```
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ -combine
+java -jar -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\ -combine
 ```
 
 ## -combine2
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species, or long sequences following ONT sequencing. In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences, inclusive of exons and introns, are regarded as repeats and subsequently clustered, leading to the identification of polymorphism. This approach is not recommended for comparative analysis of nearly identical sequences (genomes). In addition, this analysis is recommended for chromosomes of the same (or different) species but different strains, e.g., bacteria or fungi, or for chromosomes from different assemblies of eukaryotes or prokaryotes. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies. The range of application of this analysis is not limited. It is necessary that all target sequences are collected in one directory, and the full path to this directory must be provided to the application. It is acceptable to analyse a file containing more than one FASTA format record. If the comparative analysis is performed for large chromosomes (>400 Mb), it is recommended to use more RAM for the application (possibly even up to 128-256 GB).
 ```
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ -combine2
+java -jar -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\ -combine2
 ```
 
 ## nsize=
@@ -120,7 +120,7 @@ In the TotalRepeats online version (https://primerdigital.com/tools/repeats.html
 ## imgx=
 The resulting image can be stretched in width if more detailed analysis is required. This value determines the width of the image, the higher the value, the longer the width. The minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most stretched image width.
 ```
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ imgx=30	
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ imgx=5	
 ```
 
 ## Sequence Entry:
