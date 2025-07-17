@@ -49,8 +49,10 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -n
 
 ### Large genome usage (you will have to show the program to use more RAM, up to 64-128 Gb memory.
 ```
+java -jar -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\ 
+```
 
-Analysing all files in the folder:
+### Analysing all files in the folder:
 
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ 
