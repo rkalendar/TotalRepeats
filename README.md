@@ -30,7 +30,7 @@ Go to the target folder and type the following; an individual file or a file fol
 
 ### Basic usage:
 
-```java -jar -Xms4g -Xmx16g <TotalRepeatsPath>\TotalRepeats.jar <target_file_path> optional_commands```
+```java -jar <TotalRepeatsPath>\TotalRepeats.jar <target_file_path> optional_commands```
 
 
 ### Examples:
@@ -41,19 +41,13 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ kmer=12 sl
 
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\2.txt -seqshow flanks=100
 
-java -jar -Xms8g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
 
-java -jar -Xms8g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -nomask -nogff 
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -nomask -nogff 
 
 ```
 
-### Large genome usage (you will have to show the program to use more RAM, for example as listed here, up to 64 Gb memory: -Xms16g **-Xmx64g**):
-```
-java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
-```
-For chromosomes larger than 500 Mb you will need to use more memory, 128-256 Gb (-Xmx128g or -Xmx256g):
-```
-java -jar -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Cycas_panzhihuaensis\ 
+### Large genome usage (you will have to show the program to use more RAM, up to 64-128 Gb memory.
 ```
 
 Analysing all files in the folder:
@@ -61,7 +55,7 @@ Analysing all files in the folder:
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ 
 
-java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
 ```
 
 
@@ -90,7 +84,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=2
 ## sln=
 The minimum length of the sequence that is next to be used in the analysis. Some repeats are about 100 nucleotides long, such as Alu, so this value can be either above 100 to ignore short repeats or equal to 60-80 to detect short repeats like Alu. 
 ```
-java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=90 
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=90 
 ```
 
 ## ref=reference_file_path 
@@ -99,32 +93,32 @@ The user can compile a local database containing specific elements for a specifi
 [https://www.girinst.org/](https://www.girinst.org/)
 
 ```
-java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -ref=C:\TotalRepeats\test\humsub.ref
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -ref=C:\TotalRepeats\test\humsub.ref
 ```
 
 ## -combine
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species, or long sequences following ONT sequencing. In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences are detected individually for each sequence. However, repeat clustering is performed for all sequences simultaneously, resulting in the identification of repeat polymorphism. In addition, this analysis is recommended for chromosomes of the same (or different) species but different strains, e.g., bacteria or fungi, or for chromosomes from different assemblies of eukaryotes or prokaryotes. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies. The range of application of this analysis is not limited. It is necessary that all target sequences are collected in one directory, and the full path to this directory must be provided to the application. It is acceptable to analyse a file containing more than one FASTA format record. If the comparative analysis is performed for large chromosomes (>400 Mb), it is recommended to use more RAM for the application (possibly even up to 128 GB).
 ```
-java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ -combine
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ -combine
 ```
 
 ## -combine2
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species, or long sequences following ONT sequencing. In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences, inclusive of exons and introns, are regarded as repeats and subsequently clustered, leading to the identification of polymorphism. This approach is not recommended for comparative analysis of nearly identical sequences (genomes). In addition, this analysis is recommended for chromosomes of the same (or different) species but different strains, e.g., bacteria or fungi, or for chromosomes from different assemblies of eukaryotes or prokaryotes. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies. The range of application of this analysis is not limited. It is necessary that all target sequences are collected in one directory, and the full path to this directory must be provided to the application. It is acceptable to analyse a file containing more than one FASTA format record. If the comparative analysis is performed for large chromosomes (>400 Mb), it is recommended to use more RAM for the application (possibly even up to 128-256 GB).
 ```
-java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ -combine2
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ -combine2
 ```
 
 ## nsize=
 A rather important parameter for the classification of sequences. Value nsize=0 is used to ignore classification; nsize=1 - very fast clustering without determining the direction of sequences. Values 2 and higher (up to 230) are used for classification. The higher the value, the slower the algorithm will run, but the sequences will be effectively classified. The maximum value (nsize=230) can only be used when absolute stringency in classification is required. Absolute classification of sequences in practice, for certain sequences, is not reachable. Therefore, already with the parameter nsize=36, the maximum in the classification of sequences will already be reached. Therefore, the default values are 7 to 12, which in reality is ideal in terms of efficiency and speed. It is recommended to use the parameter nsize=1, for maximal fast analysis of both small and large genomes and in comparative analysis (with parameter: -combine), when it is necessary to get the overall structure of repeats in genomes as quickly as possible: 
 ```
-java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ nsize=1
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ nsize=1
 ```
 In the TotalRepeats online version (https://primerdigital.com/tools/repeats.html), the default setting is to classify sequences with a parameter (nsize=1).
 
 ## imgx=
 The resulting image can be stretched in width if more detailed analysis is required. This value determines the width of the image, the higher the value, the longer the width. The minimum value of imgx=1 (maximum compression), and a value of imgx=30 for the most stretched image width.
 ```
-java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ imgx=30	
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ imgx=30	
 ```
 
 ## Sequence Entry:
