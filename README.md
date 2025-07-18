@@ -47,7 +47,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -n
 
 ```
 
-### Large chromosome (1Gb) usage (you will have to show the program to use more RAM, up to 64-128 Gb memory.
+### Large chromosome usage (1 GB): you will need to show the program to use more RAM, up to 64–128 GB of memory.
 ```
 java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\ 
 ```
