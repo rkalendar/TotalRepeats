@@ -35,11 +35,11 @@ Go to the target folder and type the following; an individual file or a file fol
 
 ### Examples:
 ```
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\4.txt -nomask -nogff
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\NC_014637.fasta -nomask -nogff
 
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ kmer=12 sln=30 
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\2.txt -seqshow flanks=100
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\NC_014637.fasta -seqshow flanks=100
 
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
 
