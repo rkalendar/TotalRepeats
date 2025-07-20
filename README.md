@@ -61,10 +61,14 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
 ```
 java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
 ```
-##-Xms32g
+
+**-Xms32g**
 This parameter sets the initial heap size allocated to the Java Virtual Machine (JVM). In this example, -Xms32g tells the JVM to allocate 32 gigabytes of memory at startup. This is especially important for processing large genomes (e.g., those exceeding 600 megabases), as it helps prevent memory-related errors and ensures efficient performance during analysis.
-##Optional: -Xmx
+**Optional: -Xmx**
 The -Xmx parameter defines the maximum heap size that the JVM is allowed to use. For example, -Xmx64g would allow the program to use up to 64 GB of RAM if needed. If not specified, the JVM uses a platform-dependent default maximum, which may be insufficient for large-scale analyses.
+```
+java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
+```
 
 
 **Common options:**
