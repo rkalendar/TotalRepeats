@@ -32,6 +32,7 @@ Go to the target folder and type the following; an individual file or a file fol
 
 ```java -jar <TotalRepeatsPath>\TotalRepeats.jar <target_file_path> optional_commands```
 
+This command launches the TotalRepeats application, which is packaged as a standalone .jar file. The input can be either a single genomic file or a directory containing multiple sequences. Since the tool is implemented as a standard Java application, no additional software or dependencies are required.
 
 ### Examples:
 ```
