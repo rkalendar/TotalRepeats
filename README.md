@@ -53,7 +53,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -n
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ 
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ 
 ```
 
 ### Analysing large files (>100 MB, minimal RAM 32 GB):
