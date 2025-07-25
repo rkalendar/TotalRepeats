@@ -134,6 +134,12 @@ The resulting image can be stretched in width if more detailed analysis is requi
 java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ imgx=1	
 ```
 
+## quick
+This flag is only needed when masking repeats. It speeds masking a bit (up to 20%) and uses less RAM (25%), so it's recommended for large chromosomes. (default not performed)
+```
+java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -quick 
+```
+
 ## Sequence Entry:
 Sequence data files are prepared using a text editor and saved in ASCII as text/plain format (.txt) or in .fasta or without file extensions (a file extension is not obligatory). The program takes a single sequence or accepts multiple DNA sequences in FASTA format. The template length is not limited.
 
