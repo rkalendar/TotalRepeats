@@ -84,7 +84,8 @@ java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v
 | -nogff                | generate a GFF file (default performed)|
 | -seqshow              | extract repeat sequences (default not performed) |
 | -combine              | multiple sequences can be analysed as one entire sequence (default not performed)|
-| ref=file_path        | uses a database of known repeats to enable annotation of repeats (default not performed)|
+| -quick                | This flag accelerates masking slightly and uses less RAM memory on a computer. It is recommended for large chromosomes (default not performed)|
+| ref=file_path         | uses a database of known repeats to enable annotation of repeats (default not performed)|
 
 	
 ## kmer=
