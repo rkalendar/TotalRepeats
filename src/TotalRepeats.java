@@ -14,7 +14,7 @@ public class TotalRepeats {
             String infile = args[0]; // file path or Folder
             String reffile = "";
             String s = String.join(" ", args).toLowerCase() + " ";
-            int kmer = 19;   //quick search: optimal rules: kmer=19-21 seqlen=30...100, gap=kmer kmer=12-18 for short seqyences
+            int kmer = 19;   //optimal rules: kmer=19-21 seqlen=30...100, gap=kmer kmer=12-18 for short seqyences
             int seqlen = 90;
             int gap = kmer;
             int width = 0;
@@ -28,6 +28,7 @@ public class TotalRepeats {
             boolean gffshow = true;
             boolean maskpicture = false;
             boolean sensitivity = false;
+            boolean quickmask = false; // a little faster, less RAM used and a slight deviation
 
             System.out.println("Current Directory: " + System.getProperty("user.dir"));
             System.out.println("Command-line arguments:");
@@ -38,7 +39,9 @@ public class TotalRepeats {
                 int x = s.indexOf(" ", j);
                 reffile = s.substring(j + 4, x);
             }
-
+            if (s.contains("-quick")) {
+                quickmask = true;
+            }            
             if (s.contains("combine")) {
                 combine = 1;
             }
@@ -145,12 +148,12 @@ public class TotalRepeats {
                         }
                     }
                     if (combine > 0) {
-                        SaveResult2(combine, reffile, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                        SaveResult2(combine, reffile, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity, quickmask);
                     } else {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    SaveResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                                    SaveResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity, quickmask);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -159,7 +162,7 @@ public class TotalRepeats {
                     }
 
                 } else {
-                    SaveResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                    SaveResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity, quickmask);
                 }
             }
         } else {
@@ -211,7 +214,7 @@ public class TotalRepeats {
         return (Integer.parseInt(r.toString()));
     }
 
-    private static void SaveResult2(int combine, String reffile, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity) throws IOException {
+    private static void SaveResult2(int combine, String reffile, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity, boolean quickmask) throws IOException {
         long startTime = System.nanoTime();
         List<String> seqs = new ArrayList<>();
         List<String> names = new ArrayList<>();
@@ -242,7 +245,7 @@ public class TotalRepeats {
             }
         }
 
-        System.out.println("Running...");
+        System.out.println("\nRunning...");
         System.out.println("kmer=" + kmer);
         System.out.println("Classification index (0-230)=" + nkmer);
         System.out.println("Repeat block length =" + seqlen);
@@ -255,6 +258,7 @@ public class TotalRepeats {
         s2.SetSequences(sqs, nms);
         s2.SetRepeatLen(kmer, seqlen, gap);
         s2.SetShowSeq(seqshow);
+        s2.SetQuickSearch(quickmask);
         s2.SetFlanks(flanksshow);
         s2.SetMasked(maskshow);
         s2.SetMaskedPicture(maskpic);
@@ -291,7 +295,7 @@ public class TotalRepeats {
         System.out.println("Time taken: " + duration + " seconds\n");
     }
 
-    private static void SaveResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity) {
+    private static void SaveResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity, boolean quickmask) {
         try {
             long startTime = System.nanoTime();
             byte[] binaryArray = Files.readAllBytes(Paths.get(infile));
@@ -303,7 +307,7 @@ public class TotalRepeats {
                 return;
             }
 
-            System.out.println("Running...");
+            System.out.println("\nRunning...");
             System.out.println("kmer=" + kmer);
             System.out.println("Classification index (0-230)=" + nkmer);
             System.out.println("Repeat block length =" + seqlen);
@@ -314,7 +318,7 @@ public class TotalRepeats {
 
             TotalRepeatsSearching s2 = new TotalRepeatsSearching();
             s2.SetSequences(rf.getSequences(), rf.getNames());
-
+            s2.SetQuickSearch(quickmask);
             s2.SetRepeatLen(kmer, seqlen, gap);
             s2.SetShowSeq(seqshow);
             s2.SetFlanks(flanksshow);
