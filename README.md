@@ -62,10 +62,17 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\
 java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
 ```
 
-**-Xms32g**
-This parameter sets the initial heap size allocated to the Java Virtual Machine (JVM). In this example, -Xms32g tells the JVM to allocate 32 gigabytes of memory at startup. This is especially important for processing large genomes (e.g., those exceeding 100 megabases), as it helps prevent memory-related errors and ensures efficient performance during analysis.
-**Optional: -Xmx**
-The -Xmx parameter defines the maximum heap size that the JVM is allowed to use. For example, -Xmx64g would allow the program to use up to 64 GB of RAM if needed. If not specified, the JVM uses a platform-dependent default maximum, which may be insufficient for large-scale analyses.
+###Java Memory Management Parameters
+
+**-Xms (Initial Heap Size)**:
+This parameter sets the initial amount of memory allocated to the Java Virtual Machine (JVM) at startup. For example, -Xms32g allocates 32 GB of heap memory immediately. This is particularly important for analyzing large genomes (e.g., >100 Mb), as it helps avoid memory allocation delays and reduces the risk of OutOfMemoryError during runtime.
+
+**-Xmx (Maximum Heap Size) – Optional**:
+This parameter sets the maximum amount of heap memory the JVM can use. For instance, -Xmx64g allows the application to grow the heap up to 64 GB if needed. If -Xmx is not specified, the JVM relies on a platform-dependent default, which may be too low for memory-intensive tasks such as genome-wide analysis.
+
+**Recommendation**:
+On systems with 64–128 GB of RAM, explicitly setting -Xms32g -Xmx64g is not always necessary, as the JVM typically manages memory dynamically. However, for large datasets or if you encounter memory-related errors, specifying these parameters in your command-line execution is strongly advised.
+
 ```
 java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
 ```
