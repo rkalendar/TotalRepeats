@@ -62,7 +62,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\
 java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
 ```
 
-###Java Memory Management Parameters
+**Java Memory Management Parameters**
 
 **-Xms (Initial Heap Size)**:
 This parameter sets the initial amount of memory allocated to the Java Virtual Machine (JVM) at startup. For example, -Xms32g allocates 32 GB of heap memory immediately. This is particularly important for analyzing large genomes (e.g., >100 Mb), as it helps avoid memory allocation delays and reduces the risk of OutOfMemoryError during runtime.
