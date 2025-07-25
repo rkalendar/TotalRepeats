@@ -41,7 +41,7 @@ public class TotalRepeats {
             }
             if (s.contains("-quick")) {
                 quickmask = true;
-            }            
+            }
             if (s.contains("combine")) {
                 combine = 1;
             }
@@ -171,7 +171,7 @@ public class TotalRepeats {
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile>/<inputfolderpath> <optional_commands>");
             System.out.println("Common options:");
             System.out.println("kmer=19\tminimal kmer=12 (default kmer=19)");
-            System.out.println("sln=90\trepeat block length (default sln=60), it can be equal to 'kmer'");
+            System.out.println("sln=90\trepeat block length (default sln=90), it can be equal to 'kmer'");
             System.out.println("nsize=12\tspeed and sensitivity of sequence clustering: nsize=0 - ignoring clustering;  nsize=1 - very fast clustering without chain direction detection; nsize=12 - default for complete clustering.");
             System.out.println("flangs=100\textend the flanks of the repeat with an appropriate length (100 nt) (default flangs=0)");
             System.out.println("image=10000x300\t (by default, the dimensionality of the image is automatically determined)");
@@ -182,14 +182,15 @@ public class TotalRepeats {
             System.out.println("-seqshow\textract repeat sequences (default not performed)");
             System.out.println("-combine\tthis option is employed in genome-wide comparative analyses (each sequence is analyzed for repeats individually) (default not performed)");
             System.out.println("-combine2\tthis option is employed in genome-wide comparative analyses (all sequences are analyzed together) (default not performed)");
+            System.out.println("-quick\tthis flag accelerates masking slightly and uses less RAM memory on a computer. It is recommended for large chromosomes (default not performed)");
             System.out.println("-ref=target_file_path\tthe application enables annotation of repeats using a database of known repeats/genes (default not performed)");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> ssr=true seqshow=true flanks=100");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> kmer=18 sln=100 mask=false seqshow=true flanks=100\n");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\ -ref=C:\\TotalRepeats\\test\\humsub.ref\n");
             System.out.println("Large chromosome usage (1 GB): you will need to show the program to use more RAM, up to 64–128 GB of memory:\n");
-            System.out.println("java -jar -Xms32g C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\Sarcophilus_harrisii\\ \n");
+            System.out.println("java -jar -Xms32g C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\ \n");
             System.out.println("Analysing all files in the directory:");
-            System.out.println("java -jar C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\Sarcophilus_harrisii\\\n");
+            System.out.println("java -jar C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\\n");
             System.out.println("java -jar C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\Shigella\\ -combine -nomask -nogff \n");
         }
     }
