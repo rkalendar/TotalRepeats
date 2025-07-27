@@ -56,7 +56,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ 
 ```
 
-### Analysing large files (>100 MB, minimal RAM 32 GB):
+### Analysing large files (>300 MB, minimal RAM 32-64 GB):
 
 ```
 java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
@@ -65,7 +65,7 @@ java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_h
 **Java Memory Management Parameters**
 
 **-Xms (Initial Heap Size)**:
-This parameter sets the initial amount of memory allocated to the Java Virtual Machine (JVM) at startup. For example, -Xms32g allocates 32 GB of heap memory immediately. This is particularly important for analyzing large genomes (e.g., >100 Mb), as it helps avoid memory allocation delays and reduces the risk of **OutOfMemoryError** during runtime.
+This parameter sets the initial amount of memory allocated to the Java Virtual Machine (JVM) at startup. For example, -Xms32g allocates 32 GB of heap memory immediately. This is particularly important for analyzing large genomes (e.g., >300 Mb), as it helps avoid memory allocation delays and reduces the risk of **OutOfMemoryError** during runtime.
 
 **-Xmx (Maximum Heap Size) – Optional**:
 This parameter sets the maximum amount of heap memory the JVM can use. For instance, -Xmx64g allows the application to grow the heap up to 64 GB if needed. If -Xmx is not specified, the JVM relies on a platform-dependent default, which may be too low for memory-intensive tasks such as genome-wide analysis.
