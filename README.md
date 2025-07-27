@@ -91,7 +91,6 @@ java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v
 | -nogff                | generate a GFF file (default performed)|
 | -seqshow              | extract repeat sequences (default not performed) |
 | -combine              | multiple sequences can be analysed as one entire sequence (default not performed)|
-| -quick                | This flag accelerates masking slightly and uses less RAM memory on a computer. It is recommended for large chromosomes (default not performed)|
 | ref=file_path         | uses a database of known repeats to enable annotation of repeats (default not performed)|
 
 	
@@ -139,12 +138,6 @@ In the TotalRepeats online version (https://primerdigital.com/tools/repeats.html
 The resulting image can be stretched in width if more detailed analysis is required (default imgx=5). This value determines the width of the image, the higher the value, the longer the width. The minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most stretched image width.
 ```
 java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ imgx=1	
-```
-
-## quick
-This flag is only needed when masking repeats. It speeds masking a bit (up to 20%) and uses less RAM (25%), so it's recommended for large chromosomes. (default not performed)
-```
-java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -quick 
 ```
 
 ## Sequence Entry:
