@@ -56,7 +56,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ 
 ```
 
-### Analysing large files (>300 MB, minimal RAM 32-64 GB):
+### Analysing large files (>200 MB, minimal RAM 32-64 GB):
 
 ```
 java -jar -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
