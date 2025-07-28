@@ -74,7 +74,7 @@ This parameter sets the maximum amount of heap memory the JVM can use. For insta
 On systems with 64–128 GB of RAM, explicitly setting -Xms32g -Xmx64g is not always necessary, as the JVM typically manages memory dynamically. However, for large datasets or if you encounter **OutOfMemoryError**, specifying these parameters in your command-line execution is strongly advised:
 
 ```
-java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
+java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
 ```
 
 
@@ -130,7 +130,7 @@ java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0
 ## nsize=
 A rather important parameter for the classification of sequences. Value nsize=0 is used to ignore classification; nsize=1 - very fast clustering without determining the direction of sequences. Values 2 and higher (up to 230) are used for classification. The higher the value, the slower the algorithm will run, but the sequences will be effectively classified. The maximum value (nsize=230) can only be used when absolute stringency in classification is required. Absolute classification of sequences in practice, for certain sequences, is not reachable. Therefore, already with the parameter nsize=36, the maximum in the classification of sequences will already be reached. Therefore, the default values are 7 to 12, which in reality is ideal in terms of efficiency and speed. It is recommended to use the parameter nsize=1, for maximal fast analysis of both small and large genomes and in comparative analysis (with parameter: -combine), when it is necessary to get the overall structure of repeats in genomes as quickly as possible: 
 ```
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ nsize=1
+java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ nsize=1
 ```
 In the TotalRepeats online version (https://primerdigital.com/tools/repeats.html), the default setting is to classify sequences with a parameter (nsize=1).
 
@@ -155,7 +155,7 @@ GFF format General Feature Format describes genes and other features associated 
 Generic Feature Format Version 3 (GFF3) 
 https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
 1. Seqid - The file name.
-2. Repeat - SSR (perfect and imperfect microsatellite repeats, and any short or long tandem repeat); UCRP - sequences with no identified classification; CRP - sequences with a specific classification.
+2. Repeat - Short tandem repeat (STR) sequence (perfect and imperfect microsatellite repeats, and any short or long tandem repeat); UCRP - sequences with no identified classification; CRP - sequences with a specific classification.
 3. ClusterID - a cluster ID.
 4. Start - The initial position of the repeat element in the sequence. The first base has the number 1.
 5. Stop - The ending position of the repeat element (inclusive).
