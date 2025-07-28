@@ -81,7 +81,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 **Common options:**
 | Command               | Description                                   |
 | ----------------------| --------------------------------------------- |
-| kmer=	                | kmer size (default kmer=20)|
+| kmer=	                | kmer size: 9 to 32 (default: k-mer = 19)|
 | sln=	                | repeat block length (default sln=90) |
 | nsize=                | speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >1 - efficient clustering (default nsize=12) |
 | image=                | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
@@ -95,15 +95,15 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 
 	
 ## kmer=
-This is the minimum value for repeat sequence masking. It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 20 is recommended for eukaryotic chromosomes. It is also possible to use values between 18 and 19 for short chromosomes.
+This is the minimum value for repeat sequence masking. It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19-21 is recommended for eukaryotic chromosomes. It is also possible to use values between 18 and 19 for short chromosomes.
 ```
-java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=21 
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=20 
 ```
 
 ## sln=
 The minimum length of the sequence that is next to be used in the analysis. Some repeats are about 100 nucleotides long, such as Alu, so this value can be either above 100 to ignore short repeats or equal to 60-80 to detect short repeats like Alu. 
 ```
-java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=100 
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=100 
 ```
 
 ## ref=reference_file_path 
@@ -112,19 +112,19 @@ The user can compile a local database containing specific elements for a specifi
 [https://www.girinst.org/](https://www.girinst.org/)
 
 ```
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -ref=C:\TotalRepeats\test\humsub.ref
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -ref=C:\TotalRepeats\test\humsub.ref
 ```
 
 ## -combine
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species, or long sequences following ONT sequencing. In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences are detected individually for each sequence. However, repeat clustering is performed for all sequences simultaneously, resulting in the identification of repeat polymorphism. In addition, this analysis is recommended for chromosomes of the same (or different) species but different strains, e.g., bacteria or fungi, or for chromosomes from different assemblies of eukaryotes or prokaryotes. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies. The range of application of this analysis is not limited. It is necessary that all target sequences are collected in one directory, and the full path to this directory must be provided to the application. It is acceptable to analyse a file containing more than one FASTA format record. 
 ```
-java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -combine
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -combine
 ```
 
 ## -combine2
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species, or long sequences following ONT sequencing. In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences, inclusive of exons and introns, are regarded as repeats and subsequently clustered, leading to the identification of polymorphism. This approach is not recommended for comparative analysis of nearly identical sequences (genomes). In addition, this analysis is recommended for chromosomes of the same (or different) species but different strains, e.g., bacteria or fungi, or for chromosomes from different assemblies of eukaryotes or prokaryotes. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies. The range of application of this analysis is not limited. It is necessary that all target sequences are collected in one directory, and the full path to this directory must be provided to the application. It is acceptable to analyse a file containing more than one FASTA format record.
 ```
-java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -combine2
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -combine2
 ```
 
 ## nsize=
@@ -137,7 +137,7 @@ In the TotalRepeats online version (https://primerdigital.com/tools/repeats.html
 ## imgx=
 The resulting image can be stretched in width if more detailed analysis is required (default imgx=5). This value determines the width of the image, the higher the value, the longer the width. The minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most stretched image width.
 ```
-java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ imgx=1	
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ imgx=1	
 ```
 
 ## Sequence Entry:
