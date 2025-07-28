@@ -81,7 +81,7 @@ java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilu
 **Common options:**
 | Command               | Description                                   |
 | ----------------------| --------------------------------------------- |
-| kmer=	                | kmer size (default kmer=19)|
+| kmer=	                | kmer size (default kmer=20)|
 | sln=	                | repeat block length (default sln=90) |
 | nsize=                | speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >1 - efficient clustering (default nsize=12) |
 | image=                | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
@@ -95,7 +95,7 @@ java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilu
 
 	
 ## kmer=
-minimum value for the repeat ‘growth’ initialisation sequence. The value can be as low as 9, but for short repeats, this value can be used, but for chromosomes a value of 19 is recommended as a minimum. But it is also possible to use this value of 18.  
+This is the minimum value for repeat sequence masking. It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 20 is recommended for eukaryotic chromosomes. It is also possible to use values between 18 and 19 for short chromosomes.
 ```
 java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=21 
 ```
