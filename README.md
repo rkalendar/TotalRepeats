@@ -59,7 +59,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\
 ### Analysing large files (>200 MB, minimal RAM 32-64 GB):
 
 ```
-java -jar -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
+java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
 ```
 
 **Java Memory Management Parameters**
