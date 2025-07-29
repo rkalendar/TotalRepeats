@@ -81,7 +81,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 **Common options:**
 | Command               | Description                                   |
 | ----------------------| --------------------------------------------- |
-| kmer=	                | kmer size: 9 to 32 (default: k-mer = 19)|
+| kmer=	                | kmer size: 9 to 21 (default: k-mer = 19)|
 | sln=	                | repeat block length (default sln=90) |
 | nsize=                | speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >1 - efficient clustering (default nsize=12) |
 | image=                | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
@@ -95,7 +95,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 
 	
 ## kmer=
-This is the minimum value for repeat sequence masking. It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19-21 is recommended for eukaryotic chromosomes. It is also possible to use values between 18 and 19 for short chromosomes.
+This is the minimum value for repeat sequence masking (9-21). It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19 is recommended for eukaryotic chromosomes. It is also possible to use values of 18 for short chromosomes.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=20 
 ```
