@@ -71,7 +71,7 @@ This parameter sets the initial amount of memory allocated to the Java Virtual M
 This parameter sets the maximum amount of heap memory the JVM can use. For instance, -Xmx64g allows the application to grow the heap up to 64 GB if needed. If -Xmx is not specified, the JVM relies on a platform-dependent default, which may be too low for memory-intensive tasks such as genome-wide analysis.
 
 **Recommendation**:
-In case of **OutOfMemoryError** during runtime: “Exception in thread ‘main’ java.lang.OutOfMemoryError: Java heap space”, you need to increase the amount of memory used by the program. On systems with 64–128 GB of RAM, explicitly setting -Xms32g -Xmx64g is not always necessary, as the JVM typically manages memory dynamically. However, for large datasets or if you encounter **OutOfMemoryError**, specifying these parameters in your command-line execution is strongly advised. 
+In case of **Exception in thread ‘main’ java.lang.OutOfMemoryError: Java heap space** during runtime: you need to increase the amount of memory used by the program. On systems with 64–128 GB of RAM, explicitly setting -Xms32g -Xmx64g is not always necessary, as the JVM typically manages memory dynamically. However, for large datasets or if you encounter **OutOfMemoryError**, specifying these parameters in your command-line execution is strongly advised. 
 Restart application with "-Xms32g -Xmx64g" flags: 
 
 ```
