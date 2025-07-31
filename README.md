@@ -33,7 +33,10 @@ Go to the target folder and type the following; an individual file or a file fol
 ```java -jar <TotalRepeatsPath>\TotalRepeats.jar <target_file_path> optional_commands```
 
 This command launches the TotalRepeats application, which is packaged as a standalone .jar file. The input can be either a single genomic file or a directory containing multiple sequences. Since the tool is implemented as a standard Java application, no additional software or dependencies are required. 
-Masking, clustering, and annotation are all key stages of the software that use multithreading functions for parallel computing. This significantly improves the software's performance. When working with large chromosome files, it is necessary to use computers with at least 64 GB of free RAM, and to specify the maximum amount of available RAM using the flags: -Xms and -Xmx. You do not need to specify flags (-Xms and -Xmx) for files up to 100 MB. However, for files larger than 500 MB, you need more than 64 GB of free RAM and must specify flags with maximum values. For example: -Xms16g -Xmx64g.
+
+Masking, clustering, and annotation are all key stages of the software that use multithreading functions for parallel computing. This significantly improves the software's performance. 
+
+When working with large chromosome files, it is necessary to use computers with at least 64 GB of free RAM and specify the maximum amount of available RAM with the following flags: -Xms and -Xmx. You do not need to use these flags for files smaller than 100 MB. However, for files larger than 500 MB, you need more than 64 GB of free RAM and must specify the maximum values of these flags. For example, use the flags -Xms16g and -Xmx64g.
 
 ### Examples:
 ```
