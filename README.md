@@ -3,7 +3,8 @@
 
 Novel and universal tool for *de novo* identification, classification, visualization, and comparison of DNA profiles of repetitive elements at the genomic scale. This tool efficiently detects a wide range of repeats, including mobile genetic elements, tandem arrays, and large-scale genomic rearrangements, without reliance on prior sequence knowledge. The software is not limited only to the purpose of identifying any repetitive sequences and their rapid classification, but also to the comparative analysis of any target sequences, including interspecific analysis for the detection of polymorphisms without using genomic alignment. The tool uses a database of known repeats to enable annotation of repetitive sequences.
 TotalRepeats is ideal for applications in comparative genomics, evolutionary biology, structural variation analysis, and general bioinformatics research.
-The core stages: masking, clustering, and annotation are implemented with multithreading to enable parallel execution, making the software suitable for deployment on servers and high-performance computing systems.
+
+Masking, clustering, and annotation are designed as multithreaded routines to exploit parallelism, allowing the software to scale efficiently on server and supercomputing infrastructure.
 
 ## Author
 Ruslan Kalendar 
