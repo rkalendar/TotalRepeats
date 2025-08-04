@@ -3,6 +3,7 @@
 
 Novel and universal tool for *de novo* identification, classification, visualization, and comparison of DNA profiles of repetitive elements at the genomic scale. This tool efficiently detects a wide range of repeats, including mobile genetic elements, tandem arrays, and large-scale genomic rearrangements, without reliance on prior sequence knowledge. The software is not limited only to the purpose of identifying any repetitive sequences and their rapid classification, but also to the comparative analysis of any target sequences, including interspecific analysis for the detection of polymorphisms without using genomic alignment. The tool uses a database of known repeats to enable annotation of repetitive sequences.
 TotalRepeats is ideal for applications in comparative genomics, evolutionary biology, structural variation analysis, and general bioinformatics research.
+The core stages: masking, clustering, and annotation are implemented with multithreading to enable parallel execution, making the software suitable for deployment on servers and high-performance computing systems.
 
 ## Author
 Ruslan Kalendar 
@@ -34,11 +35,11 @@ Go to the target folder and type the following; an individual file or a file fol
 
 This command launches the TotalRepeats application, which is packaged as a standalone .jar file. The input can be either a single genomic file or a directory containing multiple sequences. Since the tool is implemented as a standard Java application, no additional software or dependencies are required. 
 
-Masking, clustering, and annotation are all key stages of the software that use multithreading functions for parallel computing. This significantly improves the software's performance. 
+By employing multithreading in the masking, clustering, and annotation stages, the software achieves parallel performance and can be run effectively on server-grade or HPC (supercomputer) environments.
 
 When working with large chromosome files, it is necessary to use computers with at least 64 GB of free RAM and specify the maximum amount of available RAM with the following flags: -Xms and -Xmx. You do not need to use these flags for files smaller than 100 MB. However, for files larger than 500 MB, you need more than 64 GB of free RAM and must specify the maximum values of these flags. For example, use the flags -Xms16g and -Xmx64g.
 
-### Examples:
+### Examples (Windows):
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\NC_014637.fasta -nomask -nogff
 
@@ -48,7 +49,12 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\NC_014637.f
 
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -nomask -nogff 
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -nomask -nogff
+
+```
+### Examples (Linux):
+```
+java -jar -Xms32g -Xmx128g /data/rkalendar/soft/TotalRepeats.jar /data/rkalendar/genomes/Sarcophilus_harrisii/
 
 ```
 
