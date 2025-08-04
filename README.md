@@ -55,7 +55,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -n
 ```
 ### Examples (Linux):
 ```
-java -jar -Xms32g -Xmx128g /data/rkalendar/soft/TotalRepeats.jar /data/rkalendar/genomes/Sarcophilus_harrisii/
+java -jar -Xms32g -Xmx128g /data/user/soft/TotalRepeats.jar /data/user/genomes/Sarcophilus_harrisii/
 
 ```
 
