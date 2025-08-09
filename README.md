@@ -103,8 +103,10 @@ java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilu
 | seqshow               | extract repeat sequences (default not performed) |
 | combine               | multiple sequences can be analysed as one entire sequence (default not performed)|
 | ref=file_path         | uses a database of known repeats to enable annotation of repeats (default not performed)|
+| extract               | split a single FASTA file into multiple FASTA files|
+| maskfiles             | a comparison analysis of masked files obtained from different software or algorithms|
+ 
 
-	
 ## kmer=
 This is the minimum value for repeat sequence masking (9-21). It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19 is recommended for eukaryotic chromosomes. It is also possible to use values of 18 for short chromosomes.
 ```
@@ -151,6 +153,29 @@ The resulting image can be stretched in width if more detailed analysis is requi
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ imgx=1	
 ```
 
+## extract
+Split a single FASTA file into multiple FASTA files.
+```
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\7\GCF_000002495.2_MG8_genomic.fna -extract
+```
+
+## maskfiles
+A comparison analysis of masked files obtained from different software or algorithms.
+```
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Test\runfiles.txt -maskfiles
+```
+
+Specify the file in which the related files for analysis are listed in two columns, separated by tabs. Example file: runfiles.txt
+```
+NC_017844.1.fasta	NC_017844.1.fasta.msk
+NC_017849.1.fasta	NC_017849.1.fasta.msk
+NC_017850.1.fasta	NC_017850.1.fasta.msk
+NC_017851.1.fasta	NC_017851.1.fasta.msk
+NC_017852.1.fasta	NC_017852.1.fasta.msk
+NC_017853.1.fasta	NC_017853.1.fasta.msk
+NC_017854.1.fasta	NC_017854.1.fasta.msk
+```
+ 
 ## Sequence Entry:
 Sequence data files are prepared using a text editor and saved in ASCII as text/plain format (.txt) or in .fasta or without file extensions (a file extension is not obligatory). The program takes a single sequence or accepts multiple DNA sequences in FASTA format. The template length is not limited.
 
