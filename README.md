@@ -57,6 +57,8 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -n
 ```
 java -jar -Xms32g -Xmx128g /data/user/soft/TotalRepeats.jar /data/user/genomes/Sarcophilus_harrisii/
 
+java -jar -Xms64g -Xmx256g /data/user/soft/TotalRepeats.jar /data/user/genomes/Pleurodeles_waltl/
+
 ```
 
 ### Analysing all files in the folder:
