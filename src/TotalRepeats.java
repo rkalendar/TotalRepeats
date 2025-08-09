@@ -468,7 +468,7 @@ public class TotalRepeats {
             StringBuilder sb = new StringBuilder();
             String saveFile = parentDir + File.separator + "result.txt";
             while ((line = reader.readLine()) != null) {
-                String[] s = line.split("\t");
+                String[] s = line.trim().split("[\t ]+");
                 if (s.length > 1) {
                     String inputFile1 = parentDir + File.separator + s[0].trim();
                     String inputFile2 = parentDir + File.separator + s[1].trim();
