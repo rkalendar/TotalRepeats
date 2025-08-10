@@ -1,3 +1,4 @@
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -368,28 +369,6 @@ public class TotalRepeats {
         return lowercase;
     }
 
-    public static void AnalysisLowUpperFile(String inputFile) {
-        int lowercase = 0;
-        int uppercase = 0;
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                for (char c : line.toCharArray()) {
-                    if (Character.isLowerCase(c)) {
-                        lowercase++;
-                    } else if (Character.isUpperCase(c)) {
-                        uppercase++;
-                    }
-                }
-            }
-            System.out.println("Lowercase: " + lowercase);
-            System.out.println("Uppercase: " + uppercase);
-        } catch (IOException e) {
-
-        }
-    }
-
     private static void AnalysisFile(String inputFile) {
         File input = new File(inputFile);
         String parentDir = input.getParent();
@@ -399,28 +378,26 @@ public class TotalRepeats {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
             System.out.println("\nRunning...");
-            long startTime = System.nanoTime();
             int l = 0;
-            float r = 0;
+            int r = 0;
             String line;
-            String outputFile = null;
             BufferedWriter writer = null;
             BufferedWriter report = new BufferedWriter(new FileWriter(parentDir + File.separator + "report.txt"));
 
             while ((line = reader.readLine()) != null) {
                 if (line.contains(">")) {
                     if (writer != null) {
-                        report.write("Total length (nt):" + l);
+                        report.write("Total length (nt)= " + l);
                         report.newLine();
-                        report.write("Total masked length (nt):" + (int) r);
+                        report.write("Total masked length (nt)= " + r);
                         report.newLine();
-                        report.write("Masked=" + String.format("%.2f", ((r * 100) / l)) + "%\n");
+                        report.write("Masked= " + String.format("%.2f", (float) ((r * 100) / l)) + "%\n");
                         writer.close();
                     }
                     String[] s = line.split(">");
                     if (s.length > 1) {
                         String[] s2 = s[1].trim().split(" ");
-                        outputFile = parentDir + File.separator + s2[0] + ".fasta";
+                        String outputFile = parentDir + File.separator + s2[0] + ".fasta";
                         writer = new BufferedWriter(new FileWriter(outputFile));
                         writer.write(line);
                         writer.newLine();
@@ -433,23 +410,21 @@ public class TotalRepeats {
                     if (writer != null) {
                         writer.write(line);
                         writer.newLine();
-                        l = l + line.length();
-                        r = r + countLower(line);
+                        l += line.length();
+                        r += countLower(line);
                     }
                 }
             }
             if (writer != null) {
                 writer.close();
-                report.write("Total length:" + l);
+                report.write("Total length= " + l);
                 report.newLine();
-                report.write("Total masked length:" + r);
+                report.write("Total masked length= " + r);
                 report.newLine();
-                report.write("Masked=" + String.format("%.2f", ((r * 100) / l)) + "%\n");
+                report.write("Masked= " + String.format("%.2f", (float)((r * 100) / l)) + "%\n");
                 report.close();
             }
             System.out.println("File(s) processed successfully.");
-            long duration = (System.nanoTime() - startTime) / 1000000000;
-            System.out.println("Total duration: " + duration + " seconds\n");
         } catch (IOException e) {
 
         }
@@ -463,7 +438,6 @@ public class TotalRepeats {
         }
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
             System.out.println("\nRunning...");
-            long startTime = System.nanoTime();
             String line;
             StringBuilder sb = new StringBuilder();
             String saveFile = parentDir + File.separator + "result.txt";
@@ -481,8 +455,6 @@ public class TotalRepeats {
                 report.write(sb.toString());
             }
             System.out.println("Files processed successfully.");
-            long duration = (System.nanoTime() - startTime) / 1000000000;
-            System.out.println("Total duration: " + duration + " seconds\n");
         } catch (IOException e) {
         }
     }
