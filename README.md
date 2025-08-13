@@ -107,7 +107,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | combine               | multiple sequences can be analysed as one entire sequence (default not performed)|
 | ref=file_path         | uses a database of known repeats to enable annotation of repeats (default not performed)|
 | extract               | split a single FASTA file into multiple FASTA files|
-| maskcomp             | a comparison analysis of masked files obtained from different software or algorithms|
+| maskscomp             | a comparison analysis of masked files obtained from different software or algorithms|
  
 
 ## kmer=
@@ -167,10 +167,10 @@ Split a single FASTA file into multiple FASTA files.
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\7\GCF_000002495.2_MG8_genomic.fna -extract
 ```
 
-## maskcomp
+## maskscomp
 A comparison analysis of masked files obtained from different software or algorithms.
 ```
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Test\runfiles.txt -maskfiles
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Test\runfiles.txt -maskscomp
 ```
 
 Specify the file in which the related files for analysis are listed in two columns, separated by tabs. Example file: runfiles.txt
