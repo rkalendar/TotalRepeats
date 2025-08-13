@@ -97,7 +97,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | kmer=	                | kmer size: 9 to 21 (default: k-mer = 19)|
 | sln=	                 | repeat block length (default sln=90) |
 | nsize=                | speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >1 - efficient clustering (default nsize=12) |
-| smask	                | a more sensitive method of identifying duplicates (default not performed)|
+| smask	                | a more sensitive method for identifying repetitive sequences (default not performed)|
 | image=                | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
 | imgx=                 | figure width compression (default imgx=5), the minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most extended figure width |
 | flanks=               | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
@@ -122,7 +122,7 @@ The minimum length of the sequence that is next to be used in the analysis. Some
 java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=100 
 ```
 ## smask
-A more sensitive method of identifying duplicates.
+A more sensitive method for identifying repetitive sequences.
 ```
 java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -smask
 ```
