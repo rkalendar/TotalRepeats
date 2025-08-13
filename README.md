@@ -88,15 +88,16 @@ In case of **Exception in thread ‘main’ java.lang.OutOfMemoryError: Java hea
 Restart application with "-Xms32g -Xmx64g" flags: 
 
 ```
-java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
+java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
 ```
 
 **Common options:**
 | Command               | Description                                   |
 | ----------------------| --------------------------------------------- |
 | kmer=	                | kmer size: 9 to 21 (default: k-mer = 19)|
-| sln=	                | repeat block length (default sln=90) |
+| sln=	                 | repeat block length (default sln=90) |
 | nsize=                | speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >1 - efficient clustering (default nsize=12) |
+| smask	                | a more sensitive method of identifying duplicates(default performed) |
 | image=                | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
 | imgx=                 | figure width compression (default imgx=5), the minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most extended figure width |
 | flanks=               | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
@@ -106,19 +107,24 @@ java -Xms32g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilu
 | combine               | multiple sequences can be analysed as one entire sequence (default not performed)|
 | ref=file_path         | uses a database of known repeats to enable annotation of repeats (default not performed)|
 | extract               | split a single FASTA file into multiple FASTA files|
-| maskfiles             | a comparison analysis of masked files obtained from different software or algorithms|
+| maskcomp             | a comparison analysis of masked files obtained from different software or algorithms|
  
 
 ## kmer=
 This is the minimum value for repeat sequence masking (9-21). It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19 is recommended for eukaryotic chromosomes. It is also possible to use values of 18 for short chromosomes.
 ```
-java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=20 
+java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=20 
 ```
 
 ## sln=
 The minimum length of the sequence that is next to be used in the analysis. Some repeats are about 100 nucleotides long, such as Alu, so this value can be either above 100 to ignore short repeats or equal to 60-80 to detect short repeats like Alu. 
 ```
-java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=100 
+java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=100 
+```
+## smask
+A more sensitive method of identifying duplicates.
+```
+java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -smask
 ```
 
 ## ref=reference_file_path 
@@ -161,7 +167,7 @@ Split a single FASTA file into multiple FASTA files.
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\7\GCF_000002495.2_MG8_genomic.fna -extract
 ```
 
-## maskfiles
+## maskcomp
 A comparison analysis of masked files obtained from different software or algorithms.
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Test\runfiles.txt -maskfiles
