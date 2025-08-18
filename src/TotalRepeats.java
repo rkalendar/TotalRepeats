@@ -21,7 +21,7 @@ public class TotalRepeats {
             String c = String.join(" ", args) + " ";
             int kmer = 19;   //optimal rules: kmer=19-21 seqlen=30...100, gap=kmer kmer=12-18 for short seqyences
             int seqlen = 90;
-            int gap = kmer;
+            int gap = kmer + kmer;
             int width = 0;
             int hight = 0;
             int imaged = 5;    //1...20
@@ -31,8 +31,9 @@ public class TotalRepeats {
             boolean maskshow = true;
             boolean seqshow = false;
             boolean gffshow = true;
-            boolean maskpicture = false;
-            boolean sensitivity = false;
+            boolean sensitivity = true;
+            boolean readmask = false;
+            boolean readgff = false;
 
             boolean extract = false;   // Split a single FASTA file into multiple FASTA files.
             boolean maskfiles = false; // A comparison analysis of masked files obtained from different software or algorithms.
@@ -46,8 +47,16 @@ public class TotalRepeats {
                 int x = s.indexOf(" ", j);
                 reffile = c.substring(j + 4, x);
             }
-
-            if (s.contains("maskfiles")) {
+            if (s.contains("readgff")) {
+                readgff = true;
+            }
+            if (s.contains("readmask")) {
+                readmask = true;
+            }
+            if (s.contains("smask")) {
+                sensitivity = true;
+            }
+            if (s.contains("maskscomp")) {
                 maskfiles = true;
             }
             if (s.contains("extract")) {
@@ -61,9 +70,6 @@ public class TotalRepeats {
             }
             if (s.contains("nomask")) {
                 maskshow = false;
-            }
-            if (s.contains("maskpic")) {
-                maskpicture = true;
             }
             if (s.contains("nogff")) {
                 gffshow = false;
@@ -158,12 +164,12 @@ public class TotalRepeats {
                         }
                     }
                     if (combine > 0) {
-                        SaveResult2(combine, reffile, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                        SaveResult2(combine, reffile, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
                     } else {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    SaveResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                                    SaveResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -176,11 +182,15 @@ public class TotalRepeats {
                         AnalysisFiles(infile);
                         return;
                     }
+                    if (readmask) {
+                        ReadingMaskFile(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, seqshow, width, hight);
+                        return;
+                    }
                     if (extract) {
                         AnalysisFile(infile);
                         return;
                     }
-                    SaveResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, maskpicture, sensitivity);
+                    SaveResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
                 }
             }
         } else {
@@ -191,6 +201,7 @@ public class TotalRepeats {
             System.out.println("kmer=19\t kmer=9-21 (default kmer=19)");
             System.out.println("sln=90\trepeat block length (default sln=90), it can be equal to 'kmer'");
             System.out.println("nsize=12\tspeed and sensitivity of sequence clustering: nsize=0 - ignoring clustering;  nsize=1 - very fast clustering without chain direction detection; nsize=12 - default for complete clustering.");
+            System.out.println("-smask\ta more sensitive method for identifying repetitive sequences (default not performed)");
             System.out.println("flangs=100\textend the flanks of the repeat with an appropriate length (100 nt) (default flangs=0)");
             System.out.println("image=10000x300\t (by default, the dimensionality of the image is automatically determined)");
             System.out.println("imgx=5\t (figure width compression, minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the longest figure length)");
@@ -201,13 +212,15 @@ public class TotalRepeats {
             System.out.println("-combine\tthis option is employed in genome-wide comparative analyses (each sequence is analyzed for repeats individually) (default not performed)");
             System.out.println("-combine2\tthis option is employed in genome-wide comparative analyses (all sequences are analyzed together) (default not performed)");
             System.out.println("-ref=target_file_path\tthe application enables annotation of repeats using a database of known repeats/genes (default not performed)");
+            System.out.println("-readmask\ttransfer the masking file to the software, which will then be used for clustering repeats and visualisation. The file contains only one FASTA entry.");
+            System.out.println("-readgff\ttransfer the GFF file to the software, which will then be used for visualisation.");
             System.out.println("-extract\tSplit a single FASTA file into multiple FASTA files.");
-            System.out.println("-maskfiles\tA comparison analysis of masked files obtained from different software or algorithms.");
+            System.out.println("-maskscomp\tA comparison analysis of masked files obtained from different software or algorithms.");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> ssr=true seqshow=true flanks=100");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> kmer=18 sln=100 mask=false seqshow=true flanks=100\n");
             System.out.println("java -jar -Xms16g -Xmx64g \\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\ -ref=C:\\TotalRepeats\\test\\humsub.ref\n");
-            System.out.println("Large chromosome usage (1 GB): you will need to show the program to use more RAM, up to 128 GB of memory:\n");
-            System.out.println("java -jar -Xms32g -Xmx128g C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\Sarcophilus_harrisii\\ \n");
+            System.out.println("Large chromosome usage (1 GB): you will need to show the program to use more RAM, up to 128-256 GB of memory:\n");
+            System.out.println("java -jar -Xms32g -Xmx128g C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\Pleurodeles_waltl\\ \n");
             System.out.println("Analysing all files in the directory:");
             System.out.println("java -jar -Xms16g -Xmx64g C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\\n");
             System.out.println("java -jar C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\Shigella\\ -combine -nomask -nogff \n");
@@ -234,7 +247,7 @@ public class TotalRepeats {
         return (Integer.parseInt(r.toString()));
     }
 
-    private static void SaveResult2(int combine, String reffile, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity) throws IOException {
+    private static void SaveResult2(int combine, String reffile, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity) throws IOException {
         long startTime = System.nanoTime();
         List<String> seqs = new ArrayList<>();
         List<String> names = new ArrayList<>();
@@ -280,7 +293,6 @@ public class TotalRepeats {
         s2.SetShowSeq(seqshow);
         s2.SetFlanks(flanksshow);
         s2.SetMasked(maskshow);
-        s2.SetMaskedPicture(maskpic);
         s2.SetGFF(gffshow);
         s2.SetFileNames(fnms);
 
@@ -301,10 +313,10 @@ public class TotalRepeats {
                 s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
             }
             if (combine == 1) {
-                s2.Run2(imgx, nkmer, sensitivity);
+                s2.RunCombine(imgx, nkmer, sensitivity);
             }
             if (combine == 2) {
-                s2.Run3(imgx, nkmer, sensitivity);
+                s2.RunCombine2(imgx, nkmer, sensitivity);
             }
 
         }
@@ -312,7 +324,7 @@ public class TotalRepeats {
         System.out.println("Total duration: " + duration + " seconds\n");
     }
 
-    private static void SaveResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean maskpic, boolean sensitivity) {
+    private static void SaveResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity) {
         try {
             long startTime = System.nanoTime();
             byte[] binaryArray = Files.readAllBytes(Paths.get(infile));
@@ -327,6 +339,10 @@ public class TotalRepeats {
             System.out.println("kmer=" + kmer);
             System.out.println("Classification index (0-230)=" + nkmer);
             System.out.println("Repeat block length =" + seqlen);
+            if (sensitivity) {
+                System.out.println("Sensitive detection enabled.");
+            }
+
             System.out.println("Target file: " + infile);
             if (rf.getNseq() > 1) {
                 System.out.println("Target FASTA sequences = " + rf.getNseq());
@@ -337,7 +353,6 @@ public class TotalRepeats {
             s2.SetShowSeq(seqshow);
             s2.SetFlanks(flanksshow);
             s2.SetMasked(maskshow);
-            s2.SetMaskedPicture(maskpic);
             s2.SetGFF(gffshow);
             s2.SetFileName(infile);
             if (width > 0 && hight > 0) {
@@ -350,7 +365,6 @@ public class TotalRepeats {
             }
 
             s2.Run(imgx, nkmer, sensitivity);
-
             long duration = (System.nanoTime() - startTime) / 1000000000;
             System.out.println("Total duration: " + duration + " seconds\n");
         } catch (IOException e) {
@@ -358,8 +372,8 @@ public class TotalRepeats {
         }
     }
 
-    public static int countLower(String text) {
-        int lowercase = 0;
+    public static long countLower(String text) {
+        long lowercase = 0;
         for (char c : text.toCharArray()) {
             if (Character.isLowerCase(c)) {
                 lowercase++;
@@ -377,8 +391,8 @@ public class TotalRepeats {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
             System.out.println("\nRunning...");
-            int l = 0;
-            int r = 0;
+            long l = 0;
+            long r = 0;
             String line;
             BufferedWriter writer = null;
             BufferedWriter report = new BufferedWriter(new FileWriter(parentDir + File.separator + "report.txt"));
@@ -420,7 +434,7 @@ public class TotalRepeats {
                 report.newLine();
                 report.write("Total masked length= " + r);
                 report.newLine();
-                report.write("Masked= " + String.format("%.2f", (float)((r * 100) / l)) + "%\n");
+                report.write("Masked= " + String.format("%.2f", (float) ((r * 100) / l)) + "%\n");
                 report.close();
             }
             System.out.println("File(s) processed successfully.");
@@ -455,6 +469,46 @@ public class TotalRepeats {
             }
             System.out.println("Files processed successfully.");
         } catch (IOException e) {
+        }
+    }
+
+    private static void ReadingMaskFile(String inputFile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean seqshow, int width, int hight) {
+        try {
+            long startTime = System.nanoTime();
+            byte[] binaryArray = Files.readAllBytes(Paths.get(inputFile));
+            ReadingSequencesFiles rf = new ReadingSequencesFiles(binaryArray);
+            if (rf.getNseq() == 0) {
+                System.out.println("There is no sequence(s).");
+                System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
+                System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
+                return;
+            }
+            System.out.println("\nRunning...");
+            System.out.println("Target file: " + inputFile);
+            if (rf.getNseq() > 1) {
+                System.out.println("Target FASTA sequences = " + rf.getNseq());
+            }
+            TotalRepeatsSearching s2 = new TotalRepeatsSearching();
+            s2.SetSequences(rf.getSequences(), rf.getNames());
+            s2.SetRepeatLen(kmer, seqlen, gap);
+            s2.SetShowSeq(seqshow);
+            s2.SetFlanks(flanksshow);
+            s2.SetGFF(gffshow);
+            s2.SetFileName(inputFile);
+            if (width > 0 && hight > 0) {
+                s2.SetImage(width, hight);
+            }
+            if (reffile.length() > 0) {
+                OpenSeqFiles fastafile = new OpenSeqFiles(reffile);
+                System.out.println("Reference file=" + reffile);
+                s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
+            }
+
+            s2.RunThroughMask(imgx, nkmer, inputFile);
+            long duration = (System.nanoTime() - startTime) / 1000000000;
+            System.out.println("Total duration: " + duration + " seconds\n");
+        } catch (IOException e) {
+            System.out.println("Incorrect file name.\n");
         }
     }
 }
