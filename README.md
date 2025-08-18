@@ -168,7 +168,7 @@ Tansfer the masking file to the software, which will then be used for clustering
 java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta -readmask
 ```
 
-## readmask             
+## readgff             
 Tansfer the masking file to the software, which will then be used for clustering repeats and visualisation.
 ```
 java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta NC_134482.1.fasta,gff -readgff
