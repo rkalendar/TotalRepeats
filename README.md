@@ -106,9 +106,10 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | seqshow               | extract repeat sequences (default not performed) |
 | combine               | multiple sequences can be analysed as one entire sequence (default not performed)|
 | ref=file_path         | uses a database of known repeats to enable annotation of repeats (default not performed)|
+| readmask              | transfer the masking file to the software, which will then be used for clustering repeats and visualisation|
+| readgff               | transfer the GFF file to the software, which will then be used for visualisation|
 | extract               | split a single FASTA file into multiple FASTA files|
 | maskscomp             | a comparison analysis of masked files obtained from different software or algorithms|
- 
 
 ## kmer=
 This is the minimum value for repeat sequence masking (9-21). It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19 is recommended for eukaryotic chromosomes. It is also possible to use values of 18 for short chromosomes.
@@ -159,6 +160,18 @@ In the TotalRepeats online version (https://primerdigital.com/tools/repeats.html
 The resulting image can be stretched in width if more detailed analysis is required (default imgx=5). This value determines the width of the image, the higher the value, the longer the width. The minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most stretched image width.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ imgx=1	
+```
+
+## readmask             
+Tansfer the masking file to the software, which will then be used for clustering repeats and visualisation.
+```
+java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta -readmask
+```
+
+## readmask             
+Tansfer the masking file to the software, which will then be used for clustering repeats and visualisation.
+```
+java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta NC_134482.1.fasta,gff -readgff
 ```
 
 ## extract
