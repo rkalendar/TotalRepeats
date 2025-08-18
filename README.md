@@ -105,8 +105,8 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | seqshow               | extract repeat sequences (default not performed) |
 | combine               | multiple sequences can be analysed as one entire sequence (default not performed)|
 | ref=file_path         | uses a database of known repeats to enable annotation of repeats (default not performed)|
-| readmask              | transfer the masking file to the software, which will then be used for clustering repeats and visualisation|
-| readgff               | transfer the GFF file to the software, which will then be used for visualisation|
+| readmask              | specifying a masking file to the software, which will then be used for clustering repeats and visualisation|
+| readgff               | specifying the GFF file to the software, which will then be used for visualisation|
 | extract               | split a single FASTA file into multiple FASTA files|
 | maskscomp             | a comparison analysis of masked files obtained from different software or algorithms|
 
@@ -157,7 +157,7 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ```
 
 ## readmask             
-Tansfer the masking file to the software, which will then be used for clustering repeats and visualisation. The file contains only one FASTA entry.
+Specifying a masking file to the software, which will then be used for clustering repeats and visualisation. The file contains only one FASTA entry.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta -readmask
 
@@ -165,7 +165,7 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ```
 
 ## readgff             
-Tansfer the masking file to the software, which will then be used for clustering repeats and visualisation.
+Specifying the GFF file to the software, which will then be used for visualisation. 
 ```
 java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta NC_134482.1.fasta,gff -readgff
 ```
