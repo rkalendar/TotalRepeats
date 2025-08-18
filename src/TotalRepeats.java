@@ -164,12 +164,12 @@ public class TotalRepeats {
                         }
                     }
                     if (combine > 0) {
-                        SaveResult2(combine, reffile, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
+                        TotalRepeatsCombinedResult(combine, reffile, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
                     } else {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    SaveResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
+                                    TotalRepeatsResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -190,7 +190,7 @@ public class TotalRepeats {
                         ExtractFiles(infile);
                         return;
                     }
-                    SaveResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
+                    TotalRepeatsResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
                 }
             }
         } else {
@@ -247,7 +247,7 @@ public class TotalRepeats {
         return (Integer.parseInt(r.toString()));
     }
 
-    private static void SaveResult2(int combine, String reffile, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity) throws IOException {
+    private static void TotalRepeatsCombinedResult(int combine, String reffile, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity) throws IOException {
         long startTime = System.nanoTime();
         List<String> seqs = new ArrayList<>();
         List<String> names = new ArrayList<>();
@@ -324,7 +324,7 @@ public class TotalRepeats {
         System.out.println("Total duration: " + duration + " seconds\n");
     }
 
-    private static void SaveResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity) {
+    private static void TotalRepeatsResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity) {
         try {
             long startTime = System.nanoTime();
             byte[] binaryArray = Files.readAllBytes(Paths.get(infile));
