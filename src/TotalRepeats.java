@@ -179,7 +179,7 @@ public class TotalRepeats {
 
                 } else {
                     if (maskfiles) {
-                        AnalysisFiles(infile);
+                        ComparisionMaskFiles(infile);
                         return;
                     }
                     if (readmask) {
@@ -187,7 +187,7 @@ public class TotalRepeats {
                         return;
                     }
                     if (extract) {
-                        AnalysisFile(infile);
+                        ExtractFiles(infile);
                         return;
                     }
                     SaveResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
@@ -382,7 +382,7 @@ public class TotalRepeats {
         return lowercase;
     }
 
-    private static void AnalysisFile(String inputFile) {
+    private static void ExtractFiles(String inputFile) {
         File input = new File(inputFile);
         String parentDir = input.getParent();
         if (parentDir == null) {
@@ -443,7 +443,7 @@ public class TotalRepeats {
         }
     }
 
-    private static void AnalysisFiles(String inputFile) {
+    private static void ComparisionMaskFiles(String inputFile) {
         File input = new File(inputFile);
         String parentDir = input.getParent();
         if (parentDir == null) {
