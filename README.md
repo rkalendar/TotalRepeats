@@ -157,9 +157,11 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ```
 
 ## readmask             
-Tansfer the masking file to the software, which will then be used for clustering repeats and visualisation.
+Tansfer the masking file to the software, which will then be used for clustering repeats and visualisation. The file contains only one FASTA entry.
 ```
-java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta -readmask
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta -readmask
+
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -readmask
 ```
 
 ## readgff             
