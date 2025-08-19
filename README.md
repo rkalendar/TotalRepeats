@@ -105,7 +105,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | seqshow               | extract repeat sequences (default not performed) |
 | combine               | multiple sequences can be analysed as one entire sequence (default not performed)|
 | ref=file_path         | uses a database of known repeats to enable annotation of repeats (default not performed)|
-| readmask              | specifying a masking file to the software, which will then be used for clustering repeats and visualisation|
+| readmask              | specifying a masking file to the software, which will then be used for clustering repeats, annotation and visualisation|
 | readgff               | specifying the GFF file to the software, which will then be used for visualisation|
 | extract               | split a single FASTA file into multiple FASTA files|
 | maskscomp             | a comparison analysis of masked files obtained from different software or algorithms|
@@ -157,7 +157,7 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ```
 
 ## readmask             
-Specifying a masking file to the software, which will then be used for clustering repeats and visualisation. The file contains only one FASTA entry.
+Specifying a masking file to the software, which will then be used for clustering repeats, annotation and visualisation. The file contains only one FASTA entry.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta -readmask
 
