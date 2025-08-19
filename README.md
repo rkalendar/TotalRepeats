@@ -157,7 +157,7 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ```
 
 ## readmask             
-Specifying a masking file to the software, which will then be used for clustering repeats, annotation and visualisation. The file contains only one FASTA entry.
+Specifying a masking file to the software, which will then be used for clustering repeats, annotation and visualisation. The file may contain a single FASTA entry or multiple entries.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta -readmask
 
