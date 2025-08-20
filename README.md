@@ -167,7 +167,9 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ## readgff             
 Specifying the GFF file to the software, which will then be used for visualisation. 
 ```
-java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta E:\Genomes\NC_134482.1.fasta.gff -readgff
+java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta.gff -readgff
+
+java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\ -readgff
 ```
 
 ## extract
