@@ -107,7 +107,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | ref=file_path         | uses a database of known repeats to enable annotation of repeats (default not performed)|
 | readmask              | specifying a masking file to the software, which will then be used for clustering repeats, annotation and visualisation|
 | readgff               | specifying the GFF file to the software, which will then be used for visualisation|
-| extract               | split a single FASTA file into multiple FASTA files|
+| extract               | split a single FASTA file with multiple entries into multiple FASTA files|
 | maskscomp             | a comparison analysis of masked files obtained from different software or algorithms|
 
 ## kmer=
