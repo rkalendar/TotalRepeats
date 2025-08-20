@@ -16,6 +16,7 @@ public class TotalRepeats {
     public static void main(String[] args) throws IOException {
         if (args.length > 0) {
             String infile = args[0]; // file path or Folder
+            String gfffile = ""; //file path to GFF file
             String reffile = "";
             String s = String.join(" ", args).toLowerCase() + " ";
             String c = String.join(" ", args) + " ";
@@ -49,6 +50,7 @@ public class TotalRepeats {
             }
             if (s.contains("readgff")) {
                 readgff = true;
+                gfffile = args[1];
             }
             if (s.contains("readmask")) {
                 readmask = true;
@@ -163,16 +165,31 @@ public class TotalRepeats {
                             filelist[++k] = file.getAbsolutePath();
                         }
                     }
+
                     if (combine > 0) {
                         TotalRepeatsCombinedResult(combine, reffile, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
-                    } else {
+                        return;
+                    }
+
+                    if (readmask) {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    TotalRepeatsResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
+                                    ReadingMaskFile(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, seqshow, width, hight);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
+                            }
+                        }
+                        return;
+                    }
+
+                    for (String nfile : filelist) {
+                        if (nfile != null) {
+                            try {
+                                TotalRepeatsResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
+                            } catch (Exception e) {
+                                System.err.println("Failed to open file: " + nfile);
                             }
                         }
                     }
@@ -184,6 +201,10 @@ public class TotalRepeats {
                     }
                     if (readmask) {
                         ReadingMaskFile(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, seqshow, width, hight);
+                        return;
+                    }
+                    if (readgff) {
+                        ReadingGffFile(infile, gfffile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, seqshow, width, hight);
                         return;
                     }
                     if (extract) {
@@ -475,8 +496,9 @@ public class TotalRepeats {
     private static void ReadingMaskFile(String inputFile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean seqshow, int width, int hight) {
         try {
             long startTime = System.nanoTime();
-            byte[] binaryArray = Files.readAllBytes(Paths.get(inputFile));
-            ReadingSequencesFiles rf = new ReadingSequencesFiles(binaryArray);
+            ReadingSequencesFiles rf = new ReadingSequencesFiles();
+            rf.ReadingMaskSequencesFiles(Files.readAllBytes(Paths.get(inputFile)));
+
             if (rf.getNseq() == 0) {
                 System.out.println("There is no sequence(s).");
                 System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
@@ -504,11 +526,51 @@ public class TotalRepeats {
                 s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
             }
 
-            s2.RunThroughMask(imgx, nkmer, inputFile);
+            s2.RunThroughMask(imgx, nkmer);
             long duration = (System.nanoTime() - startTime) / 1000000000;
             System.out.println("Total duration: " + duration + " seconds\n");
         } catch (IOException e) {
             System.out.println("Incorrect file name.\n");
         }
     }
+
+    private static void ReadingGffFile(String inputFile, String inputGFFfile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean seqshow, int width, int hight) {
+        try {
+            long startTime = System.nanoTime();
+            ReadingSequencesFiles rf = new ReadingSequencesFiles();
+            rf.ReadingMaskSequencesFiles(Files.readAllBytes(Paths.get(inputFile)));
+
+            if (rf.getNseq() == 0) {
+                System.out.println("There is no sequence(s).");
+                System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
+                System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
+                return;
+            }
+            System.out.println("\nRunning...");
+            System.out.println("Target file: " + inputFile);
+            System.out.println("GFF file: " + inputGFFfile);
+            if (rf.getNseq() > 1) {
+                System.out.println("Target FASTA sequences = " + rf.getNseq());
+            }
+            TotalRepeatsSearching s2 = new TotalRepeatsSearching();
+            s2.SetSequences(rf.getSequences(), rf.getNames());
+            s2.SetRepeatLen(kmer, seqlen, gap);
+            s2.SetFileName(inputFile);
+            if (width > 0 && hight > 0) {
+                s2.SetImage(width, hight);
+            }
+            if (reffile.length() > 0) {
+                OpenSeqFiles fastafile = new OpenSeqFiles(reffile);
+                System.out.println("Reference file=" + reffile);
+                s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
+            }
+
+            s2.RunThroughGFF(inputGFFfile, imgx, nkmer);
+            long duration = (System.nanoTime() - startTime) / 1000000000;
+            System.out.println("Total duration: " + duration + " seconds\n");
+        } catch (IOException e) {
+            System.out.println("Incorrect file name.\n");
+        }
+    }
+
 }
