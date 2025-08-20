@@ -100,15 +100,16 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | image=                | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
 | imgx=                 | figure width compression (default imgx=5), the minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most extended figure width |
 | flanks=               | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
-| nomask                | generate a new file with masking repeats (default performed) |
-| nogff                 | generate a GFF file (default performed)|
+| nomask                | a repeat mask file is not saved|
+| nogff                 | the GFF report file is not saved|
+| maskonly              | only generates the mask file |
 | seqshow               | extract repeat sequences (default not performed) |
-| combine               | multiple sequences can be analysed as one entire sequence (default not performed)|
-| ref=file_path         | uses a database of known repeats to enable annotation of repeats (default not performed)|
+| combine               | multiple sequences can be analysed as one entire sequence|
 | readmask              | specifying a masking file to the software, which will then be used for clustering repeats, annotation and visualisation|
 | readgff               | specifying the GFF file to the software, which will then be used for visualisation|
 | extract               | split a single FASTA file with multiple entries into multiple FASTA files|
 | maskscomp             | a comparison analysis of masked files obtained from different software or algorithms|
+| ref=file_path         | uses a database of known repeats to enable annotation of repeats|
 
 ## kmer=
 This is the minimum value for repeat sequence masking (9-21). It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19 is recommended for eukaryotic chromosomes. It is also possible to use values of 18 for short chromosomes.
