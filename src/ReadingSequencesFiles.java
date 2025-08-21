@@ -108,7 +108,7 @@ public final class ReadingSequencesFiles {
 
         String line;
         String currentName = null;
-        StringBuilder currentSeq = new StringBuilder(1 << 20); // стартово 1 МБ буфера
+        StringBuilder currentSeq = new StringBuilder(1 << 20); 
 
         while ((line = br.readLine()) != null) {
             if (line.isEmpty()) continue;
@@ -180,3 +180,4 @@ public final class ReadingSequencesFiles {
         }
     }
 }
+
