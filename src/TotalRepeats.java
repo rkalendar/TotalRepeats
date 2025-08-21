@@ -28,6 +28,7 @@ public class TotalRepeats {
             int flanksshow = 0;
             int nkmer = 12;     //0,1,2-230: nsize=0: Used when ignoring clustering; Use size=1 for very fast clustering without chain direction detection; nsize >1: Used for clustering.        
             int combine = 0;
+            boolean maskonly = false;
             boolean maskshow = true;
             boolean seqshow = false;
             boolean gffshow = true;
@@ -46,6 +47,9 @@ public class TotalRepeats {
                 int j = s.toLowerCase().indexOf("ref=");
                 int x = s.indexOf(" ", j);
                 reffile = c.substring(j + 4, x);
+            }
+            if (s.contains("maskonly")) {
+                maskonly = true;
             }
             if (s.contains("readgff")) {
                 readgff = true;
@@ -198,7 +202,7 @@ public class TotalRepeats {
                     for (String nfile : filelist) {
                         if (nfile != null) {
                             try {
-                                TotalRepeatsResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
+                                TotalRepeatsResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity, maskonly);
                             } catch (Exception e) {
                                 System.err.println("Failed to open file: " + nfile);
                             }
@@ -222,7 +226,7 @@ public class TotalRepeats {
                         ExtractFiles(infile);
                         return;
                     }
-                    TotalRepeatsResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
+                    TotalRepeatsResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity, maskonly);
                 }
             }
         } else {
@@ -233,21 +237,21 @@ public class TotalRepeats {
             System.out.println("kmer=19\t kmer=9-21 (default kmer=19)");
             System.out.println("sln=90\trepeat block length (default sln=90), it can be equal to 'kmer'");
             System.out.println("nsize=12\tspeed and sensitivity of sequence clustering: nsize=0 - ignoring clustering;  nsize=1 - very fast clustering without chain direction detection; nsize=12 - default for complete clustering.");
-            System.out.println("-smask\ta more sensitive method for identifying repetitive sequences (default not performed)");
-            System.out.println("flangs=100\textend the flanks of the repeat with an appropriate length (100 nt) (default flangs=0)");
-            System.out.println("image=10000x300\t (by default, the dimensionality of the image is automatically determined)");
-            System.out.println("imgx=5\t (figure width compression, minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the longest figure length)");
-            System.out.println("-nomask\tquick generation a new file with masking repeats (default performed)");
-            System.out.println("-nogff\tgenerate a GFF file (default performed)");
-            System.out.println("-maskpic\tgenerate a image file with masking repeats (default not performed)");
-            System.out.println("-seqshow\textract repeat sequences (default not performed)");
-            System.out.println("-combine\tthis option is employed in genome-wide comparative analyses (each sequence is analyzed for repeats individually) (default not performed)");
-            System.out.println("-combine2\tthis option is employed in genome-wide comparative analyses (all sequences are analyzed together) (default not performed)");
-            System.out.println("-ref=target_file_path\tthe application enables annotation of repeats using a database of known repeats/genes (default not performed)");
+            System.out.println("-smask\ta more sensitive method for identifying repetitive sequences");
+            System.out.println("-flangs=100\textend the flanks of the repeat with an appropriate length (100 nt) (default flangs=0)");
+            System.out.println("-image=10000x300\t (by default, the dimensionality of the image is automatically determined)");
+            System.out.println("-imgx=5\t (figure width compression, minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the longest figure length)");
+            System.out.println("-nomask\ta repeat mask file is not saved");
+            System.out.println("-maskonly\\tonly generates the mask file");
+            System.out.println("-nogff\tthe GFF report file is not saved");
+            System.out.println("-seqshow\textract repeat sequences (not default)");
+            System.out.println("-combine\tthis option is employed in genome-wide comparative analyses (each sequence is analyzed for repeats individually)");
+            System.out.println("-combine2\tthis option is employed in genome-wide comparative analyses (all sequences are analyzed together)");
             System.out.println("-readmask\ttransfer the masking file to the software, which will then be used for clustering repeats and visualisation. The file contains only one FASTA entry.");
             System.out.println("-readgff\ttransfer the GFF file to the software, which will then be used for visualisation.");
             System.out.println("-extract\tSplit a single FASTA file into multiple FASTA files.");
             System.out.println("-maskscomp\tA comparison analysis of masked files obtained from different software or algorithms.");
+            System.out.println("-ref=target_file_path\tthe application enables annotation of repeats using a database of known repeats/genes");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> ssr=true seqshow=true flanks=100");
             System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> kmer=18 sln=100 mask=false seqshow=true flanks=100\n");
             System.out.println("java -jar -Xms16g -Xmx64g \\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\ -ref=C:\\TotalRepeats\\test\\humsub.ref\n");
@@ -288,8 +292,7 @@ public class TotalRepeats {
         for (String nfile : filelist) {
             if (nfile != null) {
                 try {
-                    byte[] binaryArray = Files.readAllBytes(Paths.get(nfile));
-                    ReadingSequencesFiles rf = new ReadingSequencesFiles(binaryArray);
+                    ReadingSequencesFiles rf = new ReadingSequencesFiles(Paths.get(nfile));
 
                     if (rf.getNseq() > 0) {
                         System.out.println("Target FASTA sequences = " + rf.getNseq());
@@ -356,11 +359,10 @@ public class TotalRepeats {
         System.out.println("Total duration: " + duration + " seconds\n");
     }
 
-    private static void TotalRepeatsResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity) {
+    private static void TotalRepeatsResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity, boolean maskonly) {
         try {
-            long startTime = System.nanoTime();
-            byte[] binaryArray = Files.readAllBytes(Paths.get(infile));
-            ReadingSequencesFiles rf = new ReadingSequencesFiles(binaryArray);
+            long startTime = System.nanoTime();   
+            ReadingSequencesFiles rf = new ReadingSequencesFiles(Paths.get(infile));
             if (rf.getNseq() == 0) {
                 System.out.println("There is no sequence(s).");
                 System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
@@ -378,6 +380,7 @@ public class TotalRepeats {
             TotalRepeatsSearching s2 = new TotalRepeatsSearching();
             s2.SetSequences(rf.getSequences(), rf.getNames());
             s2.SetRepeatLen(kmer, seqlen, gap);
+            s2.SetMaskGenerate(maskonly);
             s2.SetShowSeq(seqshow);
             s2.SetFlanks(flanksshow);
             s2.SetMasked(maskshow);
@@ -488,7 +491,7 @@ public class TotalRepeats {
                     String inputFile1 = parentDir + File.separator + s[0].trim();
                     String inputFile2 = parentDir + File.separator + s[1].trim();
 
-                    FileCaseComparator fc = new FileCaseComparator();
+                    FileMasksComparator fc = new FileMasksComparator();
                     sb.append(fc.AnalysisFiles(inputFile1, inputFile2)).append("\n\n");
                 }
             }
