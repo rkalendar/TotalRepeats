@@ -166,6 +166,8 @@ public final class ReadingSequencesFiles {
         }
     }
      
+ 
+ 
     private void ReadingSequences(byte[] source) {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(source), StandardCharsets.US_ASCII))) {
             this.name_seq = null;
