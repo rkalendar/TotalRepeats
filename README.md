@@ -100,8 +100,8 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | image=                | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
 | imgx=                 | figure width compression (default imgx=5), the minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most extended figure width |
 | flanks=               | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
-| maskonly              | only generates the mask file |
 | seqshow               | extract repeat sequences (default not performed) |
+| maskonly              | it only generates the mask file; classification, annotation and visualisation are not performed|
 | combine               | multiple sequences can be analysed as one entire sequence|
 | readmask              | specifying a masking file to the software, which will then be used for clustering repeats, annotation and visualisation|
 | readgff               | specifying the GFF file to the software, which will then be used for visualisation|
@@ -200,7 +200,8 @@ Sequence data files are prepared using a text editor and saved in ASCII as text/
 ## FASTA format description:
 A sequence in FASTA format consists of the following:
 One line starts with a ">" sign and a sequence identification code. A textual description of the sequence optionally follows it. Since it is not part of the official format description, software can ignore it when it is present.
-One or more lines containing the sequence itself. A file in FASTA format may comprise more than one sequence.
+One or more lines containing the sequence itself. A file in FASTA format may comprise more than one sequence. 
+The software supports large FASTA files (2 GB).
 
 
 ## The output is saved in a GFF3 file: a nine-column, tab-delimited, plain text file. 
