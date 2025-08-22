@@ -361,7 +361,7 @@ public class TotalRepeats {
 
     private static void TotalRepeatsResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity, boolean maskonly) {
         try {
-            long startTime = System.nanoTime();   
+            long startTime = System.nanoTime();
             ReadingSequencesFiles rf = new ReadingSequencesFiles(Paths.get(infile));
             if (rf.getNseq() == 0) {
                 System.out.println("There is no sequence(s).");
@@ -505,10 +505,7 @@ public class TotalRepeats {
 
     private static void ReadingMaskFile(String inputFile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean seqshow, int width, int hight) {
         try {
-            long startTime = System.nanoTime();
-            ReadingSequencesFiles rf = new ReadingSequencesFiles();
-            rf.ReadingMaskSequencesFiles(Files.readAllBytes(Paths.get(inputFile)));
-
+            ReadingSequencesFiles rf = ReadingSequencesFiles.readMasking(Paths.get(inputFile));
             if (rf.getNseq() == 0) {
                 System.out.println("There is no sequence(s).");
                 System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
@@ -537,8 +534,6 @@ public class TotalRepeats {
             }
 
             s2.RunThroughMask(imgx, nkmer);
-            long duration = (System.nanoTime() - startTime) / 1000000000;
-            System.out.println("Total duration: " + duration + " seconds\n");
         } catch (IOException e) {
             System.out.println("Incorrect file name.\n");
         }
