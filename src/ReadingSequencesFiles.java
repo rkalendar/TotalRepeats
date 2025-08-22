@@ -18,7 +18,7 @@ public final class ReadingSequencesFiles {
         readFastaStream(Files.newBufferedReader(fastaPath, StandardCharsets.US_ASCII), /*normalize*/ true);
     }
 
-     public static ReadingSequencesFiles readMasking(Path fastaPath) throws IOException {
+    public static ReadingSequencesFiles readMasking(Path fastaPath) throws IOException {
         ReadingSequencesFiles r = new ReadingSequencesFiles();
         r.readFastaStream(Files.newBufferedReader(fastaPath, StandardCharsets.US_ASCII), /*normalize*/ false);
         return r;
@@ -27,7 +27,7 @@ public final class ReadingSequencesFiles {
     public ReadingSequencesFiles(byte[] s) {
         LoadTable();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(s), StandardCharsets.US_ASCII))) { //
-            readFastaStream(br,  true);
+            readFastaStream(br, true);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -64,7 +64,7 @@ public final class ReadingSequencesFiles {
 
     private void LoadTable() {
         dnl = new byte[128]; // ASCII
-         dnl[65] = 97;  // A->a
+        dnl[65] = 97;  // A->a
         dnl[66] = 98;   // B->b
         dnl[67] = 99;   // C->c
         dnl[68] = 100;  // D->d
@@ -82,9 +82,9 @@ public final class ReadingSequencesFiles {
         dnl[87] = 119;  // W->w
         dnl[89] = 121;  // Y->y
 
-        dnl[97]  = 97;   // a
-        dnl[98]  = 98;   // b
-        dnl[99]  = 99;   // c
+        dnl[97] = 97;   // a
+        dnl[98] = 98;   // b
+        dnl[99] = 99;   // c
         dnl[100] = 100;  // d
         dnl[103] = 103;  // g
         dnl[104] = 104;  // h
@@ -101,19 +101,20 @@ public final class ReadingSequencesFiles {
         dnl[121] = 121;  // y
     }
 
- 
     private void readFastaStream(BufferedReader br, boolean normalize) throws IOException {
         List<String> names = new ArrayList<>();
-        List<String> seqs  = new ArrayList<>();
+        List<String> seqs = new ArrayList<>();
 
         String line;
         String currentName = null;
         StringBuilder currentSeq = new StringBuilder(1 << 20); 
 
         while ((line = br.readLine()) != null) {
-            if (line.isEmpty()) continue;
+            if (line.isEmpty()) {
+                continue;
+            }
 
-              if (line.charAt(0) == '>') {
+            if (line.charAt(0) == '>') {
                 if (currentName != null) {
                     seqs.add(currentSeq.toString());
                     currentSeq.setLength(0);
@@ -128,9 +129,9 @@ public final class ReadingSequencesFiles {
                 char ch = line.charAt(i);
                 if (ch < 128 && dnl[ch] > 0) {
                     if (normalize) {
-                        currentSeq.append((char) dnl[ch]); 
+                        currentSeq.append((char) dnl[ch]);
                     } else {
-                        currentSeq.append(ch);             
+                        currentSeq.append(ch);
                     }
                     lSeqs++;
                 }
@@ -150,13 +151,13 @@ public final class ReadingSequencesFiles {
             return;
         }
 
-        name_seq = names.toArray(new String[0]);
-        sequence = seqs.toArray(new String[0]);
+        name_seq = names.toArray(String[]::new);
+        sequence = seqs.toArray(String[]::new);
     }
 
-     public void ReadingMaskSequencesFiles(byte[] source) {
+    public void ReadingMaskSequencesFiles(byte[] source) {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(source), StandardCharsets.US_ASCII))) {
-             this.name_seq = null;
+            this.name_seq = null;
             this.sequence = null;
             this.ns = 0;
             this.lSeqs = 0;
@@ -165,19 +166,5 @@ public final class ReadingSequencesFiles {
             throw new UncheckedIOException(e);
         }
     }
-     
- 
- 
-    private void ReadingSequences(byte[] source) {
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(source), StandardCharsets.US_ASCII))) {
-            this.name_seq = null;
-            this.sequence = null;
-            this.ns = 0;
-            this.lSeqs = 0;
-            readFastaStream(br, /*normalize*/ true);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-}
 
+}
