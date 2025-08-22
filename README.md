@@ -100,8 +100,6 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | image=                | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
 | imgx=                 | figure width compression (default imgx=5), the minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most extended figure width |
 | flanks=               | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
-| nomask                | a repeat mask file is not saved|
-| nogff                 | the GFF report file is not saved|
 | maskonly              | only generates the mask file |
 | seqshow               | extract repeat sequences (default not performed) |
 | combine               | multiple sequences can be analysed as one entire sequence|
