@@ -101,7 +101,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | imgx=                 | figure width compression (default imgx=5), the minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most extended figure width |
 | flanks=               | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
 | seqshow               | extract repeat sequences (default not performed) |
-| maskonly              | it only generates the mask file; classification, annotation and visualisation are not performed|
+| maskonly              | it only generates the mask file; classification, annotation and visualisation are not performed, similar command: -nsize=1|
 | combine               | multiple sequences can be analysed as one entire sequence|
 | readmask              | specifying a masking file to the software, which will then be used for clustering repeats, annotation and visualisation|
 | readgff               | specifying the GFF file to the software, which will then be used for visualisation|
