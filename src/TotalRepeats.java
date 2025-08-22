@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -29,10 +28,7 @@ public class TotalRepeats {
             int nkmer = 12;     //0,1,2-230: nsize=0: Used when ignoring clustering; Use size=1 for very fast clustering without chain direction detection; nsize >1: Used for clustering.        
             int combine = 0;
             boolean maskonly = false;
-            boolean maskshow = true;
             boolean seqshow = false;
-            boolean gffshow = true;
-            boolean sensitivity = true;
             boolean readmask = false;
             boolean readgff = false;
 
@@ -57,9 +53,6 @@ public class TotalRepeats {
             if (s.contains("readmask")) {
                 readmask = true;
             }
-            if (s.contains("smask")) {
-                sensitivity = true;
-            }
             if (s.contains("maskscomp")) {
                 maskfiles = true;
             }
@@ -71,12 +64,6 @@ public class TotalRepeats {
             }
             if (s.contains("combine2")) {
                 combine = 2;
-            }
-            if (s.contains("nomask")) {
-                maskshow = false;
-            }
-            if (s.contains("nogff")) {
-                gffshow = false;
             }
             if (s.contains("seqshow")) {
                 seqshow = true;
@@ -169,7 +156,7 @@ public class TotalRepeats {
                     }
 
                     if (combine > 0) {
-                        TotalRepeatsCombinedResult(combine, reffile, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity);
+                        TotalRepeatsCombinedResult(combine, reffile, filelist, nkmer, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight);
                         return;
                     }
 
@@ -177,7 +164,7 @@ public class TotalRepeats {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    ReadingMaskFile(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, seqshow, width, hight);
+                                    ReadingMaskFile(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -202,7 +189,7 @@ public class TotalRepeats {
                     for (String nfile : filelist) {
                         if (nfile != null) {
                             try {
-                                TotalRepeatsResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity, maskonly);
+                                TotalRepeatsResult(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly);
                             } catch (Exception e) {
                                 System.err.println("Failed to open file: " + nfile);
                             }
@@ -215,7 +202,7 @@ public class TotalRepeats {
                         return;
                     }
                     if (readmask) {
-                        ReadingMaskFile(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, seqshow, width, hight);
+                        ReadingMaskFile(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight);
                         return;
                     }
                     if (readgff) {
@@ -226,7 +213,7 @@ public class TotalRepeats {
                         ExtractFiles(infile);
                         return;
                     }
-                    TotalRepeatsResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, gffshow, maskshow, seqshow, width, hight, sensitivity, maskonly);
+                    TotalRepeatsResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly);
                 }
             }
         } else {
@@ -283,7 +270,7 @@ public class TotalRepeats {
         return (Integer.parseInt(r.toString()));
     }
 
-    private static void TotalRepeatsCombinedResult(int combine, String reffile, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity) throws IOException {
+    private static void TotalRepeatsCombinedResult(int combine, String reffile, String[] filelist, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean seqshow, int width, int hight) throws IOException {
         long startTime = System.nanoTime();
         List<String> seqs = new ArrayList<>();
         List<String> names = new ArrayList<>();
@@ -327,8 +314,7 @@ public class TotalRepeats {
         s2.SetRepeatLen(kmer, seqlen, gap);
         s2.SetShowSeq(seqshow);
         s2.SetFlanks(flanksshow);
-        s2.SetMasked(maskshow);
-        s2.SetGFF(gffshow);
+
         s2.SetFileNames(fnms);
 
         Path path = Paths.get(fnms[0]);
@@ -348,10 +334,10 @@ public class TotalRepeats {
                 s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
             }
             if (combine == 1) {
-                s2.RunCombine(imgx, nkmer, sensitivity);
+                s2.RunCombine(imgx, nkmer);
             }
             if (combine == 2) {
-                s2.RunCombine2(imgx, nkmer, sensitivity);
+                s2.RunCombine2(imgx, nkmer);
             }
 
         }
@@ -359,7 +345,7 @@ public class TotalRepeats {
         System.out.println("Total duration: " + duration + " seconds\n");
     }
 
-    private static void TotalRepeatsResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean maskshow, boolean seqshow, int width, int hight, boolean sensitivity, boolean maskonly) {
+    private static void TotalRepeatsResult(String infile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean seqshow, int width, int hight, boolean maskonly) {
         try {
             long startTime = System.nanoTime();
             ReadingSequencesFiles rf = new ReadingSequencesFiles(Paths.get(infile));
@@ -383,8 +369,6 @@ public class TotalRepeats {
             s2.SetMaskGenerate(maskonly);
             s2.SetShowSeq(seqshow);
             s2.SetFlanks(flanksshow);
-            s2.SetMasked(maskshow);
-            s2.SetGFF(gffshow);
             s2.SetFileName(infile);
             if (width > 0 && hight > 0) {
                 s2.SetImage(width, hight);
@@ -395,7 +379,7 @@ public class TotalRepeats {
                 s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
             }
 
-            s2.Run(imgx, nkmer, sensitivity);
+            s2.Run(imgx, nkmer);
             long duration = (System.nanoTime() - startTime) / 1000000000;
             System.out.println("Total duration: " + duration + " seconds\n");
         } catch (IOException e) {
@@ -503,7 +487,7 @@ public class TotalRepeats {
         }
     }
 
-    private static void ReadingMaskFile(String inputFile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean gffshow, boolean seqshow, int width, int hight) {
+    private static void ReadingMaskFile(String inputFile, String reffile, int nkmer, int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean seqshow, int width, int hight) {
         try {
             ReadingSequencesFiles rf = ReadingSequencesFiles.readMasking(Paths.get(inputFile));
             if (rf.getNseq() == 0) {
@@ -522,7 +506,6 @@ public class TotalRepeats {
             s2.SetRepeatLen(kmer, seqlen, gap);
             s2.SetShowSeq(seqshow);
             s2.SetFlanks(flanksshow);
-            s2.SetGFF(gffshow);
             s2.SetFileName(inputFile);
             if (width > 0 && hight > 0) {
                 s2.SetImage(width, hight);
