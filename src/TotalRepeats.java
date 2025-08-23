@@ -25,13 +25,12 @@ public class TotalRepeats {
             int hight = 0;
             int imaged = 5;    //1...20
             int flanksshow = 0;
-            int nkmer = 12;     //0,1,2-230: nsize=0: Used when ignoring clustering; Use size=1 for very fast clustering without chain direction detection; nsize >1: Used for clustering.        
+            int nkmer = 12;    //0,1,2-230: nsize=0: Used when ignoring clustering; Use size=1 for very fast clustering without chain direction detection; nsize >1: Used for clustering.        
             int combine = 0;
             boolean maskonly = false;
             boolean seqshow = false;
             boolean readmask = false;
             boolean readgff = false;
-
             boolean extract = false;   // Split a single FASTA file into multiple FASTA files.
             boolean maskfiles = false; // A comparison analysis of masked files obtained from different software or algorithms.
 
@@ -44,7 +43,7 @@ public class TotalRepeats {
                 int x = s.indexOf(" ", j);
                 reffile = c.substring(j + 4, x);
             }
-            if (s.contains("maskonly")) {
+            if (s.contains("maskonly")) { // -nsize=0
                 maskonly = true;
             }
             if (s.contains("readgff")) {
@@ -228,9 +227,7 @@ public class TotalRepeats {
             System.out.println("-flangs=100\textend the flanks of the repeat with an appropriate length (100 nt) (default flangs=0)");
             System.out.println("-image=10000x300\t (by default, the dimensionality of the image is automatically determined)");
             System.out.println("-imgx=5\t (figure width compression, minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the longest figure length)");
-            System.out.println("-nomask\ta repeat mask file is not saved");
-            System.out.println("-maskonly\\tonly generates the mask file");
-            System.out.println("-nogff\tthe GFF report file is not saved");
+            System.out.println("-maskonly\\tit only generates the mask file; classification, annotation and visualisation are not performed");
             System.out.println("-seqshow\textract repeat sequences (not default)");
             System.out.println("-combine\tthis option is employed in genome-wide comparative analyses (each sequence is analyzed for repeats individually)");
             System.out.println("-combine2\tthis option is employed in genome-wide comparative analyses (all sequences are analyzed together)");
@@ -329,9 +326,9 @@ public class TotalRepeats {
                 s2.SetImage(width, hight);
             }
             if (reffile.length() > 0) {
-                OpenSeqFiles fastafile = new OpenSeqFiles(reffile);
+                ReadingSequencesFiles fastafile = new ReadingSequencesFiles(Paths.get(reffile));
+                s2.SetRefSequences(fastafile.getSequences(), fastafile.getNames());
                 System.out.println("Reference file=" + reffile);
-                s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
             }
             if (combine == 1) {
                 s2.RunCombine(imgx, nkmer);
@@ -374,9 +371,9 @@ public class TotalRepeats {
                 s2.SetImage(width, hight);
             }
             if (reffile.length() > 0) {
-                OpenSeqFiles fastafile = new OpenSeqFiles(reffile);
+                ReadingSequencesFiles fastafile = new ReadingSequencesFiles(Paths.get(reffile));
+                s2.SetRefSequences(fastafile.getSequences(), fastafile.getNames());
                 System.out.println("Reference file=" + reffile);
-                s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
             }
 
             s2.Run(imgx, nkmer);
@@ -511,9 +508,9 @@ public class TotalRepeats {
                 s2.SetImage(width, hight);
             }
             if (reffile.length() > 0) {
-                OpenSeqFiles fastafile = new OpenSeqFiles(reffile);
+                ReadingSequencesFiles fastafile = new ReadingSequencesFiles(Paths.get(reffile));
+                s2.SetRefSequences(fastafile.getSequences(), fastafile.getNames());
                 System.out.println("Reference file=" + reffile);
-                s2.SetRefSequences(fastafile.getSeqs(), fastafile.getNames());
             }
 
             s2.RunThroughMask(imgx, nkmer);
