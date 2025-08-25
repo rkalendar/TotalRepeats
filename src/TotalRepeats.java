@@ -38,8 +38,8 @@ public class TotalRepeats {
             System.out.println("Command-line arguments:");
             System.out.println("Target file or Folder: " + infile);
 
-            if (s.contains("ref=")) {
-                int j = s.toLowerCase().indexOf("ref=");
+            if (s.contains("-lib=")) {
+                int j = s.toLowerCase().indexOf("lib=");
                 int x = s.indexOf(" ", j);
                 reffile = c.substring(j + 4, x);
             }
@@ -218,7 +218,7 @@ public class TotalRepeats {
         } else {
             System.out.println("TotalRepeats (2024-2025) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi)\nhttps://github.com/rkalendar/TotalRepeats\n");
             System.out.println("Basic usage:");
-            System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile>/<inputfolderpath> <optional_commands>");
+            System.out.println("java -jar /data/user/dist/TotalRepeats.jar <inputfile>/<inputfolderpath> <optional_commands>");
             System.out.println("Common options:");
             System.out.println("kmer=19\t kmer=9-21 (default kmer=19)");
             System.out.println("sln=90\trepeat block length (default sln=90), it can be equal to 'kmer'");
@@ -235,15 +235,14 @@ public class TotalRepeats {
             System.out.println("-readgff\ttransfer the GFF file to the software, which will then be used for visualisation.");
             System.out.println("-extract\tSplit a single FASTA file into multiple FASTA files.");
             System.out.println("-maskscomp\tA comparison analysis of masked files obtained from different software or algorithms.");
-            System.out.println("-ref=target_file_path\tthe application enables annotation of repeats using a database of known repeats/genes");
-            System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> ssr=true seqshow=true flanks=100");
-            System.out.println("java -jar \\TotalRepeats\\dist\\TotalRepeats.jar <inputfile> kmer=18 sln=100 mask=false seqshow=true flanks=100\n");
-            System.out.println("java -jar -Xms16g -Xmx64g \\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\ -ref=C:\\TotalRepeats\\test\\humsub.ref\n");
-            System.out.println("Large chromosome usage (1 GB): you will need to show the program to use more RAM, up to 128-256 GB of memory:\n");
-            System.out.println("java -jar -Xms32g -Xmx128g C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\Pleurodeles_waltl\\ \n");
+            System.out.println("-lib=target_file_path\tthe application enables annotation of repeats using a database of known repeats/genes");
+            System.out.println("java -jar -Xms16g -Xmx64g /data/user/dist/TotalRepeats.jar <inputfile> ssr=true seqshow=true flanks=100");
+            System.out.println("java -jar -Xms16g -Xmx64g /data/user/dist/TotalRepeats.jar <inputfile> kmer=18 sln=100 mask=false seqshow=true flanks=100\n");
+            System.out.println("java -jar -Xms16g -Xmx64g /data/user/dist/TotalRepeats.jar /data/user/genomes/T2T-CHM13v2.0/ -ref=/data/user/test/humsub.ref\n");
+            System.out.println("Large chromosome usage (>2 GB): you will need to show the program to use more RAM, up to 256 GB of memory:\n");
+            System.out.println("java -jar -Xms64g -Xmx256g /data/user/dist/TotalRepeats.jar /data/user/genomes/Viscum_album/ \n");
             System.out.println("Analysing all files in the directory:");
-            System.out.println("java -jar -Xms16g -Xmx64g C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\T2T-CHM13v2.0\\\n");
-            System.out.println("java -jar C:\\TotalRepeats\\dist\\TotalRepeats.jar E:\\Genomes\\Shigella\\ -combine -nomask -nogff \n");
+            System.out.println("java -jar -Xms64g -Xmx128g /data/user/dist/TotalRepeats.jar /data/user/genomes/Aegilops_tauschii/ \n");
         }
     }
 
