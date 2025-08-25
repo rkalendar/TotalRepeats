@@ -107,7 +107,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | readgff               | specifying the GFF file to the software, which will then be used for visualisation|
 | extract               | split a single FASTA file with multiple entries into multiple FASTA files|
 | maskscomp             | a comparison analysis of masked files obtained from different software or algorithms|
-| ref=file_path         | uses a database of known repeats to enable annotation of repeats|
+| lib=file_path         | uses a database of known repeats to enable annotation of repeats|
 
 ## kmer=
 This is the minimum value for repeat sequence masking (9-21). It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19 is recommended for eukaryotic chromosomes. It is also possible to use values of 18 for short chromosomes.
@@ -121,14 +121,14 @@ The minimum length of the sequence that is next to be used in the analysis. Some
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ sln=100 
 ```
 
-## ref=reference_file_path 
-The TE Libraries are not included with the software; however, they can be used with user-supplied libraries by selecting the '-ref=' option. TE libraries in FamDB can be downloaded from Dfam at https://www.dfam.org/releases/current/families/FamDB.
+## lib=reference_file_path 
+The TE Libraries are not included with the software; however, they can be used with user-supplied libraries by selecting the '-lib=' option. TE libraries in FamDB can be downloaded from Dfam at https://www.dfam.org/releases/current/families/FamDB.
 The latest Repbase library can also be obtained at [https://www.girinst.org/](https://www.girinst.org/). 
 If the program is directed to the FASTA file containing the database of existing repeats, each cluster will be annotated in accordance with this database.
 The user can compile a local database containing specific elements for a specific species, or use files from the Repbase database:
 
 ```
-java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ ref=C:\TotalRepeats\test\humsub.ref
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -lib=C:\TotalRepeats\test\humsub.ref
 ```
 
 ## combine
