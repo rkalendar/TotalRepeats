@@ -122,9 +122,10 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ```
 
 ## ref=reference_file_path 
+The TE Libraries are not included with the software; however, they can be used with user-supplied libraries by selecting the '-ref=' option. TE libraries in FamDB can be downloaded from Dfam at https://www.dfam.org/releases/current/families/FamDB.
+The latest Repbase library can also be obtained at [https://www.girinst.org/](https://www.girinst.org/). 
 If the program is directed to the FASTA file containing the database of existing repeats, each cluster will be annotated in accordance with this database.
 The user can compile a local database containing specific elements for a specific species, or use files from the Repbase database:
-[https://www.girinst.org/](https://www.girinst.org/)
 
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ ref=C:\TotalRepeats\test\humsub.ref
