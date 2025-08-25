@@ -55,9 +55,9 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine -n
 ```
 ### Examples (Linux):
 ```
-java -jar -Xms32g -Xmx128g /data/user/soft/TotalRepeats.jar /data/user/genomes/Sarcophilus_harrisii/
+java -jar -Xms32g -Xmx128g /data/user/dist/TotalRepeats.jar /data/user/genomes/Sarcophilus_harrisii/
 
-java -jar -Xms64g -Xmx256g /data/user/soft/TotalRepeats.jar /data/user/genomes/Pleurodeles_waltl/
+java -jar -Xms64g -Xmx256g /data/user/dist/TotalRepeats.jar /data/user/genomes/Pleurodeles_waltl/
 
 ```
 
@@ -69,10 +69,10 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ 
 ```
 
-### Analysing large files (>200 MB, minimal RAM 64 GB):
+### Analysing large files (>2 Gb, RAM 256 GB):
 
 ```
-java -jar -Xms16g -Xmx64g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
+java -jar -Xms64g -Xmx256g /data/user/dist/TotalRepeats.jar /data/user/genomes/Viscum_album/
 ```
 
 **Java Memory Management Parameters**
