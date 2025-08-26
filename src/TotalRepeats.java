@@ -41,8 +41,18 @@ public class TotalRepeats {
             if (s.contains("-lib=")) {
                 int j = s.toLowerCase().indexOf("lib=");
                 int x = s.indexOf(" ", j);
-                reffile = c.substring(j + 4, x);
+                if (x == -1) {
+                    x = s.length();
+                }
+                reffile = s.substring(j + 4, x).trim();
+                File ref = new File(reffile);
+                if (!ref.exists() || !ref.isFile()) {
+                    System.err.println("Reference file does not exist: " + reffile);
+                } else {
+                    System.out.println("Reference file found: " + ref.getAbsolutePath());
+                }
             }
+
             if (s.contains("maskonly")) { // -nsize=0
                 maskonly = true;
             }
@@ -239,7 +249,7 @@ public class TotalRepeats {
             System.out.println("java -jar -Xms16g -Xmx64g /data/user/dist/TotalRepeats.jar <inputfile> ssr=true seqshow=true flanks=100");
             System.out.println("java -jar -Xms16g -Xmx64g /data/user/dist/TotalRepeats.jar <inputfile> kmer=18 sln=100 mask=false seqshow=true flanks=100\n");
             System.out.println("java -jar -Xms16g -Xmx64g /data/user/dist/TotalRepeats.jar /data/user/genomes/T2T-CHM13v2.0/ -ref=/data/user/test/humsub.ref\n");
-            System.out.println("Large chromosome usage (>2 GB): you will need to show the program to use more RAM, up to 256 GB of memory:\n");
+            System.out.println("Large chromosome usage (>1 GB): you will need to show the program to use more RAM, up to 256 GB of memory:\n");
             System.out.println("java -jar -Xms64g -Xmx256g /data/user/dist/TotalRepeats.jar /data/user/genomes/Viscum_album/ \n");
             System.out.println("Analysing all files in the directory:");
             System.out.println("java -jar -Xms64g -Xmx128g /data/user/dist/TotalRepeats.jar /data/user/genomes/Aegilops_tauschii/ \n");
