@@ -18,14 +18,14 @@ public class TotalRepeats {
             String reffile = "";
             String s = String.join(" ", args).toLowerCase() + " ";
             String c = String.join(" ", args) + " ";
-            int kmer = 19;   //optimal rules: kmer=19-21 seqlen=30...100, gap=kmer kmer=12-18 for short seqyences
+            int kmer = 19;   //optimal rules: kmer=18-19 seqlen=30...90, kmer=12-18 for short sequences
             int seqlen = 90;
             int gap = kmer + kmer;
             int width = 0;
             int hight = 0;
             int imaged = 5;    //1...20
             int flanksshow = 0;
-            int nkmer = 12;    //0,1,2-230: nsize=0: Used when ignoring clustering; Use size=1 for very fast clustering without chain direction detection; nsize >1: Used for clustering.        
+            int nkmer = 12;    //0,1,2-230: nsize=0: Used when ignoring clustering; Use size=1 for very fast clustering without chain direction detection; nsize >2: Used for clustering.        
             int combine = 0;
             boolean maskonly = false;
             boolean seqshow = false;
@@ -163,7 +163,7 @@ public class TotalRepeats {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    ReadingMaskFile(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight);
+                                    ReadingMaskFile(nfile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
