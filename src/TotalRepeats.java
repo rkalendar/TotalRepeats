@@ -17,7 +17,6 @@ public class TotalRepeats {
             String infile = args[0]; // file path or Folder
             String reffile = "";
             String s = String.join(" ", args).toLowerCase() + " ";
-            String c = String.join(" ", args) + " ";
             int kmer = 19;   //optimal rules: kmer=18-19 seqlen=30...90, kmer=12-18 for short sequences
             int seqlen = 90;
             int gap = kmer + kmer;
@@ -46,7 +45,7 @@ public class TotalRepeats {
                 }
                 reffile = s.substring(j + 4, x).trim();
                 File ref = new File(reffile);
-                if (!ref.exists() || !ref.isFile()) {                    
+                if (!ref.exists() || !ref.isFile()) {
                     System.err.println("Reference file does not exist: " + reffile);
                     reffile = "";
                 } else {
@@ -74,6 +73,9 @@ public class TotalRepeats {
             }
             if (s.contains("combine2")) {
                 combine = 2;
+            }
+            if (s.contains("combinemask")) {
+                combine = 3;
             }
             if (s.contains("seqshow")) {
                 seqshow = true;
@@ -242,6 +244,7 @@ public class TotalRepeats {
             System.out.println("-seqshow\textract repeat sequences (not default)");
             System.out.println("-combine\tthis option is employed in genome-wide comparative analyses (each sequence is analyzed for repeats individually)");
             System.out.println("-combine2\tthis option is employed in genome-wide comparative analyses (all sequences are analyzed together)");
+            System.out.println("-combinemask\tthis option is used for genome-wide comparative analyses, for which masking files serve as the input data");
             System.out.println("-readmask\ttransfer the masking file to the software, which will then be used for clustering repeats and visualisation. The file contains only one FASTA entry.");
             System.out.println("-readgff\ttransfer the GFF file to the software, which will then be used for visualisation.");
             System.out.println("-extract\tSplit a single FASTA file into multiple FASTA files.");
@@ -285,11 +288,16 @@ public class TotalRepeats {
 
         for (String nfile : filelist) {
             if (nfile != null) {
+                ReadingSequencesFiles rf;
                 try {
-                    ReadingSequencesFiles rf = new ReadingSequencesFiles(Paths.get(nfile));
+                    if (combine == 3) {
+                        rf = ReadingSequencesFiles.readMasking(Paths.get(nfile));
+                    } else {
+                        rf = new ReadingSequencesFiles(Paths.get(nfile));
+                    }
 
                     if (rf.getNseq() > 0) {
-                        System.out.println("Target FASTA sequences = " + rf.getNseq());
+                        System.out.println("The target file contains " + rf.getNseq() + " sequence(s)");
                         names.addAll(Arrays.asList(rf.getNames()));
                         seqs.addAll(Arrays.asList(rf.getSequences()));
                         fnames.add(nfile);
@@ -321,7 +329,6 @@ public class TotalRepeats {
         s2.SetRepeatLen(kmer, seqlen, gap);
         s2.SetShowSeq(seqshow);
         s2.SetFlanks(flanksshow);
-
         s2.SetFileNames(fnms);
 
         Path path = Paths.get(fnms[0]);
@@ -345,6 +352,9 @@ public class TotalRepeats {
             }
             if (combine == 2) {
                 s2.RunCombine2(imgx, nkmer);
+            }
+            if (combine == 3) {
+                s2.RunCombineMask(imgx, nkmer);
             }
 
         }
