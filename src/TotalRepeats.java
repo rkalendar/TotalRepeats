@@ -46,8 +46,9 @@ public class TotalRepeats {
                 }
                 reffile = s.substring(j + 4, x).trim();
                 File ref = new File(reffile);
-                if (!ref.exists() || !ref.isFile()) {
+                if (!ref.exists() || !ref.isFile()) {                    
                     System.err.println("Reference file does not exist: " + reffile);
+                    reffile = "";
                 } else {
                     System.out.println("Reference file found: " + ref.getAbsolutePath());
                 }
