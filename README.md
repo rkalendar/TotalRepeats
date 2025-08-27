@@ -103,6 +103,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | seqshow               | extract repeat sequences (default not performed) |
 | maskonly              | it only generates the mask file; classification, annotation and visualisation are not performed, similar command: -nsize=0|
 | combine               | multiple sequences can be analysed as one entire sequence|
+| combinemask           | this option is used for genome-wide comparative analyses, for which masking files serve as the input data|
 | readmask              | specifying a masking file to the software, which will then be used for clustering repeats, annotation and visualisation|
 | readgff               | specifying the GFF file to the software, which will then be used for visualisation|
 | extract               | split a single FASTA file with multiple entries into multiple FASTA files|
@@ -141,6 +142,12 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyric
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species, or long sequences following ONT sequencing. In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences, inclusive of exons and introns, are regarded as repeats and subsequently clustered, leading to the identification of polymorphism. This approach is not recommended for comparative analysis of nearly identical sequences (genomes). In addition, this analysis is recommended for chromosomes of the same (or different) species but different strains, e.g., bacteria or fungi, or for chromosomes from different assemblies of eukaryotes or prokaryotes. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies. The range of application of this analysis is not limited. It is necessary that all target sequences are collected in one directory, and the full path to this directory must be provided to the application. It is acceptable to analyse a file containing more than one FASTA format record.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combine2
+```
+
+## combinemask
+This option is used for genome-wide comparative analyses, for which masking files serve as the input data.
+```
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combinemask
 ```
 
 ## nsize=
