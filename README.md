@@ -145,7 +145,7 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyric
 ```
 
 ## combinemask
-This option is used for genome-wide comparative analyses, for which masking files serve as the input data.
+Performs genome-wide comparative analyses by using multiple masking files as input. These masking files can originate from different assemblies or software tools. Once imported, they are used for repeat clustering, annotation, and visualization, allowing direct comparison of masked regions across datasets. This option also supports comparative evaluation of masking outputs obtained from different algorithms, enabling benchmarking and cross-tool analysis of repetitive sequence detection.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combinemask
 ```
