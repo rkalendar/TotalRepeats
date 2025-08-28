@@ -133,19 +133,21 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ```
 
 ## combine
+Performs genome-wide comparative analyses using multiple files to be analyzed and classification of repeats and visualization synchronized.
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species, or long sequences following ONT sequencing. In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences are detected individually for each sequence. However, repeat clustering is performed for all sequences simultaneously, resulting in the identification of repeat polymorphism. In addition, this analysis is recommended for chromosomes of the same (or different) species but different strains, e.g., bacteria or fungi, or for chromosomes from different assemblies of eukaryotes or prokaryotes. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies. The range of application of this analysis is not limited. It is necessary that all target sequences are collected in one directory, and the full path to this directory must be provided to the application. It is acceptable to analyse a file containing more than one FASTA format record. 
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combine
 ```
 
 ## combine2
+Performs genome-wide comparative analyses using multiple files to be analyzed and classification of repeats and visualization synchronized.
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species, or long sequences following ONT sequencing. In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences, inclusive of exons and introns, are regarded as repeats and subsequently clustered, leading to the identification of polymorphism. This approach is not recommended for comparative analysis of nearly identical sequences (genomes). In addition, this analysis is recommended for chromosomes of the same (or different) species but different strains, e.g., bacteria or fungi, or for chromosomes from different assemblies of eukaryotes or prokaryotes. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies. The range of application of this analysis is not limited. It is necessary that all target sequences are collected in one directory, and the full path to this directory must be provided to the application. It is acceptable to analyse a file containing more than one FASTA format record.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combine2
 ```
 
 ## combinemask
-Performs genome-wide comparative analyses by using multiple masking files as input. These masking files can originate from different assemblies or software tools. Once imported, they are used for repeat clustering, annotation, and visualization, allowing direct comparison of masked regions across datasets. This option also supports comparative evaluation of masking outputs obtained from different algorithms, enabling benchmarking and cross-tool analysis of repetitive sequence detection.
+Performs genome-wide comparative analyses using multiple masking files. Supports synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combinemask
 ```
@@ -186,7 +188,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\7\GCF_000002495.2_MG8_genomic
 ```
 
 ## maskscomp
-A comparison analysis of masked files obtained from different software or algorithms.
+Compares masked files produced by different software tools or algorithms, enabling cross-tool benchmarking. 
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Test\runfiles.txt -maskscomp
 ```
