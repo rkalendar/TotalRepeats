@@ -101,14 +101,14 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | imgx=                 | figure width compression (default imgx=5), the minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most extended figure width |
 | flanks=               | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
 | seqshow               | extract repeat sequences (default not performed) |
-| maskonly              | it only generates the mask file; classification, annotation and visualisation are not performed, similar command: -nsize=0|
-| combine               | multiple sequences can be analysed as one entire sequence|
-| combinemask           | this option is used for genome-wide comparative analyses, for which masking files serve as the input data|
-| readmask              | specifying a masking file to the software, which will then be used for clustering repeats, annotation and visualisation|
-| readgff               | specifying the GFF file to the software, which will then be used for visualisation|
-| extract               | split a single FASTA file with multiple entries into multiple FASTA files|
-| maskscomp             | a comparison analysis of masked files obtained from different software or algorithms|
-| lib=file_path         | uses a database of known repeats to enable annotation of repeats|
+| maskonly              | Generates only the masked output file. Similar command: -nsize=0|
+| combine               | Performs genome-wide comparative analyses using multiple files to be analyzed and classification of repeats and visualization synchronized.|
+| combinemask           | Performs genome-wide comparative analyses using multiple masking files. Supports synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms.|
+| readmask              | Imports one or more masking files and uses them for repeat clustering, annotation, and visualization.|
+| readgff               | Imports one or more GFF files for direct visualization of annotated repeats.|
+| extract               | Splits a multi-entry FASTA file into separate files, generating one file per entry.|
+| maskscomp             | Compares masked files produced by different software tools or algorithms, enabling cross-tool benchmarking.|
+| lib=file_path         | Uses a user-specified repeat library to annotate detected repeats. Compatible with Repbase, Dfam/FamDB, or custom databases.|
 
 ## kmer=
 This is the minimum value for repeat sequence masking (9-21). It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19 is recommended for eukaryotic chromosomes. It is also possible to use values of 18 for short chromosomes.
