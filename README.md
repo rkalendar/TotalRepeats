@@ -103,7 +103,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | seqshow               | extract repeat sequences (default not performed) |
 | maskonly              | Generates only the masked output file. Similar command: -nsize=0|
 | combine               | It performs comparative analysis of individual sequences (chromosomes) using multiple files for synchronised analysis of repeat classification and visualisation.|
-| combine2              | It performs comparative analysis of individual sequences (chromosomes) using multiple files to analyse homologous regions (and repeats) between target sequences, classify, annotate and visualise them synchronously.|
+| combine2              | It performs comparative analysis of individual sequences (chromosomes) using multiple files to analyse homologous regions (and repeats) between target sequences, classify, annotate and visualise them synchronously. This option can be used to identify unique regions for each of the homologous chromosomes.|
 | combinemask           | Performs genome-wide comparative analyses using multiple masking files. Supports synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms.|
 | readmask              | Imports one or more masking files and uses them for repeat clustering, annotation, and visualization.|
 | readgff               | Imports one or more GFF files for direct visualization of annotated repeats.|
