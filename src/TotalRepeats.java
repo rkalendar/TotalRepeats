@@ -68,15 +68,20 @@ public class TotalRepeats {
             if (s.contains("extract")) {
                 extract = true;
             }
+
             if (s.contains("combine")) {
                 combine = 1;
+                if (s.contains("combine2")) {
+                    combine = 2;
+                }
+                if (s.contains("combine3")) {
+                    combine = 4;
+                }
+                if (s.contains("combinemask")) {
+                    combine = 3;
+                }
             }
-            if (s.contains("combine2")) {
-                combine = 2;
-            }
-            if (s.contains("combinemask")) {
-                combine = 3;
-            }
+
             if (s.contains("seqshow")) {
                 seqshow = true;
             }
@@ -300,9 +305,13 @@ public class TotalRepeats {
                         System.out.println("The target file contains " + rf.getNseq() + " sequence(s)");
                         names.addAll(Arrays.asList(rf.getNames()));
                         seqs.addAll(Arrays.asList(rf.getSequences()));
-                        fnames.add(nfile);
+                        for (int i = 0; i < rf.getNseq(); i++) {
+                            fnames.add(nfile + "_1");
+                        }
+
                     }
                     if (rf.getNseq() == 0) {
+                        fnames.add(nfile);
                         System.out.println("There is no sequence(s).");
                         System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
                         System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
@@ -334,10 +343,12 @@ public class TotalRepeats {
         Path path = Paths.get(fnms[0]);
         Path parentDir = path.getParent();
         if (parentDir != null) {
+
             String fileName = "combined";
             Path combinedPath = parentDir.resolve(fileName);
             fileName = combinedPath.toString();
             System.out.println("Combined path: " + fileName);
+
             s2.SetFileName(fileName);
             if (width > 0 && hight > 0) {
                 s2.SetImage(width, hight);
@@ -351,12 +362,14 @@ public class TotalRepeats {
                 s2.RunCombine(imgx, nkmer);
             }
             if (combine == 2) {
-                s2.RunCombine2(imgx, nkmer);
+                s2.RunGenerateSharedMasks(imgx, nkmer);
             }
             if (combine == 3) {
                 s2.RunCombineMask(imgx, nkmer);
             }
-
+            if (combine == 4) {
+                s2.RunCombine2(imgx, nkmer);
+            }
         }
         long duration = (System.nanoTime() - startTime) / 1000000000;
         System.out.println("Total duration: " + duration + " seconds\n");
@@ -553,5 +566,4 @@ public class TotalRepeats {
             System.out.println("Incorrect file name.\n");
         }
     }
-
 }
