@@ -103,7 +103,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | seqshow               | extract repeat sequences (default not performed) |
 | maskonly              | Generates only the masked output file. Similar command: -nsize=0|
 | combine               | It performs comparative analysis of individual sequences (chromosomes) using multiple files for synchronised analysis of repeat classification and visualisation.|
-| combine2              | Comparative Homology Masking. It performs comparative analysis of individual sequences (chromosomes) using multiple files to analyse homologous regions (and repeats) between target sequences. This option can be used to identify unique regions for each of the homologous chromosomes.|
+| homology              | Comparative Homology Masking. It performs comparative analysis of individual sequences (chromosomes) using multiple files to analyse homologous regions (and repeats) between target sequences. This option can be used to identify unique regions for each of the homologous chromosomes.|
 | combinemask           | Performs genome-wide comparative analyses using multiple masking files. Supports synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms.|
 | readmask              | Imports one or more masking files and uses them for repeat clustering, annotation, and visualization.|
 | readgff               | Imports one or more GFF files for direct visualization of annotated repeats.|
@@ -140,10 +140,10 @@ This option is employed in genome-wide comparative analyses to analyze homologou
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combine
 ```
 
-## combine2
+## homology
 Comparative Homology Masking: This option performs a comparative analysis of homologous regions and generates an individual mask for each sequence. All homologous regions both within a sequence and between different sequences are treated as repeats. It is particularly useful for analyzing homologous sequences or chromosomes from the same or different species, as well as long-read assemblies (e.g., ONT sequencing). By focusing on homologous segments, this method enables the detection of unique regions, sequence heterogeneity, and polymorphisms without requiring a full-genome alignment. Importantly, all repetitive elements including exons and introns are classified as repeats, which facilitates polymorphism discovery.  It is best applied to chromosomes from different strains (e.g., bacteria or fungi), or to assemblies from different versions of eukaryotic or prokaryotic genomes. For example, it can be used to identify unique regions distinguishing human chromosomes X and Y: shared regions are masked, while unique sequences remain in uppercase for clarity. This option is not restricted to chromosomal fragments; it can be applied to any collection of target sequences. All sequences must be placed in a single directory, and the full directory path must be provided. Multi-entry FASTA files are fully supported.
 ```
-java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combine2
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -homology
 ```
 
 
