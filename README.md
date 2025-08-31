@@ -1,7 +1,7 @@
 ## TotalRepeats
 ## A universal genome-wide tool for rapid *de novo* identification, classification, annotation, comparative analysis, and visualization of repetitive elements
 
-##Overview
+## Overview
 
 TotalRepeats is a universal, de novo tool for genome-wide identification, classification, visualization, and comparison of repetitive DNA elements.
 It efficiently detects a wide spectrum of repeats, including:
@@ -95,7 +95,7 @@ Restart application with "-Xms32g -Xmx64g" flags:
 java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
 ```
 
-##Common options
+## Common options
 | Command        | Description                                                               |
 | -------------- | ------------------------------------------------------------------------- |
 | `kmer=19`      | k-mer size (9–21; default = 19)                                           |
@@ -114,6 +114,33 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | `-extract`     | Split multi-entry FASTA into separate files                               |
 | `-maskscomp`   | Compare masked outputs from different algorithms/software                 |
 | `-lib=path`    | Use external repeat library (Repbase, Dfam/FamDB, or custom)              |
+
+## ⚙️ Advanced Usage
+| Option           | Purpose                                                                                                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **-combine**     | Runs synchronized repeat analysis across multiple sequences (e.g., chromosomes, assemblies, strains). Useful for detecting repeat polymorphisms across species or assemblies. |
+| **-homology**    | Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
+| **-combinemask** | Compares multiple **masking files** to benchmark different assemblies or tools.                                                                                               |
+| **-nsize=**      | Controls clustering sensitivity. <br> `0` = skip clustering, <br> `1` = fastest (overview), <br> `>1` = more accurate (default = 12).                                         |
+| **-lib=path**    | Use external repeat libraries (e.g., Repbase, Dfam/FamDB, or a custom library) for annotation.                                                                                |
+
+## Example Commands
+```
+# Comparative repeat analysis across multiple bacterial strains
+java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/Pyricularia_oryzae/ -combine  
+
+# Comparative homology masking (unique vs. shared repeats)
+java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/Pyricularia_oryzae/ -homology  
+
+# Benchmark different repeat-masking outputs
+java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/ -combinemask  
+
+# Fast genome overview (low-accuracy clustering)
+java -Xms32g -jar TotalRepeats.jar E:/Genomes/Sorghum_bicolor/ nsize=1  
+
+# Annotate repeats using Repbase/Dfam
+java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/T2T-CHM13v2.0/ -lib=humsub.ref  
+```
 
 ## kmer=
 This is the minimum value for repeat sequence masking (9-21). It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19 is recommended for eukaryotic chromosomes. It is also possible to use values of 18 for short chromosomes.
@@ -234,31 +261,3 @@ https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
 7. Strand - Valid entries include '+' (forward direction), '-' (complement direction).
 8. Phase -  is not analysed for the presence of a reading frame; therefore, this value is '.'
 9. Sequence (if parameter used: seqshow=true)
-
-
-## ⚙️ Advanced Usage
-| Option           | Purpose                                                                                                                                                                       |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **-combine**     | Runs synchronized repeat analysis across multiple sequences (e.g., chromosomes, assemblies, strains). Useful for detecting repeat polymorphisms across species or assemblies. |
-| **-homology**    | Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
-| **-combinemask** | Compares multiple **masking files** to benchmark different assemblies or tools.                                                                                               |
-| **-nsize=**      | Controls clustering sensitivity. <br> `0` = skip clustering, <br> `1` = fastest (overview), <br> `>1` = more accurate (default = 12).                                         |
-| **-lib=path**    | Use external repeat libraries (e.g., Repbase, Dfam/FamDB, or a custom library) for annotation.                                                                                |
-
-
-## Example Commands
-
-# Comparative repeat analysis across multiple bacterial strains
-java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/Pyricularia_oryzae/ -combine  
-
-# Comparative homology masking (unique vs. shared repeats)
-java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/Pyricularia_oryzae/ -homology  
-
-# Benchmark different repeat-masking outputs
-java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/ -combinemask  
-
-# Fast genome overview (low-accuracy clustering)
-java -Xms32g -jar TotalRepeats.jar E:/Genomes/Sorghum_bicolor/ nsize=1  
-
-# Annotate repeats using Repbase/Dfam
-java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/T2T-CHM13v2.0/ -lib=humsub.ref  
