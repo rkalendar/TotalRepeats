@@ -1,10 +1,21 @@
 ## TotalRepeats
 ## A universal genome-wide tool for rapid *de novo* identification, classification, annotation, comparative analysis, and visualization of repetitive elements
 
-Novel and universal tool for *de novo* identification, classification, visualization, and comparison of DNA profiles of repetitive elements at the genomic scale. This tool efficiently detects a wide range of repeats, including mobile genetic elements, tandem arrays, and large-scale genomic rearrangements, without reliance on prior sequence knowledge. The software is not limited only to the purpose of identifying any repetitive sequences and their rapid classification, but also to the comparative analysis of any target sequences, including interspecific analysis for the detection of polymorphisms without using genomic alignment. The tool uses a database of known repeats to enable annotation of repetitive sequences.
-TotalRepeats is ideal for applications in comparative genomics, evolutionary biology, structural variation analysis, and general bioinformatics research.
+##Overview
 
-Masking, clustering, and annotation are designed as multithreaded routines to exploit parallelism, allowing the software to scale efficiently on server and supercomputing infrastructure.
+TotalRepeats is a universal, de novo tool for genome-wide identification, classification, visualization, and comparison of repetitive DNA elements.
+It efficiently detects a wide spectrum of repeats, including:
+Mobile genetic elements (transposons, retrotransposons)
+Tandem arrays (microsatellites, telomers, minisatellites)
+Large-scale structural variations (duplications, rearrangements)
+
+Unlike conventional tools, TotalRepeats does not require prior sequence knowledge. It supports:
+Rapid identification and classification of repeats
+Comparative analysis across multiple genomes or assemblies
+Interspecific polymorphism detection without whole-genome alignment
+Annotation of repeats using external libraries (Repbase, Dfam/FamDB, or custom datasets)
+The tool is particularly well-suited for comparative genomics, evolutionary biology, structural variation studies, and bioinformatics research.
+Masking, clustering, and annotation are fully multithreaded, scaling efficiently from personal computers to HPC/supercomputing clusters.
 
 ## Author
 Ruslan Kalendar 
@@ -15,7 +26,7 @@ https://primerdigital.com/tools/repeats.html
 
 ## Availability and requirements:
 
-Operating system(s): Platform independent
+Operating system(s): Cross-platform (Windows, Linux, macOS)
 
 Programming language: Java 24 or higher
 
@@ -23,56 +34,49 @@ Java Downloads: https://www.oracle.com/java/technologies/downloads/
 
 How do I set or change the Java path system variable: https://www.java.com/en/download/help/path.html
 
-To run the project from the command line. Command-line options, separated by spaces. 
-The executive file ```TotalRepeats.jar``` is in the ```dist``` directory, which can be copied to any location. 
-Go to the target folder and type the following; an individual file or a file folder can be specified:
 
-```java -jar <TotalRepeatsPath>\TotalRepeats.jar <target_file_path/Folder_path>```
+## Running TotalRepeats
 
+The main executable is ```TotalRepeats.jar``` (located in the ```dist``` directory). Copy it to any folder and run:
 
-### Basic usage:
+```java -jar <TotalRepeatsPath>/TotalRepeats.jar <input_file_or_directory> [options]```
 
-```java -jar <TotalRepeatsPath>\TotalRepeats.jar <target_file_path> optional_commands```
+Input can be a single sequence file (FASTA/plain text) or a directory with multiple genomes.
+No extra dependencies are required.
 
-This command launches the TotalRepeats application, which is packaged as a standalone .jar file. The input can be either a single genomic file or a directory containing multiple sequences. Since the tool is implemented as a standard Java application, no additional software or dependencies are required. 
+## Memory Considerations
 
-By employing multithreading in the masking, clustering, and annotation stages, the software achieves parallel performance and can be run effectively on server-grade or HPC (supercomputer) environments.
+For small genomes/files (<100 MB): No JVM memory flags needed.
+For medium genomes (>500 MB): Use ≥64 GB RAM and specify -Xms / -Xmx.
+For very large genomes (>2 Gb): 256 GB RAM recommended.
 
-When working with large chromosome files, it is necessary to use computers with at least 64 GB of free RAM and specify the maximum amount of available RAM with the following flags: -Xms and -Xmx. You do not need to use these flags for files smaller than 100 MB. However, for files larger than 500 MB, you need more than 64 GB of free RAM and must specify the maximum values of these flags. For example, use the flags -Xms16g and -Xmx64g.
+### Examples
 
-### Examples (Windows):
+```java -Xms32g -Xmx128g -jar TotalRepeats.jar E:/Genomes/Sarcophilus_harrisii/```
+
+### Usage Examples
+### Windows
 ```
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\NC_014637.fasta 
+# Basic run on a FASTA file
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\Genomes\NC_014637.fasta  
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ kmer=12 sln=30 
+# Custom k-mer and string length
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\Genomes\ kmer=12 sln=30  
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\NC_014637.fasta -seqshow -flanks=100
+# Extract repeats with 100-nt flanks
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\Genomes\NC_014637.fasta -seqshow -flanks=100  
 
-java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -imgx=2
+# Large human genome with image compression
+java -Xms16g -Xmx32g -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -imgx=2  
 
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine 
-
+# Combine multiple chromosomes for synchronized classification
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine  
 ```
-### Examples (Linux):
+### Linux
 ```
-java -jar -Xms32g -Xmx128g /data/user/dist/TotalRepeats.jar /data/user/genomes/Sarcophilus_harrisii/
+java -Xms32g -Xmx128g -jar /data/user/dist/TotalRepeats.jar /data/genomes/Sarcophilus_harrisii/  
 
-java -jar -Xms64g -Xmx256g /data/user/dist/TotalRepeats.jar /data/user/genomes/Pleurodeles_waltl/ -imgx=2
-
-```
-
-### Analysing all files in the folder:
-
-```
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\TotalRepeats\test\ 
-
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ 
-```
-
-### Analysing large files (>2 Gb, RAM 256 GB):
-
-```
-java -jar -Xms64g -Xmx256g /data/user/dist/TotalRepeats.jar /data/user/genomes/Viscum_album/
+java -Xms64g -Xmx256g -jar /data/user/dist/TotalRepeats.jar /data/genomes/Pleurodeles_waltl/ -imgx=2  
 ```
 
 **Java Memory Management Parameters**
@@ -91,25 +95,25 @@ Restart application with "-Xms32g -Xmx64g" flags:
 java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophilus_harrisii\
 ```
 
-**Common options:**
-| Command               | Description                                   |
-| ----------------------| --------------------------------------------- |
-| kmer=	                | kmer size: 9 to 21 (default: k-mer = 19)|
-| sln=	                 | repeat block length (default sln=90) |
-| nsize=                | speed and sensitivity of sequence clustering: nsize=0 - ignores clustering; nsize=1 - very fast clustering without sequence chain direction detection; nsize >1 - efficient clustering (default nsize=12) |
-| image=                | the dimensionality of the image (by default, the dimensionality of the image is automatically determined), example: image=10000x300 |
-| imgx=                 | figure width compression (default imgx=5), the minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most extended figure width |
-| flanks=               | extend the flanks of the repeat with an appropriate length (100 nt) (default flanks=0) |
-| seqshow               | extract repeat sequences (default not performed) |
-| maskonly              | Generates only the masked output file. Similar command: -nsize=0|
-| combine               | It performs comparative analysis of individual sequences (chromosomes) using multiple files for synchronised analysis of repeat classification and visualisation.|
-| homology              | Comparative Homology Masking. It performs comparative analysis of individual sequences (chromosomes) using multiple files to analyse homologous regions (and repeats) between target sequences. This option can be used to identify unique regions for each of the homologous chromosomes.|
-| combinemask           | Performs genome-wide comparative analyses using multiple masking files. Supports synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms.|
-| readmask              | Imports one or more masking files and uses them for repeat clustering, annotation, and visualization.|
-| readgff               | Imports one or more GFF files for direct visualization of annotated repeats.|
-| extract               | Splits a multi-entry FASTA file into separate files, generating one file per entry.|
-| maskscomp             | Compares masked files produced by different software tools or algorithms, enabling cross-tool benchmarking.|
-| lib=file_path         | Uses a user-specified repeat library to annotate detected repeats. Compatible with Repbase, Dfam/FamDB, or custom databases.|
+##Common options
+| Command        | Description                                                               |
+| -------------- | ------------------------------------------------------------------------- |
+| `kmer=19`      | k-mer size (9–21; default = 19)                                           |
+| `sln=90`       | Minimum repeat block length (default = 90)                                |
+| `nsize=12`     | Clustering stringency (0 = off, 1 = fastest, >1 = accurate; default = 12) |
+| `image=W×H`    | Output image size (default = auto)                                        |
+| `imgx=5`       | Image width scaling (1 = compressed, 20 = stretched; default = 5)         |
+| `flanks=100`   | Extend repeats by N bases (default = 0)                                   |
+| `-seqshow`     | Extract repeat sequences                                                  |
+| `-maskonly`    | Only generate masked output (skip clustering/annotation)                  |
+| `-combine`     | Perform synchronized repeat analysis across multiple input sequences      |
+| `-homology`    | Comparative masking of homologous regions to highlight unique sequences   |
+| `-combinemask` | Compare multiple masking files for cross-tool benchmarking                |
+| `-readmask`    | Import masking files for clustering/annotation/visualization              |
+| `-readgff`     | Import GFF files for repeat visualization                                 |
+| `-extract`     | Split multi-entry FASTA into separate files                               |
+| `-maskscomp`   | Compare masked outputs from different algorithms/software                 |
+| `-lib=path`    | Use external repeat library (Repbase, Dfam/FamDB, or custom)              |
 
 ## kmer=
 This is the minimum value for repeat sequence masking (9-21). It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19 is recommended for eukaryotic chromosomes. It is also possible to use values of 18 for short chromosomes.
@@ -208,12 +212,13 @@ NC_017854.1.fasta	NC_017854.1.fasta.msk
 ## Sequence Entry:
 Sequence data files are prepared using a text editor and saved in ASCII as text/plain format (.txt) or in .fasta or without file extensions (a file extension is not obligatory). The program takes a single sequence or accepts multiple DNA sequences in FASTA format. The template length is not limited.
 
+
 ## FASTA format description:
 A sequence in FASTA format consists of the following:
 One line starts with a ">" sign and a sequence identification code. A textual description of the sequence optionally follows it. Since it is not part of the official format description, software can ignore it when it is present.
 One or more lines containing the sequence itself. A file in FASTA format may comprise more than one sequence. 
 The software supports large FASTA files (2 GB).
-
+ 
 
 ## The output is saved in a GFF3 file: a nine-column, tab-delimited, plain text file. 
  
@@ -229,3 +234,31 @@ https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
 7. Strand - Valid entries include '+' (forward direction), '-' (complement direction).
 8. Phase -  is not analysed for the presence of a reading frame; therefore, this value is '.'
 9. Sequence (if parameter used: seqshow=true)
+
+
+## ⚙️ Advanced Usage
+| Option           | Purpose                                                                                                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **-combine**     | Runs synchronized repeat analysis across multiple sequences (e.g., chromosomes, assemblies, strains). Useful for detecting repeat polymorphisms across species or assemblies. |
+| **-homology**    | Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
+| **-combinemask** | Compares multiple **masking files** to benchmark different assemblies or tools.                                                                                               |
+| **-nsize=**      | Controls clustering sensitivity. <br> `0` = skip clustering, <br> `1` = fastest (overview), <br> `>1` = more accurate (default = 12).                                         |
+| **-lib=path**    | Use external repeat libraries (e.g., Repbase, Dfam/FamDB, or a custom library) for annotation.                                                                                |
+
+
+## Example Commands
+
+# Comparative repeat analysis across multiple bacterial strains
+java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/Pyricularia_oryzae/ -combine  
+
+# Comparative homology masking (unique vs. shared repeats)
+java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/Pyricularia_oryzae/ -homology  
+
+# Benchmark different repeat-masking outputs
+java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/ -combinemask  
+
+# Fast genome overview (low-accuracy clustering)
+java -Xms32g -jar TotalRepeats.jar E:/Genomes/Sorghum_bicolor/ nsize=1  
+
+# Annotate repeats using Repbase/Dfam
+java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/T2T-CHM13v2.0/ -lib=humsub.ref  
