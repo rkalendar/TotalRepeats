@@ -4,16 +4,13 @@
 ## Overview
 
 TotalRepeats is a universal, de novo tool for genome-wide identification, classification, visualization, and comparison of repetitive DNA elements.
-It efficiently detects a wide spectrum of repeats, including:
-Mobile genetic elements (transposons, retrotransposons)
-Tandem arrays (microsatellites, telomers, minisatellites)
-Large-scale structural variations (duplications, rearrangements)
-
+It efficiently detects a wide spectrum of repeats, including: Mobile genetic elements (transposons, retrotransposons), Tandem arrays (microsatellites, telomers, minisatellites),
+Large-scale structural variations (duplications, rearrangements).
 Unlike conventional tools, TotalRepeats does not require prior sequence knowledge. It supports:
-Rapid identification and classification of repeats
-Comparative analysis across multiple genomes or assemblies
-Interspecific polymorphism detection without whole-genome alignment
-Annotation of repeats using external libraries (Repbase, Dfam/FamDB, or custom datasets)
+Rapid identification and classification of repeats;
+Comparative analysis across multiple genomes or assemblies;
+Interspecific polymorphism detection without whole-genome alignment;
+Annotation of repeats using external libraries (Repbase, Dfam/FamDB, or custom datasets).
 The tool is particularly well-suited for comparative genomics, evolutionary biology, structural variation studies, and bioinformatics research.
 Masking, clustering, and annotation are fully multithreaded, scaling efficiently from personal computers to HPC/supercomputing clusters.
 
