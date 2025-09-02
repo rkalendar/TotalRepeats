@@ -29,6 +29,7 @@ public class TotalRepeats {
             boolean maskonly = false;
             boolean seqshow = false;
             boolean readmask = false;
+            boolean extupmask = false;
             boolean readgff = false;
             boolean extract = false;   // Split a single FASTA file into multiple FASTA files.
             boolean maskfiles = false; // A comparison analysis of masked files obtained from different software or algorithms.
@@ -52,7 +53,9 @@ public class TotalRepeats {
                     System.out.println("Reference file found: " + ref.getAbsolutePath());
                 }
             }
-
+            if (s.contains("extunique")) { // -seqlen>100
+                extupmask = true;
+            }
             if (s.contains("maskonly")) { // -nsize=0
                 maskonly = true;
             }
@@ -74,12 +77,12 @@ public class TotalRepeats {
                 if (s.contains("combine2")) {
                     combine = 2;
                 }
-                if (s.contains("combine3")) {
-                    combine = 4;
-                }
                 if (s.contains("combinemask")) {
                     combine = 3;
                 }
+            }
+            if (s.contains("homology")) {
+                combine = 4;
             }
 
             if (s.contains("seqshow")) {
@@ -190,6 +193,19 @@ public class TotalRepeats {
                         return;
                     }
 
+                    if (extupmask) {
+                        for (String nfile : filelist) {
+                            if (nfile != null) {
+                                try {
+                                    ReadingUpperMaskFile(nfile, seqlen, gap);
+                                } catch (Exception e) {
+                                    System.err.println("Failed to open file: " + nfile);
+                                }
+                            }
+                        }
+                        return;
+                    }
+
                     if (readgff) {
                         for (String nfile : filelist) {
                             if (nfile != null) {
@@ -230,6 +246,11 @@ public class TotalRepeats {
                         ExtractFiles(infile);
                         return;
                     }
+                    if (extupmask) {
+                        ReadingUpperMaskFile(infile, seqlen, gap);
+                        return;
+                    }
+
                     TotalRepeatsResult(infile, reffile, nkmer, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly);
                 }
             }
@@ -249,6 +270,7 @@ public class TotalRepeats {
             System.out.println("-seqshow\textract repeat sequences (not default)");
             System.out.println("-combine\tthis option is employed in genome-wide comparative analyses (each sequence is analyzed for repeats individually)");
             System.out.println("-combine2\tthis option is employed in genome-wide comparative analyses (all sequences are analyzed together)");
+            System.out.println("-homology\tComparative Homology Masking. It performs comparative analysis of individual sequences (chromosomes) using multiple files to analyse homologous regions (and repeats) between target sequences.");
             System.out.println("-combinemask\tthis option is used for genome-wide comparative analyses, for which masking files serve as the input data");
             System.out.println("-readmask\ttransfer the masking file to the software, which will then be used for clustering repeats and visualisation. The file contains only one FASTA entry.");
             System.out.println("-readgff\ttransfer the GFF file to the software, which will then be used for visualisation.");
@@ -344,12 +366,14 @@ public class TotalRepeats {
         Path parentDir = path.getParent();
         if (parentDir != null) {
 
-            String fileName = "combined";
-            Path combinedPath = parentDir.resolve(fileName);
-            fileName = combinedPath.toString();
-            System.out.println("Combined path: " + fileName);
+            if (combine == 3) {
+                String fileName = "combined";
+                Path combinedPath = parentDir.resolve(fileName);
+                fileName = combinedPath.toString();
+                System.out.println("Combined path: " + fileName);
+                s2.SetFileName(fileName);
+            }
 
-            s2.SetFileName(fileName);
             if (width > 0 && hight > 0) {
                 s2.SetImage(width, hight);
             }
@@ -361,13 +385,13 @@ public class TotalRepeats {
             if (combine == 1) {
                 s2.RunCombine(imgx, nkmer);
             }
-            if (combine == 2) {
-                s2.RunGenerateSharedMasks(imgx, nkmer);
+            if (combine == 4) {
+                s2.RunHomologyMasking(imgx, nkmer);
             }
             if (combine == 3) {
                 s2.RunCombineMask(imgx, nkmer);
             }
-            if (combine == 4) {
+            if (combine == 2) {
                 s2.RunCombine2(imgx, nkmer);
             }
         }
@@ -425,6 +449,31 @@ public class TotalRepeats {
             }
         }
         return lowercase;
+    }
+
+    private static void ReadingUpperMaskFile(String inputFile, int seqlen, int gap) throws IOException {
+        try {
+            ReadingSequencesFiles rf = ReadingSequencesFiles.readMasking(Paths.get(inputFile));
+            if (rf.getNseq() == 0) {
+                System.out.println("There is no sequence(s).");
+                System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
+                System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
+                return;
+            }
+            System.out.println("\nRunning...");
+            System.out.println("Target file: " + inputFile);
+            if (rf.getNseq() > 1) {
+                System.out.println("Target FASTA sequences = " + rf.getNseq());
+            }
+            TotalRepeatsSearching s2 = new TotalRepeatsSearching();
+            s2.SetFileName(inputFile);
+            s2.SetSequences(rf.getSequences(), rf.getNames());
+            s2.RunUniquesMaskSaving(gap, seqlen);
+
+        } catch (IOException e) {
+            System.out.println("Incorrect file name.\n");
+        }
+
     }
 
     private static void ExtractFiles(String inputFile) {
@@ -545,7 +594,6 @@ public class TotalRepeats {
                 s2.SetRefSequences(fastafile.getSequences(), fastafile.getNames());
                 System.out.println("Reference file=" + reffile);
             }
-
             s2.RunThroughMask(imgx, nkmer);
         } catch (IOException e) {
             System.out.println("Incorrect file name.\n");
