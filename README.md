@@ -3,16 +3,16 @@
 
 ## Overview
 
-TotalRepeats is a universal, de novo tool for genome-wide identification, classification, visualization, and comparison of repetitive DNA elements.
-It efficiently detects a wide spectrum of repeats, including: Mobile genetic elements (transposons, retrotransposons), Tandem arrays (microsatellites, telomers, minisatellites),
-Large-scale structural variations (duplications, rearrangements).
-Unlike conventional tools, TotalRepeats does not require prior sequence knowledge. It supports:
+TotalRepeats is a universal, *de novo* tool for genome-wide identification, classification, visualization, and comparison of repetitive DNA elements.
+It efficiently detects a wide spectrum of repeats, including: mobile genetic elements (transposons, retrotransposons), tandem arrays (microsatellites, minisatellites, telomers, satellite DNA),
+Large-scale structural variations (duplications, rearrangements). 
+Unlike conventional tools, TotalRepeats does not require prior sequence knowledge. 
+It supports:
 Rapid identification and classification of repeats;
 Comparative analysis across multiple genomes or assemblies;
 Interspecific polymorphism detection without whole-genome alignment;
 Annotation of repeats using external libraries (Repbase, Dfam/FamDB, or custom datasets).
-The tool is particularly well-suited for comparative genomics, evolutionary biology, structural variation studies, and bioinformatics research.
-Masking, clustering, and annotation are fully multithreaded, scaling efficiently from personal computers to HPC/supercomputing clusters.
+The tool is particularly well-suited for comparative genomics, evolutionary biology, structural variation studies, and bioinformatics research. Masking, clustering, and annotation are fully multithreaded, scaling efficiently from personal computers to HPC/supercomputing clusters.
 
 ## Author
 Ruslan Kalendar 
@@ -103,9 +103,6 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | `flanks=100`   | Extend repeats by N bases (default = 0)                                   |
 | `-seqshow`     | Extract repeat sequences                                                  |
 | `-maskonly`    | Only generate masked output (skip clustering/annotation)                  |
-| `-combine`     | Perform synchronized repeat analysis across multiple input sequences      |
-| `-homology`    | Comparative masking of homologous regions to highlight unique sequences   |
-| `-combinemask` | Compare multiple masking files for cross-tool benchmarking                |
 | `-readmask`    | Import masking files for clustering/annotation/visualization              |
 | `-readgff`     | Import GFF files for repeat visualization                                 |
 | `-extract`     | Split multi-entry FASTA into separate files                               |
@@ -116,7 +113,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | Option           | Purpose                                                                                                                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **-combine**     | Runs synchronized repeat analysis across multiple sequences (e.g., chromosomes, assemblies, strains). Useful for detecting repeat polymorphisms across species or assemblies. |
-| **-homology**    | Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
+| **-homology**    | Comparative masking of homologous regions to highlight unique sequences. Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
 | **-combinemask** | Compares multiple **masking files** to benchmark different assemblies or tools.                                                                                               |
 | **-nsize=**      | Controls clustering sensitivity. <br> `0` = skip clustering, <br> `1` = fastest (overview), <br> `>1` = more accurate (default = 12).                                         |
 | **-lib=path**    | Use external repeat libraries (e.g., Repbase, Dfam/FamDB, or a custom library) for annotation.                                                                                |
