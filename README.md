@@ -105,17 +105,16 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | `-maskonly`    | Only generate masked output (skip clustering/annotation)                  |
 | `-readmask`    | Import masking files for clustering/annotation/visualization              |
 | `-readgff`     | Import GFF files for repeat visualization                                 |
-| `-extract`     | Split multi-entry FASTA into separate files                               |
-| `-maskscomp`   | Compare masked outputs from different algorithms/software                 |
-| `-lib=path`    | Use external repeat library (Repbase, Dfam/FamDB, or custom)              |
 
 ## ⚙️ Advanced Usage
 | Option           | Purpose                                                                                                                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **-combine**     | Runs synchronized repeat analysis across multiple sequences (e.g., chromosomes, assemblies, strains). Useful for detecting repeat polymorphisms across species or assemblies. |
 | **-homology**    | Comparative masking of homologous regions to highlight unique sequences. Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
-| **-combinemask** | Compares multiple **masking files** to benchmark different assemblies or tools.                                                                                               |
+| **combinemask** | Compares multiple **masking files** to benchmark different assemblies or tools.                                                                                               |
 | **-nsize=**      | Controls clustering sensitivity. <br> `0` = skip clustering, <br> `1` = fastest (overview), <br> `>1` = more accurate (default = 12).                                         |
+| **-extract**     | Split multi-entry FASTA into separate files                               |
+| **-maskscomp**   | Compare masked outputs from different algorithms/software                 |
 | **-lib=path**    | Use external repeat libraries (e.g., Repbase, Dfam/FamDB, or a custom library) for annotation.                                                                                |
 
 ## Example Commands
