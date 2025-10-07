@@ -45,7 +45,7 @@ No extra dependencies are required.
 
 For small genomes/files (<100 MB): No JVM memory flags needed.
 For medium genomes (>500 MB): Use ≥64 GB RAM and specify -Xms / -Xmx.
-For very large genomes (>2 Gb): 256 GB RAM recommended.
+For very large genomes (>2 Gb): >128 GB RAM recommended.
 
 ### Examples
 
@@ -111,7 +111,8 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **-combine**     | Runs synchronized repeat analysis across multiple sequences (e.g., chromosomes, assemblies, strains). Useful for detecting repeat polymorphisms across species or assemblies. |
 | **-homology**    | Comparative masking of homologous regions to highlight unique sequences. Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
-| **combinemask** | Compares multiple **masking files** to benchmark different assemblies or tools.                                                                                               |
+| **combinemask**  | Compares multiple **masking files** to benchmark different assemblies or tools.                                                                                               |
+| **-amask**       | Masking is performed using a Repeater2-based pairwise sequence alignment.                              |
 | **-nsize=**      | Controls clustering sensitivity. <br> `0` = skip clustering, <br> `1` = fastest (overview), <br> `>1` = more accurate (default = 12).                                         |
 | **-extract**     | Split multi-entry FASTA into separate files                               |
 | **-maskscomp**   | Compare masked outputs from different algorithms/software                 |
@@ -198,6 +199,12 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_13
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -readmask
 ```
 
+## amask           
+Masking is performed using a Repeater2-based pairwise sequence alignment.  
+```
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -amask
+```
+
 ## readgff             
 Specifying the GFF file/Folder to the software, which will then be used for visualisation. 
 ```
@@ -205,6 +212,7 @@ java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.f
 
 java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\ -readgff
 ```
+
 
 ## extract
 Split a single FASTA file into multiple FASTA files.
