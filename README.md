@@ -95,9 +95,9 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 ## Common options
 | Command        | Description                                                               |
 | -------------- | ------------------------------------------------------------------------- |
-| `kmer=19`      | k-mer size (9–21; default = 19)                                           |
+| `kmer=18`      | k-mer size (9–21; default = 19)                                           |
 | `sln=90`       | Minimum repeat block length (default = 90)                                |
-| `nsize=12`     | Clustering stringency (0 = off, 1 = fastest, >1 = accurate; default = 12) |
+| `nsize=12`     | Clustering stringency (0 = off, 1 = fastest, >1 = accurate; default = 28) |
 | `image=W×H`    | Output image size (default = auto)                                        |
 | `imgx=5`       | Image width scaling (1 = compressed, 20 = stretched; default = 5)         |
 | `flanks=100`   | Extend repeats by N bases (default = 0)                                   |
