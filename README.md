@@ -109,7 +109,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 ## ⚙️ Advanced Usage
 | Option           | Purpose                                                                                                                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **-combine**     | Runs synchronized repeat analysis across multiple sequences (e.g., chromosomes, assemblies, strains). Useful for detecting repeat polymorphisms across species or assemblies. |
+| **-combine**     | Performs pan-genome comparative analyses using multiple files (e.g., chromosomes, assemblies, strains) to be analyzed and classification of repeats and visualization synchronized. Useful for detecting repeat polymorphisms across species or assemblies. |
 | **-homology**    | Comparative masking of homologous regions to highlight unique sequences. Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
 | **combinemask**  | Compares multiple **masking files** to benchmark different assemblies or tools.                                                                                               |
 | **-amask**       | Masking is performed using a Repeater2-based pairwise sequence alignment (https://github.com/rkalendar/Repeater).                              |
