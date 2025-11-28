@@ -96,26 +96,26 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | Command        | Description                                                               |
 | -------------- | ------------------------------------------------------------------------- |
 | `kmer=18`      | k-mer size (9–21; default = 19)                                           |
-| `sln=90`       | Minimum repeat block length (default = 90)                                |
+| `sln=90`       | Minimum repeat block length (default = 60)                                |
 | `nsize=12`     | Clustering stringency (0 = off, 1 = fastest, >1 = accurate; default = 28) |
 | `image=W×H`    | Output image size (default = auto)                                        |
 | `imgx=5`       | Image width scaling (1 = compressed, 20 = stretched; default = 5)         |
 | `flanks=100`   | Extend repeats by N bases (default = 0)                                   |
 | `-seqshow`     | Extract repeat sequences                                                  |
-| `-maskonly`    | Only generate masked output (skip clustering/annotation)                  |
+| `-maskonly`    | This option generates solely the masked output file                       |
 | `-readmask`    | Import masking files for clustering/annotation/visualization              |
-| `-readgff`     | Import GFF files for repeat visualization                                 |
+| `-readgff`     | This function imports one or more GFF files for direct visualization of annotated repeats|
 
 ## ⚙️ Advanced Usage
 | Option           | Purpose                                                                                                                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **-combine**     | Performs pan-genome comparative analyses using multiple files (e.g., chromosomes, assemblies, strains) to be analyzed and classification of repeats and visualization synchronized. Useful for detecting repeat polymorphisms across species or assemblies. |
-| **-homology**    | Comparative masking of homologous regions to highlight unique sequences. Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
-| **combinemask**  | Compares multiple **masking files** to benchmark different assemblies or tools.                                                                                               |
-| **-amask**       | Masking is performed using a Repeater2-based pairwise sequence alignment (https://github.com/rkalendar/Repeater).                              |
+| **-combine**     | This function conducts pangenome comparative analyses utilizing multiple files for analysis, classification of repeats, and synchronized visualization. Useful for detecting repeat polymorphisms across species or assemblies. |
+| **-homology**    | This involves the comparative masking of homologous regions to emphasize unique sequences, effectively masking homologous regions between sequences to highlight distinct regions. Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
+| **combinemask**  | This function performs pangenome comparative analyses using multiple **masking files**, supporting synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms. |
+| **-amask**       | Masking is executed through pairwise sequence alignment. |
 | **-nsize=**      | Controls clustering sensitivity. <br> `0` = skip clustering, <br> `1` = fastest (overview), <br> `>1` = more accurate (default = 12).                                         |
 | **-extract**     | Split multi-entry FASTA into separate files                               |
-| **-maskscomp**   | Compare masked outputs from different algorithms/software                 |
+| **-maskscomp**   | This function compares masked files produced by different software tools or algorithms, facilitating cross-tool benchmarking.|
 | **-lib=path**    | Use external repeat libraries (e.g., Repbase, Dfam/FamDB, or a custom library) for annotation.                                                                                |
 
 ## Example Commands
@@ -159,7 +159,7 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ```
 
 ## combine
-Performs comparative analyses using multiple files to be analyzed and classification of repeats and visualization synchronized.
+This involves the comparative masking of homologous regions to emphasize unique sequences, effectively masking homologous regions between sequences to highlight distinct regions. 
 This option is employed in genome-wide comparative analyses to analyze homologous sequences or chromosomes from the same or different species, or long sequences following ONT sequencing. In the context of studying homologous sequences, this approach enables the detection of heterogeneity and polymorphism without the necessity of a full-genome alignment. In this scenario, all repetitive sequences are detected individually for each sequence. However, repeat clustering is performed for all sequences simultaneously, resulting in the identification of repeat polymorphism. In addition, this analysis is recommended for chromosomes of the same (or different) species but different strains, e.g., bacteria or fungi, or for chromosomes from different assemblies of eukaryotes or prokaryotes. Furthermore, the application of this option is not limited to chromosome fragments from different genomic assemblies. The range of application of this analysis is not limited. It is necessary that all target sequences are collected in one directory, and the full path to this directory must be provided to the application. It is acceptable to analyse a file containing more than one FASTA format record. 
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combine
@@ -173,7 +173,7 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyric
 
 
 ## combinemask
-Performs genome-wide comparative analyses using multiple masking files. Supports synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms.
+This function performs pangenome comparative analyses using multiple masking files, supporting synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combinemask
 ```
@@ -192,7 +192,7 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ```
 
 ## readmask             
-Specifying a masking file/Folder to the software, which will then be used for clustering repeats, annotation and visualisation. The file may contain a single FASTA entry or multiple entries.
+This function imports one or more masking files for use in repeat clustering, annotation, and visualization. The file may contain a single FASTA entry or multiple entries.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta -readmask
 
@@ -200,13 +200,13 @@ java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-C
 ```
 
 ## amask           
-Masking is performed using a Repeater2-based pairwise sequence alignment (https://github.com/rkalendar/Repeater).  
+Masking is executed through pairwise sequence alignment (https://github.com/rkalendar/Repeater).  
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -amask
 ```
 
 ## readgff             
-Specifying the GFF file/Folder to the software, which will then be used for visualisation. 
+This function imports one or more GFF files for direct visualization of annotated repeats.
 ```
 java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.fasta.gff -readgff
 
@@ -215,13 +215,13 @@ java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\ -readgff
 
 
 ## extract
-Split a single FASTA file into multiple FASTA files.
+This function divides a multi-entry FASTA file into separate files, producing one file per entry.
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\7\GCF_000002495.2_MG8_genomic.fna -extract
 ```
 
 ## maskscomp
-Compares masked files produced by different software tools or algorithms, enabling cross-tool benchmarking. 
+This function compares masked files produced by different software tools or algorithms, facilitating cross-tool benchmarking.
 ```
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Test\runfiles.txt -maskscomp
 ```
