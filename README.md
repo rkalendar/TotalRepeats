@@ -58,13 +58,13 @@ For very large genomes (>2 Gb): >128 GB RAM recommended.
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\Genomes\NC_014637.fasta  
 
 # Custom k-mer and string length
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\Genomes\ kmer=12 sln=30  
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\Genomes\ kmer=16 sln=30  
 
 # Extract repeats with 100-nt flanks
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\Genomes\NC_014637.fasta -seqshow -flanks=100  
 
 # Large human genome with image compression
-java -Xms16g -Xmx32g -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -imgx=2  
+java -Xms16g -Xmx32g -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -imgx=20  
 
 # Combine multiple chromosomes for synchronized classification
 java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine  
@@ -73,7 +73,7 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine
 ```
 java -Xms32g -Xmx128g -jar /data/user/dist/TotalRepeats.jar /data/genomes/Sarcophilus_harrisii/  
 
-java -Xms64g -Xmx256g -jar /data/user/dist/TotalRepeats.jar /data/genomes/Pleurodeles_waltl/ -imgx=2  
+java -Xms64g -Xmx256g -jar /data/user/dist/TotalRepeats.jar /data/genomes/Pleurodeles_waltl/ -imgx=20  
 ```
 
 **Java Memory Management Parameters**
@@ -95,9 +95,8 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 ## Common options
 | Command        | Description                                                               |
 | -------------- | ------------------------------------------------------------------------- |
-| `kmer=18`      | k-mer size (9–21; default = 19)                                           |
-| `sln=90`       | Minimum repeat block length (default = 60)                                |
-| `nsize=12`     | Clustering stringency (0 = off, 1 = fastest, >1 = accurate; default = 36) |
+| `kmer=18`      | k-mer size (9–21; default = 18)                                           |
+| `sln=90`       | Minimum repeat block length (default = 80)                                |
 | `image=W×H`    | Output image size (default = auto)                                        |
 | `imgx=5`       | Image width scaling (1 = compressed, 20 = stretched; default = 5)         |
 | `flanks=100`   | Extend repeats by N bases (default = 0)                                   |
@@ -113,7 +112,6 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | **-homology**    | This involves the comparative masking of homologous regions to emphasize unique sequences, effectively masking homologous regions between sequences to highlight distinct regions. Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
 | **combinemask**  | This function performs pangenome comparative analyses using multiple **masking files**, supporting synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms. |
 | **-amask**       | Masking is executed through pairwise sequence alignment. |
-| **-nsize=**      | Controls clustering sensitivity. <br> `0` = skip clustering, <br> `1` = fastest (overview), <br> `>1` = more accurate (default = 12).                                         |
 | **-extract**     | Split multi-entry FASTA into separate files                               |
 | **-maskscomp**   | This function compares masked files produced by different software tools or algorithms, facilitating cross-tool benchmarking.|
 | **-lib=path**    | Use external repeat libraries (e.g., Repbase, Dfam/FamDB, or a custom library) for annotation.                                                                                |
@@ -129,9 +127,6 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/Pyricularia_oryzae/ -homol
 # Benchmark different repeat-masking outputs
 java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/ -combinemask  
 
-# Fast genome overview (low-accuracy clustering)
-java -Xms32g -jar TotalRepeats.jar E:/Genomes/Sorghum_bicolor/ nsize=1  
-
 # Annotate repeats using Repbase/Dfam
 java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/T2T-CHM13v2.0/ -lib=humsub.ref  
 ```
@@ -139,7 +134,7 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/T2T-CHM13v2.0/ -lib=humsub
 ## kmer=
 This is the minimum value for repeat sequence masking (9-21). It can be as low as 9 for very short repeats, such as CRISPR repeats. However, a value of 19 is recommended for eukaryotic chromosomes. It is also possible to use values of 18 for short chromosomes.
 ```
-java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=18  
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ kmer=21  
 ```
 
 ## sln=
@@ -171,19 +166,11 @@ Comparative Homology Masking: This option performs a comparative analysis of hom
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -homology
 ```
 
-
 ## combinemask
 This function performs pangenome comparative analyses using multiple masking files, supporting synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms.
 ```
 java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Pyricularia_oryzae\ -combinemask
 ```
-
-## nsize=
-A rather important parameter for the classification of sequences. Value nsize=0 is used to ignore classification; nsize=1 - very fast clustering without determining the direction of sequences. Values 2 and higher (up to 230) are used for classification. The higher the value, the slower the algorithm will run, but the sequences will be effectively classified. The maximum value (nsize=230) can only be used when absolute stringency in classification is required. Absolute classification of sequences in practice, for certain sequences, is not reachable. Therefore, already with the parameter nsize=36, the maximum in the classification of sequences will already be reached. Therefore, the default values are 12 to 36, which in reality is ideal in terms of efficiency and speed. It is recommended to use the parameter nsize=1, for maximal fast analysis of both small and large genomes and in comparative analysis (with parameter: -combine), when it is necessary to get the overall structure of repeats in genomes as quickly as possible: 
-```
-java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sorghum_bicolor\ nsize=1
-```
-In the TotalRepeats online version (https://primerdigital.com/tools/repeats.html), the default setting is to classify sequences with a parameter (nsize=1).
 
 ## imgx=
 The resulting image can be stretched in width if more detailed analysis is required (default imgx=5). This value determines the width of the image, the higher the value, the longer the width. The minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the most stretched image width. Two files with the *.png and *.svg extensions are used to save graphic results.
@@ -212,7 +199,6 @@ java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\NC_134482.1.f
 
 java -jar -Xms16g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\ -readgff
 ```
-
 
 ## extract
 This function divides a multi-entry FASTA file into separate files, producing one file per entry.
