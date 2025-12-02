@@ -128,7 +128,7 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/Pyricularia_oryzae/ -homol
 java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/ -combinemask  
 
 # Annotate repeats using Repbase/Dfam
-java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/T2T-CHM13v2.0/ -lib=humsub.ref  
+java -Xms16g -Xmx32g -jar TotalRepeats.jar E:/Genomes/T2T-CHM13v2.0/ -lib=E:/Lib/humsub.ref  
 ```
 
 ## kmer=
