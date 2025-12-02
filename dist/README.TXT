@@ -28,4 +28,4 @@ java -jar TotalRepeats.jar <inputfile/folder> -combine
 
 Additionally, repetitive sequences can be annotated using a user-defined reference database. Users may import established repositories such as GIRI (https://www.girinst.org/) or construct custom databases tailored to specific research needs. To enable reference-based annotation, the -lib=<file_path> flag should be specified: 
 
-java -jar TotalRepeats.jar <inputfile/folder> -lib=humsub.ref
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -lib=C:\TotalRepeats\test\humsub.ref
