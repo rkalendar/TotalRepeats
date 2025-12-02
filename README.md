@@ -3,7 +3,7 @@
 
 ## Overview
 
-TotalRepeats is a universal, *de novo* tool for genome-wide identification, classification, visualization, and comparison of repetitive DNA elements.
+TotalRepeats is a universal, *de novo* tool for genome-wide identification, classification, annotation, visualization, and comparison of repetitive DNA elements.
 It efficiently detects a wide spectrum of repeats, including: mobile genetic elements (transposons, retrotransposons), tandem arrays (microsatellites, minisatellites, telomers, satellite DNA),
 Large-scale structural variations (duplications, rearrangements). 
 Unlike conventional tools, TotalRepeats does not require prior sequence knowledge. 
@@ -67,13 +67,20 @@ java -jar C:\TotalRepeats\dist\TotalRepeats.jar C:\Genomes\NC_014637.fasta -seqs
 java -Xms16g -Xmx32g -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -imgx=20  
 
 # Combine multiple chromosomes for synchronized classification
-java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine  
+java -jar C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Shigella\ -combine
+
+# This is the complete process, including de novo identification, classification and visualisation of repeats, and annotation according to the user file specified in '-lib='
+java -jar -Xms16g -Xmx32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -lib=C:\TotalRepeats\test\humsub.ref
 ```
 ### Linux
 ```
 java -Xms32g -Xmx128g -jar /data/user/dist/TotalRepeats.jar /data/genomes/Sarcophilus_harrisii/  
 
-java -Xms64g -Xmx256g -jar /data/user/dist/TotalRepeats.jar /data/genomes/Pleurodeles_waltl/ -imgx=20  
+java -Xms64g -Xmx256g -jar /data/user/dist/TotalRepeats.jar /data/genomes/Pleurodeles_waltl/ -imgx=20
+
+java -jar -Xms16g -Xmx32g /data/user/dist/TotalRepeats.jar /data/genomes/Shigella/ -combine
+
+java -jar -Xms16g -Xmx32g /data/user/dist/TotalRepeats.jar /data/genomes/T2T-CHM13v2.0/ -lib=/data/user/test/humsub.ref
 ```
 
 **Java Memory Management Parameters**
