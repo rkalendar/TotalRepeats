@@ -26,6 +26,6 @@ The comparative analysis mode, activated via the -combine flag, is specifically 
 
 java -jar TotalRepeats.jar <inputfile/folder> -combine 
 
-Additionally, repetitive sequences can be annotated using a user-defined reference database. Users may import established repositories such as GIRI (https://www.girinst.org/) or construct custom databases tailored to specific research needs. To enable reference-based annotation, the -ref=<file_path> flag should be specified: 
+Additionally, repetitive sequences can be annotated using a user-defined reference database. Users may import established repositories such as GIRI (https://www.girinst.org/) or construct custom databases tailored to specific research needs. To enable reference-based annotation, the -lib=<file_path> flag should be specified: 
 
-java -jar TotalRepeats.jar <inputfile/folder> -ref=humsub.ref
+java -jar TotalRepeats.jar <inputfile/folder> -lib=humsub.ref
