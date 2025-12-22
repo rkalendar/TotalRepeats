@@ -114,7 +114,7 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 ## Common options
 | Command        | Description                                                               |
 | -------------- | ------------------------------------------------------------------------- |
-| `kmer=18`      | k-mer size (9–21; default = 18)                                           |
+| `kmer=18`      | k-mer size (9–21; default = 19)                                           |
 | `sln=90`       | Minimum repeat block length (default = 80)                                |
 | `image=W×H`    | Output image size (default = auto)                                        |
 | `imgx=5`       | Image width scaling (1 = compressed, 20 = stretched; default = 5)         |
@@ -128,10 +128,11 @@ java -Xms32g -Xmx128g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\Sarcophil
 | Option           | Purpose                                                                                                                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **-combine**     | This function conducts pangenome comparative analyses utilizing multiple files for analysis, classification of repeats, and synchronized visualization. Useful for detecting repeat polymorphisms across species or assemblies. |
-| **-homology**    | This involves the comparative masking of homologous regions to emphasize unique sequences, effectively masking homologous regions between sequences to highlight distinct regions. Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y).                            |
+| **-homology**    | This involves the comparative masking of homologous regions to emphasize unique sequences, effectively masking homologous regions between sequences to highlight distinct regions. Masks homologous regions between sequences to highlight **unique regions**. Ideal for comparing closely related chromosomes (e.g., human X vs. Y). |
 | **combinemask**  | This function performs pangenome comparative analyses using multiple **masking files**, supporting synchronized repeat clustering, annotation, visualization, and cross-tool benchmarking by comparing outputs from different assemblies or algorithms. |
-| **-amask**       | Masking is executed through pairwise sequence alignment. |
-| **-extract**     | Split multi-entry FASTA into separate files                               |
+| **-quick**       | (Multithreading clustering) Using fully multithreading significantly accelerates the classification of sequences into individual clusters.|
+| **-amask**       | Masking is executed through pairwise sequence alignment.|
+| **-extract**     | Split multi-entry FASTA into separate files.|
 | **-maskscomp**   | This function compares masked files produced by different software tools or algorithms, facilitating cross-tool benchmarking.|
 | **-lib=path**    | Use external repeat libraries (e.g., Repbase, Dfam/FamDB, or a custom library) for annotation.                                                                                |
 
