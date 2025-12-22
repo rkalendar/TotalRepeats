@@ -38,19 +38,15 @@ To install a specific version of OpenJDK using Conda, you need to specify the ve
 
 ```conda config --set channel_priority strict```
 
-2. Create a new Conda environment (recommended). Creating a dedicated environment helps manage dependencies and avoid conflicts with other projects:
+2. Create a new Conda environment and install the desired OpenJDK version. Creating a dedicated environment helps manage dependencies and avoid conflicts with other projects:
 
-```conda create -n java25```
+```conda create -n java25 openjdk=25```
 
 3. Activate the new environment:
 
 ```conda activate java25```
 
-4. Install the desired OpenJDK version: Specify the version number in the installation command:
-
-```conda install openjdk=25```
-
-5. Check if you have Java installed. The output should display information for the installed Java version:
+4. Check if you have Java installed. The output should display information for the installed Java version:
 
 ```java -version```
 
