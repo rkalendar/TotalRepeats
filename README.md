@@ -33,26 +33,27 @@ How do I set or change the Java path system variable: https://www.java.com/en/do
 ## Installing Java using Conda
 To install a specific version of OpenJDK using Conda, you need to specify the version number in your installation command and use the conda-forge channel. 
 The latest version is available on the conda-forge channel:
-1. Verify the installation. The output should display information for the installed Java version:
-
-```java -version```
-
-2. Add the conda-forge channel (if not already added): It is recommended to add the conda-forge channel to your configuration and set its priority to strict to ensure packages are preferentially installed from this channel:
+1. Add the conda-forge channel (if not already added): It is recommended to add the conda-forge channel to your configuration and set its priority to strict to ensure packages are preferentially installed from this channel:
    
 ```conda config --add channels conda-forge```
 
 ```conda config --set channel_priority strict```
 
-4. Create a new Conda environment (recommended): Creating a dedicated environment helps manage dependencies and avoid conflicts with other projects.
+2. Create a new Conda environment (recommended). Creating a dedicated environment helps manage dependencies and avoid conflicts with other projects:
+
 ```conda create -n java25```
 
-6. Activate the new environment:
+3. Activate the new environment:
 
 ```conda activate java25```
 
-8. Install the desired OpenJDK version: Specify the version number in the installation command:
+4. Install the desired OpenJDK version: Specify the version number in the installation command:
 
 ```conda install openjdk=25```
+
+5. Check if you have Java installed. The output should display information for the installed Java version:
+
+```java -version```
 
 ## Running TotalRepeats
 
