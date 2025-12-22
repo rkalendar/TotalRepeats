@@ -31,9 +31,8 @@ Java Downloads: https://www.oracle.com/java/technologies/downloads/
 How do I set or change the Java path system variable: https://www.java.com/en/download/help/path.html
 
 ## Installing Java using Conda
-To install a specific version of OpenJDK using Conda, you need to specify the version number in your installation command and use the conda-forge channel. 
-The latest version is available on the conda-forge channel:
-1. Add the conda-forge channel (if not already added): It is recommended to add the conda-forge channel to your configuration and set its priority to strict to ensure packages are preferentially installed from this channel:
+To install a specific version of OpenJDK using Conda, you need to specify the version number in your installation command and use the conda-forge channel. The latest version is available on the conda-forge channel.
+1. Add the conda-forge channel (if not already added). It is recommended to add the conda-forge channel to your configuration and set its priority to strict to ensure packages are preferentially installed from this channel:
    
 ```conda config --add channels conda-forge```
 
