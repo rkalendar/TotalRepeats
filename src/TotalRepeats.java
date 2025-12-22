@@ -22,7 +22,7 @@ public class TotalRepeats {
             int gap = kmer + kmer;
             int width = 0;
             int hight = 0;
-            int imaged = 10;           // 1...20
+            int imaged = 10;           // 1...30
             int flanksshow = 0;
             int combine = 0;          // Two or more files analysed simultaneously.
             boolean amask = false;    // masking is performed by Pairwise Sequence Alignment: Repeater2 based 
@@ -61,7 +61,7 @@ public class TotalRepeats {
             if (s.contains("-nossr")) {
                 ssrdetect = false;
             }
-            if (s.contains("-quick")) {
+            if (s.contains("-quick")) {// (Multithreading clustering) Using fully multithreading significantly accelerates the classification of sequences into individual clusters.
                 fastclustering = true;
             }
             if (s.contains("extunique")) { // -seqlen>100
@@ -106,8 +106,8 @@ public class TotalRepeats {
                     if (imaged < 5) {
                         imaged = 5;
                     }
-                    if (imaged > 20) {
-                        imaged = 20;
+                    if (imaged > 30) {
+                        imaged = 30;
                     }
                 }
             }
