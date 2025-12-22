@@ -25,12 +25,27 @@ https://primerdigital.com/tools/repeats.html
 
 Operating system(s): Cross-platform (Windows, Linux, macOS)
 
-Programming language: Java 24 or higher
+Programming language: Java 25 or higher
 
 Java Downloads: https://www.oracle.com/java/technologies/downloads/
 
 How do I set or change the Java path system variable: https://www.java.com/en/download/help/path.html
 
+## Installation a Java 25, using Conda
+To install a specific version of OpenJDK, such as Java 25, using Conda, you need to use the conda-forge channel and specify the version number in your installation command. The latest version (25.0.1) is available on the conda-forge channel.
+1. Verify the installation (The output should display information for the installed Java 25 version):
+```java -version```
+2. Add the conda-forge channel (if not already added): It is recommended to add the conda-forge channel to your configuration and set its priority to strict to ensure packages are preferentially installed from this channel.
+```conda config --add channels conda-forge```
+```conda config --set channel_priority strict```
+3. Create a new Conda environment (recommended): Creating a dedicated environment helps manage dependencies and avoid conflicts with other projects.
+```conda create -n java25```
+4. Activate the new environment:
+conda activate java25_env
+5. Install the desired OpenJDK version: Specify the version number in the installation command.
+```conda install openjdk=25```
+6. Using conda: 
+```conda activate java25```
 
 ## Running TotalRepeats
 
