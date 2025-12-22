@@ -6,7 +6,6 @@
 TotalRepeats is a universal, *de novo* tool for genome-wide identification, classification, annotation, visualization, and comparison of repetitive DNA elements.
 It efficiently detects a wide spectrum of repeats, including: mobile genetic elements (transposons, retrotransposons), tandem arrays (microsatellites, minisatellites, telomers, satellite DNA),
 Large-scale structural variations (duplications, rearrangements). 
-Unlike conventional tools, TotalRepeats does not require prior sequence knowledge. 
 It supports:
 Rapid identification and classification of repeats;
 Comparative analysis across multiple genomes or assemblies;
