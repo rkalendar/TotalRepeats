@@ -31,17 +31,27 @@ Java Downloads: https://www.oracle.com/java/technologies/downloads/
 How do I set or change the Java path system variable: https://www.java.com/en/download/help/path.html
 
 ## Installing Java using Conda
-To install a specific version of OpenJDK using Conda, you need to specify the version number in your installation command and use the conda-forge channel. The latest version is available on the conda-forge channel.
-1. Verify the installation. The output should display information for the installed Java version.
+To install a specific version of OpenJDK using Conda, you need to specify the version number in your installation command and use the conda-forge channel. 
+The latest version is available on the conda-forge channel:
+1. Verify the installation. The output should display information for the installed Java version:
+
 ```java -version```
-2. Add the conda-forge channel (if not already added): It is recommended to add the conda-forge channel to your configuration and set its priority to strict to ensure packages are preferentially installed from this channel.
+
+2. Add the conda-forge channel (if not already added): It is recommended to add the conda-forge channel to your configuration and set its priority to strict to ensure packages are preferentially installed from this channel:
+   
 ```conda config --add channels conda-forge```
+
 ```conda config --set channel_priority strict```
-3. Create a new Conda environment (recommended): Creating a dedicated environment helps manage dependencies and avoid conflicts with other projects.
+
+4. Create a new Conda environment (recommended): Creating a dedicated environment helps manage dependencies and avoid conflicts with other projects.
 ```conda create -n java25```
-4. Activate the new environment:
+
+6. Activate the new environment:
+
 ```conda activate java25```
-5. Install the desired OpenJDK version: Specify the version number in the installation command.
+
+8. Install the desired OpenJDK version: Specify the version number in the installation command:
+
 ```conda install openjdk=25```
 
 ## Running TotalRepeats
