@@ -41,8 +41,9 @@ TotalRepeats is a universal, *de novo* tool for genome-wide identification, clas
 - **Mobile genetic elements** — transposons, retrotransposons (LINEs, SINEs, LTR elements, DNA transposons)
 - **Tandem arrays** — microsatellites (SSRs), minisatellites, telomeric repeats, centromeric satellite DNA
 - **Genes duplication** — genes duplication, rearrangement and copy-number variants
-- **Large-scale structural variations** — segmental duplications, rearrangements, copy-number variants
-
+- **Large-scale structural variations** — segmental duplications, rearrangements
+- **Unique sequence identification** — Detection of sequences that occur only once across the entire genome and within individual chromosomes
+ 
 The tool is particularly well-suited for comparative genomics, evolutionary biology, structural variation studies, and bioinformatics research. Masking, clustering, and annotation are fully **multithreaded**, scaling efficiently from personal laptops to HPC/supercomputing clusters.
 
 ---
