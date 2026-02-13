@@ -64,22 +64,22 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│                       TotalRepeats Pipeline                            │
+│                       TotalRepeats Pipeline                             │
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  1. INPUT                    2. MASKING                                  │
 │  ┌────────────────┐          ┌─────────────────────────────┐             │
 │  │ FASTA files     │────────▶│ K-mer decomposition         │             │
 │  │ (single or dir) │         │ Identify repeated k-mers    │             │
-│  └────────────────┘          │ Merge overlapping regions    │             │
+│  └────────────────┘          │ Merge overlapping regions   │             │
 │                              └─────────────┬───────────────┘             │
 │                                            │                             │
 │  3. CLUSTERING                             ▼                             │
 │  ┌──────────────────────────────────────────────────────────┐            │
 │  │ • Group repeat copies into families by sequence identity │            │
-│  │ • Classify: tandem (STR), unclassified (UCRP),          │            │
+│  │ • Classify: tandem (STR), unclassified (UCRP),           │            │
 │  │   classified (CRP) via external library                  │            │
-│  │ • Multithreaded pairwise comparison                      │            │
+│  │ • Multithreaded k-mer vector comparison                  │            │
 │  └─────────────────────────┬────────────────────────────────┘            │
 │                            │                                             │
 │  4. ANNOTATION             ▼               5. OUTPUT                     │
