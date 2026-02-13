@@ -191,7 +191,7 @@ java [JVM flags] -jar TotalRepeats.jar <input_file_or_directory> [options]
 
 When working with large genomes, allocate additional heap memory using JVM flags:
 
-| Genome Size | Recommended RAM | JVM Flags |
+| Chromosome Size | Recommended RAM | JVM Flags |
 |---|---|---|
 | < 100 MB | Default | None needed |
 | 100–500 MB | 16–32 GB | `-Xms8g -Xmx16g` |
