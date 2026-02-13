@@ -40,6 +40,7 @@ TotalRepeats is a universal, *de novo* tool for genome-wide identification, clas
 
 - **Mobile genetic elements** — transposons, retrotransposons (LINEs, SINEs, LTR elements, DNA transposons)
 - **Tandem arrays** — microsatellites (SSRs), minisatellites, telomeric repeats, centromeric satellite DNA
+- **Genes duplication** — genes duplication, rearrangement and copy-number variants
 - **Large-scale structural variations** — segmental duplications, rearrangements, copy-number variants
 
 The tool is particularly well-suited for comparative genomics, evolutionary biology, structural variation studies, and bioinformatics research. Masking, clustering, and annotation are fully **multithreaded**, scaling efficiently from personal laptops to HPC/supercomputing clusters.
@@ -69,7 +70,7 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 │                                                                          │
 │  1. INPUT                    2. MASKING                                  │
 │  ┌────────────────┐          ┌─────────────────────────────┐             │
-│  │ FASTA files     │────────▶│ K-mer decomposition         │             │
+│  │ FASTA files     │────────▶│ K-mer decomposition        │             │
 │  │ (single or dir) │         │ Identify repeated k-mers    │             │
 │  └────────────────┘          │ Merge overlapping regions   │             │
 │                              └─────────────┬───────────────┘             │
@@ -84,7 +85,7 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 │                            │                                             │
 │  4. ANNOTATION             ▼               5. OUTPUT                     │
 │  ┌──────────────────────────┐    ┌──────────────────────────┐            │
-│  │ Match clusters against   │───▶│ GFF3 annotations         │            │
+│  │ Match clusters against   │───▶│ GFF3 annotations        │            │
 │  │ Repbase / Dfam / custom  │    │ Masked FASTA             │            │
 │  │ library (optional)       │    │ PNG / SVG visualizations │            │
 │  └──────────────────────────┘    │ Summary statistics       │            │
