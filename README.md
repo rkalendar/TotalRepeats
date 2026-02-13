@@ -5,7 +5,7 @@
 [![Java](https://img.shields.io/badge/Java-25+-orange.svg?logo=openjdk)](https://www.oracle.com/java/technologies/downloads/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue.svg)]()
 [![Online Tool](https://img.shields.io/badge/Try%20Online-TotalRepeats-green.svg)](https://primerdigital.com/tools/repeats.html)
-[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)](LICENSE.txt)
+[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)]
 
 ---
 
