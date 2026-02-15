@@ -242,7 +242,7 @@ Sets the k-mer length for repeat masking (range: 9–21). Shorter k-mers detect 
 
 | K-mer Range | Best For | Examples |
 |---|---|---|
-| 9–12 | Very short repeats | CRISPR spacers, microsatellites |
+| 9–12 | Very short repeats | CRISPR spacers |
 | 13–17 | Small chromosomes, organellar genomes | Mitochondria, plastids, bacteria |
 | 18–21 | Eukaryotic chromosomes (recommended) | Human, plant, fungal genomes |
 
@@ -256,7 +256,7 @@ Sets the minimum length (bp) for a repeat region to be included in the output. S
 
 | Value | Effect |
 |---|---|
-| 30–60 | Captures very short repeats (microsatellites, MITE elements) |
+| 20–60 | Captures very short repeats (CRISPR spacers, MITE elements) |
 | 60–80 | Good balance for most analyses (default) |
 | 100+ | Filters out short elements; focuses on longer repeats |
 
