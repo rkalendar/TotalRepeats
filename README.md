@@ -506,14 +506,14 @@ java -Xms32g -Xmx128g -jar TotalRepeats.jar genome.fasta
 
 - **Check k-mer size:** For small genomes or short repeats, reduce `kmer` (e.g., `kmer=12`).
 - **Lower minimum length:** Reduce `sln` (e.g., `sln=30`) to capture shorter elements.
-- **Verify input:** Ensure the FASTA file contains valid nucleotide sequence, not protein or empty records.
+- **Verify input:** Ensure the FASTA file contains valid nucleotide sequence.
 
 ### Output images are too small or too compressed
 
 Increase the image scaling factor:
 
 ```bash
-java -jar TotalRepeats.jar genome.fasta imgx=15
+java -jar TotalRepeats.jar genome.fasta imgx=30
 ```
 
 Or specify exact dimensions:
