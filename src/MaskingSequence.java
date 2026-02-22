@@ -245,14 +245,4 @@ public class MaskingSequence {
         }
         return r;
     }
-
-    /**
-     * Rolling 2-bit hash instead of encodeKmerLong rescanning all k bases each
-     * window. Each step is now O(1) instead of O(k), which is a significant win
-     * for larger k values. The encoding uses 2 bits per base (A=0, C=1, G=2,
-     * T=3) fitting up to k=32 in a long. 
-      private static long encodeKmer2(byte[] bases, int start, int kmerSize) {
-      long code = 0L; for (int i = start; i < start + kmerSize; i++) { code =
-      (code << 2) | bases[i]; } return code; }
-     */
 }
