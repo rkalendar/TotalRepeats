@@ -2,69 +2,84 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Single-sequence repeat masker using k-mer frequency analysis. Counts k-mers
- * on both strands of a single sequence, retains those observed ≥ 2 times, then
- * masks regions covered by repeated k-mers.
+ * Single-threaded repeat masker using k-mer frequency analysis.
  */
-public class MaskingSequence {
+public class MaskingSequences {
 
-    private long gapsLen = 0;
-    private long repeatsLen = 0;
+    private long[] repeatsLen;
+    private long[] gapsLen;
     private final int MIN_COUNT = 2;
 
     // ── Public API ──────────────────────────────────────────────────────────
     /**
-     * Mask repeat regions in a single sequence.
+     * Mask repeat regions in the given sequences.
      *
-     * @param seq DNA sequence
+     * @param seq array of DNA sequences
      * @param ssrmsk per-base SSR mask (0 = not masked)
      * @param kmer k-mer length
      * @param minLenSeq minimum repeat block length to report
-     * @return flat array of [start₀, len₀, start₁, len₁, …]
+     * @param sens sensitivity flag (adjusts coverage threshold)
+     * @return list of int[] per sequence; each array is [start₀, len₀, start₁,
+     * len₁, …]
      */
-    public int[] mask(String seq, byte[] ssrmsk, int kmer, int minLenSeq) {
-        final boolean sens = true;
+    public ArrayList<int[]> mask(String[] seq, byte[][] ssrmsk, int kmer, int minLenSeq, boolean sens) {
+        final int ns = seq.length;
         final int top = sens ? (kmer / 2 - 1) : (kmer - 1);
 
-        // Normalise once, reuse for both phases
-        final byte[] fwd = normalise(seq);
-        final byte[] rev = normalise(dna.ComplementDNA(seq));
+        repeatsLen = new long[ns];
+        gapsLen = new long[ns];
 
-        // Count gaps
-        gapsLen = 0;
-        for (byte b : fwd) {
-            if (b == 4) {
-                gapsLen++;
-            }
+        // Pre-normalise all sequences (forward + reverse complement)
+        byte[][] fwd = new byte[ns][];
+        byte[][] rev = new byte[ns][];
+
+        // ── Phase 1: k-mer counting ────────────────────────────────────────
+        LongIntHashMap map = new LongIntHashMap();
+        for (int k = 0; k < ns; k++) {
+            fwd[k] = normalise(seq[k]);
+            rev[k] = normalise(dna.ComplementDNA(seq[k]));
+            countKmers(map, k, fwd[k], rev[k], kmer);
         }
 
-        // Phase 1: count k-mers → LongIntHashMap directly
-        LongIntHashMap kmerMap = countKmers(fwd, rev, kmer);
+        // ── Phase 2: masking — map передаётся напрямую, без промежуточного Set
+        ArrayList<int[]> results = new ArrayList<>(ns);
+        for (int k = 0; k < ns; k++) {
+            int[] coverage = computeCoverage(map, fwd[k], rev[k], kmer, ssrmsk[k]);
+            int[] result = buildBlocks(coverage, kmer, minLenSeq, top, k);
+            results.add(result);
+        }
 
-        // Phase 2: compute per-base coverage
-        // Filtering by MIN_COUNT — inside markStrand through get() >= MIN_COUNT
-        int[] coverage = computeCoverage(kmerMap, fwd, rev, kmer, ssrmsk);
-
-        // Phase 3: build blocks and filter
-        return buildBlocks(coverage, kmer, minLenSeq, top);
+        return results;
     }
 
-    public long gapsLength() {
+    public long[] gapsLength() {
         return gapsLen;
     }
 
-    public long repeatLength() {
+    public long[] repeatLength() {
         return repeatsLen;
     }
 
     // ── Phase 1: k-mer counting ─────────────────────────────────────────────
-    private LongIntHashMap countKmers(byte[] fwd, byte[] rev, int kmer) {
-        LongIntHashMap map = new LongIntHashMap();
+    private void countKmers(LongIntHashMap map, int seqIdx, byte[] fwd, byte[] rev, int kmer) {
+        // Count gaps
+        long gaps = 0L;
+        for (byte b : fwd) {
+            if (b == 4) {
+                gaps++;
+            }
+        }
+        gapsLen[seqIdx] = gaps;
+
+        // Count k-mers on both strands
         countStrand(map, fwd, kmer);
         countStrand(map, rev, kmer);
-        return map;
     }
 
+    /**
+     * Slide a k-mer window over one strand, incrementing counts for k-mers that
+     * contain no gaps (base value 4). Counts are capped at MIN_COUNT.
+     */
     private void countStrand(LongIntHashMap map, byte[] bases, int kmer) {
         final int len = bases.length;
         int gapCount = 0;
@@ -96,7 +111,10 @@ public class MaskingSequence {
         }
     }
 
-    // ── Phase 2: coverage ───────────────────────────────────────────────────
+    // ── Phase 2: coverage & masking ─────────────────────────────────────────
+    /**
+     * LongIntHashMap: get(code) >= MIN_COUNT 
+     */
     private int[] computeCoverage(LongIntHashMap kmerMap, byte[] fwd, byte[] rev, int kmer, byte[] ssrmsk) {
         final int len = fwd.length;
         final int[] coverage = new int[len];
@@ -125,7 +143,6 @@ public class MaskingSequence {
 
             if (gapCount == 0) {
                 long code = encodeKmer(bases, start, kmer);
-
                 if (kmerMap.get(code) >= MIN_COUNT) {
                     for (int j = start; j <= i; j++) {
                         if (ssrmsk[j] == 0) {
@@ -159,6 +176,7 @@ public class MaskingSequence {
             if (gapCount == 0) {
                 long code = encodeKmer(bases, start, kmer);
                 if (kmerMap.get(code) >= MIN_COUNT) {
+                    // Map reverse-complement window → forward-strand coordinates
                     int fwdStart = len - start - kmer;
                     int fwdEnd = len - start;
                     for (int j = fwdStart; j < fwdEnd; j++) {
@@ -175,8 +193,8 @@ public class MaskingSequence {
         }
     }
 
-    // ── Phase 3: block building ─────────────────────────────────────────────
-    private int[] buildBlocks(int[] coverage, int kmer, int minLenSeq, int top) {
+    // ── Block building ──────────────────────────────────────────────────────
+    private int[] buildBlocks(int[] coverage, int kmer, int minLenSeq, int top, int seqIdx) {
         final int n = coverage.length;
         List<int[]> blocks = new ArrayList<>();
         int i = 0;
@@ -216,7 +234,7 @@ public class MaskingSequence {
                 totalLen += length;
             }
         }
-        repeatsLen = totalLen;
+        repeatsLen[seqIdx] = totalLen;
 
         int[] result = new int[filtered.size() * 2];
         int p = 0;
@@ -227,6 +245,7 @@ public class MaskingSequence {
         return result;
     }
 
+    // ── Utilities ───────────────────────────────────────────────────────────
     private static byte[] normalise(String seq) {
         byte[] raw = seq.getBytes();
         for (int i = 0; i < raw.length; i++) {
@@ -235,15 +254,11 @@ public class MaskingSequence {
         return raw;
     }
 
-    private long encodeKmer(byte[] b, int start, int kmerSize) {
-        // Maximum value: -9,223,372,036,854,775,808 and 9,223,372,036,854,775,807 (which is 2^63 - 1)
-        // kmer<=19 only positive hashcode
-        // kmer>19 some hashcodes shifted to negative one
-        long r = 0L;
+    private static long encodeKmer(byte[] bases, int start, int kmerSize) {
+        long code = 0L;
         for (int i = start; i < start + kmerSize; i++) {
-            r = r * 10 + b[i];           
+            code = code * 10 + bases[i];
         }
-        return r;
+        return code;
     }
-
 }
