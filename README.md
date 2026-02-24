@@ -230,6 +230,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `-readgff` | Import GFF annotation files for direct visualization |
 | `-extract` | Split a multi-entry FASTA into individual files (one per sequence) |
 | `-maskscomp` | Compare masked outputs from different tools or pipelines |
+| `-out=<path>` | Path to output folder (default: current folder) |
 | `-lib=PATH` | Annotate repeats with an external library (Repbase, Dfam, or custom FASTA) |
 
 ---
