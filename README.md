@@ -194,9 +194,9 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | Chromosome Size | Recommended RAM | JVM Flags |
 |---|---|---|
 | < 100 MB | Default | None needed |
-| 100–500 MB | 16–32 GB | `-Xms8g -Xmx16g` |
+| 100–500 MB | 16 GB | `-Xms8g -Xmx16g` |
 | 500 MB – 2 GB | 32 GB | `-Xms16g -Xmx32g` |
-| > 2 GB | 128+ GB | `-Xms32g -Xmx64g` |
+| > 2 GB | 64+ GB | `-Xms32g -Xmx64g` |
 
 **What the flags mean:**
 
