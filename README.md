@@ -71,8 +71,8 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 │                                                                          │
 │  1. INPUT                    2. MASKING                                  │
 │  ┌────────────────┐          ┌─────────────────────────────┐             │
-│  │ FASTA files     │────────▶│ K-mer decomposition        │             │
-│  │ (single or dir) │         │ Identify repeated k-mers    │             │
+│  │ FASTA files    │────────▶│ K-mer decomposition         │             │
+│  │ (single or dir)│          │ Identify repeated k-mers    │             │
 │  └────────────────┘          │ Merge overlapping regions   │             │
 │                              └─────────────┬───────────────┘             │
 │                                            │                             │
@@ -196,7 +196,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | < 100 MB | Default | None needed |
 | 100–500 MB | 16–32 GB | `-Xms8g -Xmx16g` |
 | 500 MB – 2 GB | 64 GB | `-Xms32g -Xmx64g` |
-| > 2 GB | 128+ GB | `-Xms64g -Xmx128g` |
+| > 2 GB | 128+ GB | `-Xms32g -Xmx64g` |
 
 **What the flags mean:**
 
