@@ -306,7 +306,7 @@ public class TotalRepeats {
 
     private static void printHelp() {
         String jar = "java -jar /path/to/TotalRepeats.jar";
-        String jarMem = "java -jar -Xms16g -Xmx64g /path/to/TotalRepeats.jar";
+        String jarMem = "java -jar -Xms16g -Xmx32g /path/to/TotalRepeats.jar";
 
         String[] lines = {
             "TotalRepeats (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi)",
@@ -316,14 +316,14 @@ public class TotalRepeats {
             "  " + jar + " <input_file_or_folder> [options]",
             "",
             "CORE OPTIONS:",
-            "  -kmer=<9-21>         K-mer size for repeat detection (default: 18)",
+            "  -kmer=<9-21>         K-mer size for repeat detection (default: 19)",
             "  -sln=<int>           Minimum repeat block length in bp (default: 80; can equal kmer)",
             "  -flangs=<int>        Extend repeat flanks by N nucleotides (default: 0)",
             "",
             "IMAGE OPTIONS:",
             "  -image=<WxH>         Output image dimensions, e.g. -image=10000x300",
             "                       (default: auto-determined)",
-            "  -imgx=<1-20>         Figure width compression; 1 = max compression, 20 = longest figure",
+            "  -imgx=<1-30>         Figure width compression; 1 = max compression, 20 = longest figure",
             "",
             "ANALYSIS MODES:",
             "  -maskonly            Generate repeat mask file only; skip classification, annotation,",
@@ -357,15 +357,15 @@ public class TotalRepeats {
             "  " + jarMem + " <input> -kmer=18 -sln=100 -seqshow -flangs=100",
             "",
             "  # Directory input with a reference file:",
-            "  " + jarMem + " /data/genomes/T2T-CHM13v2.0/ -ref=/data/test/humsub.ref",
+            "  " + jarMem + " /data/genomes/T2T-CHM13v2.0/ -ref=/data/test/humsub.ref -out=/data/report/",
             "",
-            "  # Large chromosome (>2 GB) — allocate up to 256 GB RAM:",
-            "  java -jar -Xms64g -Xmx256g /path/to/TotalRepeats.jar /data/genomes/Viscum_album/",
+            "  # Large chromosome (>2 GB) — allocate up to 64 GB RAM:",
+            "  java -jar -Xms16g -Xmx64g /path/to/TotalRepeats.jar /data/genomes/Viscum_album/ -out=/data/report/",
             "",
             "  # Analyse all FASTA files in a directory:",
-            "  java -jar -Xms64g -Xmx128g /path/to/TotalRepeats.jar /data/genomes/Aegilops_tauschii/",
+            "  java -jar -Xms16g -Xmx32g /path/to/TotalRepeats.jar /data/genomes/Aegilops_tauschii/",
             "",
-            "NOTE: For sequences larger than 2 GB, increase heap memory with -Xmx (e.g. -Xmx256g).",};
+            "NOTE: For sequences larger than 2 GB, increase heap memory with -Xmx (e.g. -Xmx64g).",};
 
         for (String line : lines) {
             System.out.println(line);
