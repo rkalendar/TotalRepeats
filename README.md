@@ -447,14 +447,14 @@ java -jar TotalRepeats.jar /data/genomes/NC_014637.fasta -seqshow flanks=100
 
 ```bash
 # Human T2T genome with Repbase annotation
-java -Xms32g -Xmx128g -jar TotalRepeats.jar /data/genomes/T2T-CHM13v2.0/ \
+java -Xms16g -Xmx32g -jar TotalRepeats.jar /data/genomes/T2T-CHM13v2.0/ \
     -lib=/data/libraries/humsub.ref
 
 # Tasmanian devil genome
-java -Xms32g -Xmx128g -jar TotalRepeats.jar /data/genomes/Sarcophilus_harrisii/
+java -Xms16g -Xmx64g -jar TotalRepeats.jar /data/genomes/Sarcophilus_harrisii/
 
 # Very large genome (Iberian ribbed newt, ~20 Gb) — stretched image output
-java -Xms64g -Xmx256g -jar TotalRepeats.jar /data/genomes/Pleurodeles_waltl/ imgx=20
+java -Xms16g -Xmx64g -jar TotalRepeats.jar /data/genomes/Pleurodeles_waltl/ imgx=20
 ```
 
 ### Comparative Genomics
@@ -498,7 +498,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 Increase heap allocation according to the [Memory Configuration](#memory-configuration) table:
 
 ```bash
-java -Xms32g -Xmx128g -jar TotalRepeats.jar genome.fasta
+java -Xms16g -Xmx64g -jar TotalRepeats.jar genome.fasta
 ```
 
 > **Tip:** If your machine has limited RAM, try `-maskonly` to skip clustering — the masking step uses significantly less memory.
@@ -528,7 +528,7 @@ java -jar TotalRepeats.jar genome.fasta image=4000x2000
 Enable multithreaded clustering:
 
 ```bash
-java -Xms32g -Xmx64g -jar TotalRepeats.jar genome.fasta -quick
+java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta -quick
 ```
 
 ---
@@ -565,12 +565,6 @@ It enables multithreaded pairwise comparison during the clustering step. This si
 
 🌐 **Online version:** <https://primerdigital.com/tools/repeats.html>
 
----
-
-## Citation
-
-If you use TotalRepeats in your research, please cite:
- 
 
 ---
 
