@@ -451,7 +451,7 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar /data/genomes/T2T-CHM13v2.0/ \
     -lib=/data/libraries/humsub.ref
 
 # Tasmanian devil genome
-java -Xms16g -Xmx64g -jar TotalRepeats.jar /data/genomes/Sarcophilus_harrisii/
+java -Xms16g -Xmx64g -jar TotalRepeats.jar /data/genomes/Sarcophilus_harrisii/ -out=/results/output
 
 # Very large genome (Iberian ribbed newt, ~20 Gb) — stretched image output
 java -Xms16g -Xmx64g -jar TotalRepeats.jar /data/genomes/Pleurodeles_waltl/ imgx=20
