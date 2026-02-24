@@ -34,18 +34,44 @@ public class TotalRepeats {
             boolean extract = false;   // Split a larger FASTA file into multiple FASTA files, works with single file or folder
             boolean maskfiles = false; // A comparison analysis of masked files obtained from different software or algorithms.
             boolean ssrdetect = true;
+            String outdir = "";  // output folder; default = folder of input file
 
             System.out.println("Current Directory: " + System.getProperty("user.dir"));
             System.out.println("Command-line arguments:");
             System.out.println("Target file or Folder: " + infile);
 
-            if (s.contains("-lib=")) {
-                int j = s.toLowerCase().indexOf("lib=");
-                int x = s.indexOf(" ", j);
+            if (s.contains("-out=")) {
+                String argsRaw = String.join(" ", args) + " ";
+                int j = argsRaw.toLowerCase().indexOf("-out=");
+                int x = argsRaw.indexOf(" ", j);
                 if (x == -1) {
-                    x = s.length();
+                    x = argsRaw.length();
                 }
-                reffile = s.substring(j + 4, x).trim();
+                outdir = argsRaw.substring(j + 5, x).trim();
+                File outFolder = new File(outdir);
+                if (!outFolder.exists()) {
+                    if (outFolder.mkdirs()) {
+                        System.out.println("Output folder created: " + outFolder.getAbsolutePath());
+                    } else {
+                        System.err.println("Cannot create output folder: " + outdir + ". Using default.");
+                        outdir = "";
+                    }
+                } else if (!outFolder.isDirectory()) {
+                    System.err.println("Output path is not a folder: " + outdir + ". Using default.");
+                    outdir = "";
+                } else {
+                    System.out.println("Output folder: " + outFolder.getAbsolutePath());
+                }
+            }
+
+            if (s.contains("-lib=")) {
+                String argsRaw = String.join(" ", args) + " ";
+                int j = argsRaw.toLowerCase().indexOf("-lib=");
+                int x = argsRaw.indexOf(" ", j);
+                if (x == -1) {
+                    x = argsRaw.length();
+                }
+                reffile = argsRaw.substring(j + 5, x).trim();
                 File ref = new File(reffile);
                 if (!ref.exists() || !ref.isFile()) {
                     System.err.println("Reference file does not exist: " + reffile);
@@ -54,7 +80,7 @@ public class TotalRepeats {
                     System.out.println("Reference file found: " + ref.getAbsolutePath());
                 }
             }
-            if (s.contains("amask")) { // Pairwise Sequence Alignment: Repeater2 based 
+            if (s.contains("-amask")) { // Pairwise Sequence Alignment: Repeater2 based 
                 amask = true;
             }
             if (s.contains("-nossr")) {
@@ -150,10 +176,10 @@ public class TotalRepeats {
                 int x = s.indexOf(" ", j);
                 if (x > j) {
                     String[] d = s.substring(j + 6, x).split("x");
-                    if (d.length > 0) {
+                    if (d.length > 1) {
                         width = StrToInt(d[0]);
                         hight = StrToInt(d[1]);
-                        if (hight == 0 | width == 0) {
+                        if (hight == 0 || width == 0) {
                             width = 0;
                             hight = 0;
                         }
@@ -165,6 +191,10 @@ public class TotalRepeats {
             if (folder.exists() && (folder.isDirectory() || folder.isFile())) {
                 if (folder.isDirectory()) {
                     File[] files = folder.listFiles();
+                    if (files == null) {
+                        System.err.println("Cannot read directory: " + folder.toString());
+                        return;
+                    }
                     if (files.length == 0) {
                         System.err.println("No files: " + folder.toString());
                         return;
@@ -178,7 +208,7 @@ public class TotalRepeats {
                     }
 
                     if (combine > 0) {
-                        TotalRepeatsCombinedResult(combine, reffile, filelist, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, ssrdetect);
+                        TotalRepeatsCombinedResult(combine, reffile, filelist, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, ssrdetect, outdir);
                         return;
                     }
 
@@ -186,7 +216,7 @@ public class TotalRepeats {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    ExtractFiles(nfile);
+                                    ExtractFiles(nfile, outdir);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -199,7 +229,7 @@ public class TotalRepeats {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    ReadingMaskFile(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, ssrdetect);
+                                    ReadingMaskFile(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, ssrdetect, outdir);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -212,7 +242,7 @@ public class TotalRepeats {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    ReadingUpperMaskFile(nfile, seqlen, gap);
+                                    ReadingUpperMaskFile(nfile, seqlen, gap, outdir);
                                 } catch (IOException e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -225,7 +255,7 @@ public class TotalRepeats {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    ReadingGffFile(nfile, imaged, width, hight);
+                                    ReadingGffFile(nfile, imaged, width, hight, outdir);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -237,7 +267,7 @@ public class TotalRepeats {
                     for (String nfile : filelist) {
                         if (nfile != null) {
                             try {
-                                TotalRepeatsResult(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, ssrdetect);
+                                TotalRepeatsResult(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, ssrdetect, outdir);
                             } catch (Exception e) {
                                 System.err.println("Failed to open file: " + nfile);
                             }
@@ -246,60 +276,99 @@ public class TotalRepeats {
 
                 } else {
                     if (maskfiles) {
-                        ComparisionMaskFiles(infile);
+                        ComparisionMaskFiles(infile, outdir);
                         return;
                     }
                     if (readmask) {
-                        ReadingMaskFile(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, ssrdetect);
+                        ReadingMaskFile(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, ssrdetect, outdir);
                         return;
                     }
                     if (readgff) {
-                        ReadingGffFile(infile, imaged, width, hight);
+                        ReadingGffFile(infile, imaged, width, hight, outdir);
                         return;
                     }
                     if (extract) {
-                        ExtractFiles(infile);
+                        ExtractFiles(infile, outdir);
                         return;
                     }
                     if (extupmask) {
-                        ReadingUpperMaskFile(infile, seqlen, gap);
+                        ReadingUpperMaskFile(infile, seqlen, gap, outdir);
                         return;
                     }
 
-                    TotalRepeatsResult(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, ssrdetect);
+                    TotalRepeatsResult(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, ssrdetect, outdir);
                 }
             }
         } else {
-            System.out.println("TotalRepeats (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi)\nhttps://github.com/rkalendar/TotalRepeats\n");
-            System.out.println("Basic usage:");
-            System.out.println("java -jar /data/user/dist/TotalRepeats.jar <inputfile>/<inputfolderpath> <optional_commands>");
-            System.out.println("Common options:");
-            System.out.println("-kmer=19\t kmer=9-21 (default kmer=18)");
-            System.out.println("-sln=90\trepeat block length (default sln=80), it can be equal to 'kmer'");
-            System.out.println("-flangs=100\textend the flanks of the repeat with an appropriate length (100 nt) (default flangs=0)");
-            System.out.println("-image=10000x300\t (by default, the dimensionality of the image is automatically determined)");
-            System.out.println("-imgx=5\t (figure width compression, minimum value of imgx=1 (maximum compression), and a value of imgx=20 for the longest figure length)");
-            System.out.println("-maskonly\\tit only generates the mask file; classification, annotation and visualisation are not performed");
-            System.out.println("-amask\\tmasking is performed by pairwise sequence alignment (Repeater2 based)");
-            System.out.println("-seqshow\textract repeat sequences (not default)");
-            System.out.println("-nossr\tSSR detection is not performed (SSR detection is performed by default)");
-            System.out.println("-quick\tSignificant acceleration of repeat classification for multithreading processors (not default)");
-            System.out.println("-combine\tthis option is employed in genome-wide comparative analyses (each sequence is analyzed for repeats individually)");
-            System.out.println("-combine2\tthis option is employed in genome-wide comparative analyses (all sequences are analyzed together)");
-            System.out.println("-homology\tComparative Homology Masking. It performs comparative analysis of individual sequences (chromosomes) using multiple files to analyse homologous regions (and repeats) between target sequences.");
-            System.out.println("-combinemask\tthis option is used for genome-wide comparative analyses, for which masking files serve as the input data");
-            System.out.println("-readmask\ttransfer the masking file to the software, which will then be used for clustering repeats and visualisation. The file contains only one FASTA entry.");
-            System.out.println("-readgff\ttransfer the GFF file to the software, which will then be used for visualisation.");
-            System.out.println("-extract\tSplit a single FASTA file into multiple FASTA files.");
-            System.out.println("-maskscomp\tA comparison analysis of masked files obtained from different software or algorithms.");
-            System.out.println("-lib=target_file_path\tthe application enables annotation of repeats using a database of known repeats/genes");
-            System.out.println("java -jar -Xms16g -Xmx64g /data/user/dist/TotalRepeats.jar <inputfile> ssr=true seqshow=true flanks=100");
-            System.out.println("java -jar -Xms16g -Xmx64g /data/user/dist/TotalRepeats.jar <inputfile> kmer=18 sln=100 mask=false seqshow=true flanks=100\n");
-            System.out.println("java -jar -Xms16g -Xmx64g /data/user/dist/TotalRepeats.jar /data/user/genomes/T2T-CHM13v2.0/ -ref=/data/user/test/humsub.ref\n");
-            System.out.println("Large chromosome usage (>2 GB): you will need to show the program to use more RAM, up to 256 GB of memory:\n");
-            System.out.println("java -jar -Xms64g -Xmx256g /data/user/dist/TotalRepeats.jar /data/user/genomes/Viscum_album/ \n");
-            System.out.println("Analysing all files in the directory:");
-            System.out.println("java -jar -Xms64g -Xmx128g /data/user/dist/TotalRepeats.jar /data/user/genomes/Aegilops_tauschii/ \n");
+            printHelp();
+        }
+    }
+
+    private static void printHelp() {
+        String jar = "java -jar /path/to/TotalRepeats.jar";
+        String jarMem = "java -jar -Xms16g -Xmx64g /path/to/TotalRepeats.jar";
+
+        String[] lines = {
+            "TotalRepeats (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi)",
+            "https://github.com/rkalendar/TotalRepeats",
+            "",
+            "BASIC USAGE:",
+            "  " + jar + " <input_file_or_folder> [options]",
+            "",
+            "CORE OPTIONS:",
+            "  -kmer=<9-21>         K-mer size for repeat detection (default: 18)",
+            "  -sln=<int>           Minimum repeat block length in bp (default: 80; can equal kmer)",
+            "  -flangs=<int>        Extend repeat flanks by N nucleotides (default: 0)",
+            "",
+            "IMAGE OPTIONS:",
+            "  -image=<WxH>         Output image dimensions, e.g. -image=10000x300",
+            "                       (default: auto-determined)",
+            "  -imgx=<1-20>         Figure width compression; 1 = max compression, 20 = longest figure",
+            "",
+            "ANALYSIS MODES:",
+            "  -maskonly            Generate repeat mask file only; skip classification, annotation,",
+            "                       and visualisation",
+            "  -amask               Mask using pairwise sequence alignment (Repeater2-based)",
+            "  -seqshow             Extract and output repeat sequences (default: off)",
+            "  -nossr               Disable SSR (Simple Sequence Repeat) detection (default: on)",
+            "  -quick               Accelerate repeat classification using multithreading (default: off)",
+            "",
+            "COMPARATIVE / GENOME-WIDE OPTIONS:",
+            "  -combine             Genome-wide analysis: each sequence analyzed individually",
+            "  -combine2            Genome-wide analysis: all sequences analyzed together",
+            "  -homology            Comparative Homology Masking: cross-file analysis of homologous",
+            "                       regions and repeats between target sequences (e.g. chromosomes)",
+            "  -combinemask         Genome-wide comparative analysis using masking files as input",
+            "",
+            "INPUT / OUTPUT OPTIONS:",
+            "  -readmask            Load a masking file (single FASTA entry) for clustering and",
+            "                       visualisation",
+            "  -readgff             Load a GFF file for visualisation",
+            "  -extract             Split a single multi-entry FASTA file into individual FASTA files",
+            "  -maskscomp           Compare masking files produced by different software or algorithms",
+            "  -lib=<path>          Annotate repeats using a database of known repeats or genes",
+            "  -out=<path>          Path to output folder (default: current folder)",
+            "",
+            "EXAMPLES:",
+            "  # Standard run with SSR and flanking sequences:",
+            "  " + jarMem + " <input> -flangs=100 -seqshow",
+            "",
+            "  # Custom k-mer, block length, no masking, with flanks:",
+            "  " + jarMem + " <input> -kmer=18 -sln=100 -seqshow -flangs=100",
+            "",
+            "  # Directory input with a reference file:",
+            "  " + jarMem + " /data/genomes/T2T-CHM13v2.0/ -ref=/data/test/humsub.ref",
+            "",
+            "  # Large chromosome (>2 GB) — allocate up to 256 GB RAM:",
+            "  java -jar -Xms64g -Xmx256g /path/to/TotalRepeats.jar /data/genomes/Viscum_album/",
+            "",
+            "  # Analyse all FASTA files in a directory:",
+            "  java -jar -Xms64g -Xmx128g /path/to/TotalRepeats.jar /data/genomes/Aegilops_tauschii/",
+            "",
+            "NOTE: For sequences larger than 2 GB, increase heap memory with -Xmx (e.g. -Xmx256g).",};
+
+        for (String line : lines) {
+            System.out.println(line);
         }
     }
 
@@ -325,7 +394,7 @@ public class TotalRepeats {
 
     private static void TotalRepeatsCombinedResult(int combine, String reffile, String[] filelist,
             int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean seqshow,
-            int width, int hight, boolean fst, boolean ssr) throws IOException {
+            int width, int hight, boolean fst, boolean ssr, String outdir) throws IOException {
 
         long startTime = System.nanoTime();
 
@@ -333,7 +402,7 @@ public class TotalRepeats {
         List<String> names = new ArrayList<>();
         List<String> fnames = new ArrayList<>();
 
-        String combinedFile = getReportFile(filelist);
+        String combinedFile = getReportFile(filelist, outdir);
         if (combinedFile != null) {
             System.out.println("Combined report path: " + combinedFile);
         } else {
@@ -367,9 +436,9 @@ public class TotalRepeats {
                     System.out.println("Target file: " + nfile);
                 } else {
                     fnames.add(nfile);
-                System.out.println("There is no sequence(s).");
-                System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
-                System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
+                    System.out.println("There is no sequence(s).");
+                    System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
+                    System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
                 }
             } catch (IOException e) {
                 System.err.println("Failed to open file: " + nfile);
@@ -395,10 +464,15 @@ public class TotalRepeats {
 
         Path path = Paths.get(fnms[0]);
         Path parentDir = path.getParent();
-        if (parentDir != null) {
+        Path effectiveDir = (outdir != null && !outdir.isEmpty()) ? Paths.get(outdir) : parentDir;
+        if (effectiveDir == null) {
+            System.err.println("Cannot determine output directory for combined result.");
+            return;
+        }
+        if (true) {  // always enter (effectiveDir guaranteed non-null above)
 
             if (combine == 3) {
-                String fileName = parentDir.resolve("combined").toString();
+                String fileName = effectiveDir.resolve("combined").toString();
                 System.out.println("Combined path: " + fileName);
                 s2.SetFileName(fileName);
             }
@@ -434,7 +508,7 @@ public class TotalRepeats {
 
     private static void TotalRepeatsResult(String infile, String reffile, int kmer, int seqlen,
             int gap, int flanksshow, int imgx, boolean seqshow, int width, int hight,
-            boolean maskonly, boolean amask, boolean fst, boolean ssr) {
+            boolean maskonly, boolean amask, boolean fst, boolean ssr, String outdir) {
         try {
             long startTime = System.nanoTime();
 
@@ -465,7 +539,7 @@ public class TotalRepeats {
             s2.SetShowSeq(seqshow);
             s2.SetSSRdetection(ssr);
             s2.SetFlanks(flanksshow);
-            s2.SetFileName(infile);
+            s2.SetFileName(resolveOutputDir(infile, outdir) + File.separator + new File(infile).getName());
 
             if (width > 0 && hight > 0) {
                 s2.SetImage(width, hight);
@@ -504,12 +578,12 @@ public class TotalRepeats {
         return lowercase;
     }
 
-    private static void ReadingUpperMaskFile(String inputFile, int seqlen, int gap) throws IOException {
+    private static void ReadingUpperMaskFile(String inputFile, int seqlen, int gap, String outdir) throws IOException {
         try {
             FastaReader rf = FastaReader.fromPathRaw(Paths.get(inputFile));
 
             if (rf.isEmpty()) {
-                 System.out.println("There is no sequence(s).");
+                System.out.println("There is no sequence(s).");
                 System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
                 System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
                 return;
@@ -522,7 +596,7 @@ public class TotalRepeats {
             }
 
             TotalRepeatsSearching s2 = new TotalRepeatsSearching();
-            s2.SetFileName(inputFile);
+            s2.SetFileName(resolveOutputDir(inputFile, outdir) + File.separator + new File(inputFile).getName());
             s2.SetSequences(
                     rf.getSequences().toArray(String[]::new),
                     rf.getNames().toArray(String[]::new)
@@ -534,20 +608,16 @@ public class TotalRepeats {
         }
     }
 
-    private static void ExtractFiles(String inputFile) {
-        File input = new File(inputFile);
-        String parentDir = input.getParent();
-        if (parentDir == null) {
-            parentDir = ".";
-        }
+    private static void ExtractFiles(String inputFile, String outdir) {
+        String parentDir = resolveOutputDir(inputFile, outdir);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+             BufferedWriter report = new BufferedWriter(new FileWriter(parentDir + File.separator + "report.txt"))) {
             System.out.println("\nRunning...");
             long l = 0;
             long r = 0;
             String line;
             BufferedWriter writer = null;
-            BufferedWriter report = new BufferedWriter(new FileWriter(parentDir + File.separator + "report.txt"));
 
             while ((line = reader.readLine()) != null) {
                 if (line.contains(">")) {
@@ -587,20 +657,15 @@ public class TotalRepeats {
                 report.write("Total masked length= " + r);
                 report.newLine();
                 report.write("Masked= " + String.format("%.2f", (float) ((r * 100) / l)) + "%\n");
-                report.close();
             }
             System.out.println("File(s) processed successfully.");
         } catch (IOException e) {
-
+            System.err.println("Error processing file: " + inputFile + " — " + e.getMessage());
         }
     }
 
-    private static void ComparisionMaskFiles(String inputFile) {
-        File input = new File(inputFile);
-        String parentDir = input.getParent();
-        if (parentDir == null) {
-            parentDir = ".";
-        }
+    private static void ComparisionMaskFiles(String inputFile, String outdir) {
+        String parentDir = resolveOutputDir(inputFile, outdir);
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
             System.out.println("\nRunning...");
             String line;
@@ -621,12 +686,13 @@ public class TotalRepeats {
             }
             System.out.println("Files processed successfully.");
         } catch (IOException e) {
+            System.err.println("Error processing mask comparison: " + e.getMessage());
         }
     }
 
     private static void ReadingMaskFile(String inputFile, String reffile, int kmer, int seqlen,
             int gap, int flanksshow, int imgx, boolean seqshow, int width, int hight,
-            boolean fst, boolean ssr) {
+            boolean fst, boolean ssr, String outdir) {
         try {
             FastaReader rf = FastaReader.fromPathRaw(Paths.get(inputFile));
 
@@ -652,7 +718,7 @@ public class TotalRepeats {
             s2.SetShowSeq(seqshow);
             s2.SetSSRdetection(ssr);
             s2.SetFlanks(flanksshow);
-            s2.SetFileName(inputFile);
+            s2.SetFileName(resolveOutputDir(inputFile, outdir) + File.separator + new File(inputFile).getName());
 
             if (width > 0 && hight > 0) {
                 s2.SetImage(width, hight);
@@ -674,12 +740,12 @@ public class TotalRepeats {
         }
     }
 
-    private static void ReadingGffFile(String inputGFFfile, int imgx, int width, int hight) {
+    private static void ReadingGffFile(String inputGFFfile, int imgx, int width, int hight, String outdir) {
         try {
             System.out.println("\nRunning...");
             System.out.println("GFF file: " + inputGFFfile);
             TotalRepeatsSearching s2 = new TotalRepeatsSearching();
-            s2.SetFileName(inputGFFfile);
+            s2.SetFileName(resolveOutputDir(inputGFFfile, outdir) + File.separator + new File(inputGFFfile).getName());
             if (width > 0 && hight > 0) {
                 s2.SetImage(width, hight);
             }
@@ -689,18 +755,25 @@ public class TotalRepeats {
         }
     }
 
-    private static String getReportFile(String[] filelist) {
+    /**
+     * Returns the effective output directory for a given input file. Uses
+     * outdir if specified; otherwise falls back to the input file's parent
+     * folder.
+     */
+    private static String resolveOutputDir(String inputFile, String outdir) {
+        if (outdir != null && !outdir.isEmpty()) {
+            return outdir;
+        }
+        String parent = new File(inputFile).getParent();
+        return (parent != null) ? parent : ".";
+    }
+
+    private static String getReportFile(String[] filelist, String outdir) {
         if (filelist == null || filelist.length == 0) {
             return "";
         }
-
-        File file = new File(filelist[0]);
-        String parentDir = file.getParent();
-
-        if (parentDir != null) {
-            return parentDir + File.separator + "report";
-        } else {
-            return "report"; // fallback if no parent directory
-        }
+        String dir = (outdir != null && !outdir.isEmpty()) ? outdir : resolveOutputDir(filelist[0], "");
+        return dir + File.separator + "report";
     }
+
 }
