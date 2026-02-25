@@ -134,7 +134,7 @@ cd TotalRepeats
 java -version
 
 # 3. Run — no build step required
-java -jar dist/TotalRepeats.jar genome.fasta
+java -jar dist/TotalRepeats.jar genome.fasta -out=/results/output
 ```
 
 ### Option 2: Using Conda
@@ -231,7 +231,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `-extract` | Split a multi-entry FASTA into individual files (one per sequence) |
 | `-maskscomp` | Compare masked outputs from different tools or pipelines |
 | `-out=<path>` | Path to output folder (default: current folder) |
-| `-lib=PATH` | Annotate repeats with an external library (Repbase, Dfam, or custom FASTA) |
+| `-lib=<path>` | Annotate repeats with an external library (Repbase, Dfam, or custom FASTA) |
 
 ---
 
