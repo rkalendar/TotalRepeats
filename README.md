@@ -1,6 +1,6 @@
 # TotalRepeats
 
-**A universal genome-wide tool for rapid *de novo* identification, classification, annotation, comparative analysis, and visualization of repetitive elements**
+**an integrated genome-wide platform for rapid de novo identification, classification, annotation, comparative analysis, and visualization of repetitive elements**
 
 [![Java](https://img.shields.io/badge/Java-25+-orange.svg?logo=openjdk)](https://www.oracle.com/java/technologies/downloads/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue.svg)]()
