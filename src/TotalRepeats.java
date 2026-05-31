@@ -15,39 +15,34 @@ public class TotalRepeats {
         if (args.length > 0) {
             String infile = args[0]; // file path or Folder
             String reffile = "";
-            String s = String.join(" ", args).toLowerCase() + " ";
+            String argsRaw = String.join(" ", args) + " ";   // case-preserving (for paths)
+            String s = argsRaw.toLowerCase();                // case-insensitive (for flags/keys)
             int kmer = 19;   // optimal rules: kmer=18-19 seqlen=30...90, kmer=12-18 for short sequences
             int seqlen = 80;
             int gap = kmer + kmer;
             int width = 0;
             int hight = 0;
-            int imaged = 10;           // 1...30
+            int imaged = 10;               // 1...30
             int flanksshow = 0;
-            int combine = 0;          // Two or more files analysed simultaneously.
-            boolean amask = false;    // masking is performed by Pairwise Sequence Alignment: Repeater2 based 
-            boolean maskonly = false; // The process of masking is performed without the use of clustering or annotation.
+            int combine = 0;               // Two or more files analysed simultaneously.
+            boolean amask = false;         // masking is performed by Pairwise Sequence Alignment: Repeater2 based 
+            boolean maskonly = false;      // The process of masking is performed without the use of clustering or annotation.
             boolean seqshow = false;
             boolean fastclustering = false; // Multithreading clustering 
-            boolean readmask = false;  // reading masked FASTA for clustering and annotation
-            boolean extupmask = false; // extraction of the UPPER blocks of the masked chromosome contain unique sequences.
+            boolean readmask = false;       // reading masked FASTA for clustering and annotation
+            boolean extupmask = false;      // extraction of the UPPER blocks of the masked chromosome contain unique sequences.
             boolean readgff = false;
-            boolean extract = false;   // Split a larger FASTA file into multiple FASTA files, works with single file or folder
-            boolean maskfiles = false; // A comparison analysis of masked files obtained from different software or algorithms.
+            boolean extract = false;        // Split a larger FASTA file into multiple FASTA files, works with single file or folder
+            boolean maskfiles = false;      // A comparison analysis of masked files obtained from different software or algorithms.
             boolean ssrdetect = true;
-            String outdir = "";  // output folder; default = folder of input file
+            String outdir = "";             // output folder; default = folder of input file
 
             System.out.println("Current Directory: " + System.getProperty("user.dir"));
             System.out.println("Command-line arguments:");
             System.out.println("Target file or Folder: " + infile);
 
             if (s.contains("-out=")) {
-                String argsRaw = String.join(" ", args) + " ";
-                int j = argsRaw.toLowerCase().indexOf("-out=");
-                int x = argsRaw.indexOf(" ", j);
-                if (x == -1) {
-                    x = argsRaw.length();
-                }
-                outdir = argsRaw.substring(j + 5, x).trim();
+                outdir = strArg(argsRaw, s, "-out=");
                 File outFolder = new File(outdir);
                 if (!outFolder.exists()) {
                     if (outFolder.mkdirs()) {
@@ -64,14 +59,10 @@ public class TotalRepeats {
                 }
             }
 
-            if (s.contains("-lib=")) {
-                String argsRaw = String.join(" ", args) + " ";
-                int j = argsRaw.toLowerCase().indexOf("-lib=");
-                int x = argsRaw.indexOf(" ", j);
-                if (x == -1) {
-                    x = argsRaw.length();
-                }
-                reffile = argsRaw.substring(j + 5, x).trim();
+            if (s.contains("-lib=") || s.contains("-ref=")) {
+                reffile = s.contains("-lib=")
+                        ? strArg(argsRaw, s, "-lib=")
+                        : strArg(argsRaw, s, "-ref=");
                 File ref = new File(reffile);
                 if (!ref.exists() || !ref.isFile()) {
                     System.err.println("Reference file does not exist: " + reffile);
@@ -86,7 +77,7 @@ public class TotalRepeats {
             if (s.contains("-nossr")) {
                 ssrdetect = false;
             }
-            if (s.contains("-quick")) {// (Multithreading clustering) Using fully multithreading significantly accelerates the classification of sequences into individual clusters.
+            if (s.contains("-fast") || s.contains("-quick")) {// (Multithreading clustering) Using fully multithreading significantly accelerates the classification of sequences into individual clusters.
                 fastclustering = true;
             }
             if (s.contains("extunique")) { // -seqlen>100
@@ -123,54 +114,11 @@ public class TotalRepeats {
             if (s.contains("seqshow")) {
                 seqshow = true;
             }
-            if (s.contains("imgx=")) {
-                int j = s.indexOf("imgx=");
-                int x = s.indexOf(" ", j);
-                if (x > j) {
-                    imaged = StrToInt(s.substring(j + 5, x));
-                    if (imaged < 5) {
-                        imaged = 5;
-                    }
-                    if (imaged > 30) {
-                        imaged = 30;
-                    }
-                }
-            }
-            if (s.contains("flanks=")) {
-                flanksshow = 0;
-                int j = s.indexOf("flanks=");
-                int x = s.indexOf(" ", j);
-                if (x > j) {
-                    flanksshow = StrToInt(s.substring(j + 7, x));
-                }
-                if (flanksshow < 0) {
-                    flanksshow = 0;
-                }
-                if (flanksshow > 1000) {
-                    flanksshow = 1000;
-                }
-            }
-            if (s.contains("kmer=")) {
-                int j = s.indexOf("kmer=");
-                int x = s.indexOf(" ", j);
-                if (x > j) {
-                    kmer = StrToInt(s.substring(j + 5, x));
-                }
-            }
-            if (s.contains("sln=")) {
-                int j = s.indexOf("sln=");
-                int x = s.indexOf(" ", j);
-                if (x > j) {
-                    seqlen = StrToInt(s.substring(j + 4, x));
-                }
-            }
-            if (s.contains("gap=")) {
-                int j = s.indexOf("gap=");
-                int x = s.indexOf(" ", j);
-                if (x > j) {
-                    gap = StrToInt(s.substring(j + 4, x));
-                }
-            }
+            imaged = clamp(intArg(s, imaged, "imgx="), 5, 30);
+            flanksshow = clamp(intArg(s, flanksshow, "flanks=", "flangs="), 0, 1000);
+            kmer = intArg(s, kmer, "kmer=");
+            seqlen = intArg(s, seqlen, "sln=");
+            gap = intArg(s, gap, "gap=");
             if (s.contains("image=")) { // image=40000x5000
                 int j = s.indexOf("image=");
                 int x = s.indexOf(" ", j);
@@ -392,6 +340,51 @@ public class TotalRepeats {
         return (Integer.parseInt(r.toString()));
     }
 
+    /**
+     * Returns the integer value following the first matching {@code key}
+     * (e.g. "kmer=") in the lowercased argument string {@code s}, or
+     * {@code def} if none of the keys is present.
+     */
+    private static int intArg(String s, int def, String... keys) {
+        for (String key : keys) {
+            int j = s.indexOf(key);
+            if (j >= 0) {
+                int x = s.indexOf(' ', j);
+                if (x > j) {
+                    return StrToInt(s.substring(j + key.length(), x));
+                }
+            }
+        }
+        return def;
+    }
+
+    /**
+     * Extracts the case-preserving value following {@code key} from the raw
+     * argument string, or {@code null} if the key is absent. The key is matched
+     * case-insensitively via {@code rawLower}; the value is taken from {@code raw}.
+     */
+    private static String strArg(String raw, String rawLower, String key) {
+        int j = rawLower.indexOf(key);
+        if (j < 0) {
+            return null;
+        }
+        int x = raw.indexOf(' ', j);
+        if (x < 0) {
+            x = raw.length();
+        }
+        return raw.substring(j + key.length(), x).trim();
+    }
+
+    private static int clamp(int v, int lo, int hi) {
+        return (v < lo) ? lo : (v > hi) ? hi : v;
+    }
+
+    private static void printFastaFormatHelp() {
+        System.out.println("There is no sequence(s).");
+        System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
+        System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
+    }
+
     private static void TotalRepeatsCombinedResult(int combine, String reffile, String[] filelist,
             int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean seqshow,
             int width, int hight, boolean fst, boolean ssr, String outdir) throws IOException {
@@ -436,9 +429,7 @@ public class TotalRepeats {
                     System.out.println("Target file: " + nfile);
                 } else {
                     fnames.add(nfile);
-                    System.out.println("There is no sequence(s).");
-                    System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
-                    System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
+                    printFastaFormatHelp();
                 }
             } catch (IOException e) {
                 System.err.println("Failed to open file: " + nfile);
@@ -469,37 +460,35 @@ public class TotalRepeats {
             System.err.println("Cannot determine output directory for combined result.");
             return;
         }
-        if (true) {  // always enter (effectiveDir guaranteed non-null above)
 
-            if (combine == 3) {
-                String fileName = effectiveDir.resolve("combined").toString();
-                System.out.println("Combined path: " + fileName);
-                s2.SetFileName(fileName);
-            }
+        if (combine == 3) {
+            String fileName = effectiveDir.resolve("combined").toString();
+            System.out.println("Combined path: " + fileName);
+            s2.SetFileName(fileName);
+        }
 
-            if (width > 0 && hight > 0) {
-                s2.SetImage(width, hight);
-            }
+        if (width > 0 && hight > 0) {
+            s2.SetImage(width, hight);
+        }
 
-            if (!reffile.isEmpty()) {
-                FastaReader ref = FastaReader.fromPath(Paths.get(reffile));
-                s2.SetRefSequences(
-                        ref.getSequences().toArray(String[]::new),
-                        ref.getNames().toArray(String[]::new)
-                );
-                System.out.println("Reference file=" + reffile);
-            }
+        if (!reffile.isEmpty()) {
+            FastaReader ref = FastaReader.fromPath(Paths.get(reffile));
+            s2.SetRefSequences(
+                    ref.getSequences().toArray(String[]::new),
+                    ref.getNames().toArray(String[]::new)
+            );
+            System.out.println("Reference file=" + reffile);
+        }
 
-            switch (combine) {
-                case 1 ->
-                    s2.RunCombine(imgx, fst);
-                case 2 ->
-                    s2.RunCombine2(imgx, fst);
-                case 3 ->
-                    s2.RunCombineMask(imgx, fst);
-                case 4 ->
-                    s2.RunHomologyMasking(imgx);
-            }
+        switch (combine) {
+            case 1 ->
+                s2.RunCombine(imgx, fst);
+            case 2 ->
+                s2.RunCombine2(imgx, fst);
+            case 3 ->
+                s2.RunCombineMask(imgx, fst);
+            case 4 ->
+                s2.RunHomologyMasking(imgx);
         }
 
         long duration = (System.nanoTime() - startTime) / 1_000_000_000;
@@ -515,9 +504,7 @@ public class TotalRepeats {
             FastaReader rf = FastaReader.fromPath(Paths.get(infile));
 
             if (rf.isEmpty()) {
-                System.out.println("There is no sequence(s).");
-                System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
-                System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
+                printFastaFormatHelp();
                 return;
             }
 
@@ -570,8 +557,8 @@ public class TotalRepeats {
 
     public static long countLower(String text) {
         long lowercase = 0;
-        for (char c : text.toCharArray()) {
-            if (Character.isLowerCase(c)) {
+        for (int i = 0, n = text.length(); i < n; i++) {
+            if (Character.isLowerCase(text.charAt(i))) {
                 lowercase++;
             }
         }
@@ -583,9 +570,7 @@ public class TotalRepeats {
             FastaReader rf = FastaReader.fromPathRaw(Paths.get(inputFile));
 
             if (rf.isEmpty()) {
-                System.out.println("There is no sequence(s).");
-                System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
-                System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
+                printFastaFormatHelp();
                 return;
             }
 
@@ -611,8 +596,7 @@ public class TotalRepeats {
     private static void ExtractFiles(String inputFile, String outdir) {
         String parentDir = resolveOutputDir(inputFile, outdir);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-             BufferedWriter report = new BufferedWriter(new FileWriter(parentDir + File.separator + "report.txt"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile)); BufferedWriter report = new BufferedWriter(new FileWriter(parentDir + File.separator + "report.txt"))) {
             System.out.println("\nRunning...");
             long l = 0;
             long r = 0;
@@ -626,7 +610,7 @@ public class TotalRepeats {
                         report.newLine();
                         report.write("Total masked length (nt)= " + r);
                         report.newLine();
-                        report.write("Masked= " + String.format("%.2f", (float) ((r * 100) / l)) + "%\n");
+                        report.write("Masked= " + String.format("%.2f", l > 0 ? (100.0 * r) / l : 0.0) + "%\n");
                         writer.close();
                     }
                     String[] s = line.split(">");
@@ -656,7 +640,7 @@ public class TotalRepeats {
                 report.newLine();
                 report.write("Total masked length= " + r);
                 report.newLine();
-                report.write("Masked= " + String.format("%.2f", (float) ((r * 100) / l)) + "%\n");
+                report.write("Masked= " + String.format("%.2f", l > 0 ? (100.0 * r) / l : 0.0) + "%\n");
             }
             System.out.println("File(s) processed successfully.");
         } catch (IOException e) {
@@ -697,9 +681,7 @@ public class TotalRepeats {
             FastaReader rf = FastaReader.fromPathRaw(Paths.get(inputFile));
 
             if (rf.isEmpty()) {
-                System.out.println("There is no sequence(s).");
-                System.out.println("File format in Fasta:\n>header\nsequence here\n\nIn FASTA format the line before the nucleotide sequence, called the FASTA definition line, must begin with a carat (\">\"), followed by a unique SeqID (sequence identifier).\nThe line after the FASTA definition line begins the nucleotide sequence.\n");
-                System.out.println(">seq1\nactacatactacatcactctctctccgcacag\n");
+                printFastaFormatHelp();
                 return;
             }
 
