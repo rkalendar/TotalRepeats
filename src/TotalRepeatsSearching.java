@@ -38,6 +38,10 @@ public final class TotalRepeatsSearching {
         ReportFilePath = a;
     }
 
+    public void SetPangenome(boolean b) {
+        this.pangenome = b;
+    }
+
     public void SetFileName(String a) {
         filePath = a;
     }
@@ -212,6 +216,7 @@ public final class TotalRepeatsSearching {
             SavingGFF(ReportFilePath, 0, l, seqslen);
             SavingPicture(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);
             SavingSVG(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);//(int k, int n, int len, int dw, int dh, int[] seqslen)
+            SavingPangenome(ReportFilePath, seqslen);   // pangenome: core / accessory / unique families
 
             // --- Individual (per-file) reports and pictures ---
             // Built as exact slices of the COMBINED clustering so that each
@@ -249,7 +254,6 @@ public final class TotalRepeatsSearching {
             bb = bbCombined;
         }
     }
-
 
     public void RunCombineMask(int k, boolean fst) throws IOException {
         startTime = System.nanoTime();
@@ -514,64 +518,68 @@ public final class TotalRepeatsSearching {
         if (bb != null) {
             SavingGFF(ReportFilePath, 0, l, seqslen);
             SavingPicture(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);
-            SavingSVG(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);//(int k, int n, int len, int dw, int dh, int[] seqslen)                    
-        }
+            SavingSVG(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);//(int k, int n, int len, int dw, int dh, int[] seqslen)
+            SavingPangenome(ReportFilePath, seqslen);   // pangenome: core / accessory / unique families
 
-        // --- Individual (per-file) report and picture ---
-        // The combined output above is now fully written. Partition the global
-        // repeat blocks (u) and STR blocks (ssr) by sequence range, remap them to
-        // local coordinates, cluster each sequence on its own and save a separate
-        // GFF report, PNG and SVG per input file. seq is restored to the original
-        // per-sequence array so SavingGFF/SavingPicture/SavingSVG see seq[i]/sname[i].
-        seq = seqs;
-        int start = 0;
-        for (int i = 0; i < nseq; i++) {
-            int end = seqslen[i];               // global end (exclusive)
-            int li = seqs[i].length();
+            // --- Individual (per-file) reports and pictures ---
+            // Built as exact slices of the COMBINED clustering so each sequence's
+            // individual report/picture matches its region in the combined one:
+            // the same families keep the same cluster index (hence colour, row and
+            // ClusterID) and reference labels; only the blocks are restricted to
+            // this sequence and remapped to its own local coordinates. Per-sequence
+            // statistics are recomputed from the sliced blocks (gaps = N/n bases).
+            ArrayList<int[]> bbCombined = bb;
+            seq = seqs;                          // restore individual sequences (for SeqShow)
+            int start = 0;
+            for (int i = 0; i < nseq; i++) {
+                int end = seqslen[i];
+                int li = seqs[i].length();
 
-            int[] ssrLocal = SliceBlocksLocal(ssr, start, end);
-            int[] uLocal = SliceBlocksLocal(u, start, end);
+                int[] ssrLocal = SliceBlocksLocal(ssr, start, end);
+                int[] uLocal = SliceBlocksLocal(u, start, end);
 
-            // Per-file statistics (gaps counted as N/n bases in this sequence)
-            long repBp = 0;
-            for (int j = 1; j < uLocal.length; j += 2) {
-                repBp += Math.abs(uLocal[j]);
-            }
-            long ssrBp = 0;
-            for (int j = 1; j < ssrLocal.length; j += 2) {
-                ssrBp += Math.abs(ssrLocal[j]);
-            }
-            long gapBp = 0;
-            for (int p = 0; p < li; p++) {
-                char ch = seqs[i].charAt(p);
-                if (ch == 'N' || ch == 'n') {
-                    gapBp++;
+                long repBp = 0;
+                for (int j = 1; j < uLocal.length; j += 2) {
+                    repBp += Math.abs(uLocal[j]);
                 }
+                long ssrBp = 0;
+                for (int j = 1; j < ssrLocal.length; j += 2) {
+                    ssrBp += Math.abs(ssrLocal[j]);
+                }
+                long gapBp = 0;
+                for (int pp = 0; pp < li; pp++) {
+                    char ch = seqs[i].charAt(pp);
+                    if (ch == 'N' || ch == 'n') {
+                        gapBp++;
+                    }
+                }
+                long eff = (li - gapBp > 0) ? (li - gapBp) : li;
+                repeatslen = (repBp * 100.0) / eff;
+                ssrglobal = (ssrBp * 100.0) / eff;
+                gapslen = gapBp;
+                gaps = (gapBp * 100.0) / li;
+
+                System.out.println("\n" + sname[i]);
+                System.out.println("Target sequence length = " + li + " nt");
+                System.out.println("Sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
+                System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
+                System.out.println("Sequence gap (bp)=" + (int) gapslen + " (" + String.format("%.4f", gaps) + "%)");
+
+                // per-file bb = slice of the combined clustering (same order/count -> same colours/IDs)
+                ArrayList<int[]> bbLocal = new ArrayList<>(bbCombined.size());
+                for (int[] z7 : bbCombined) {
+                    bbLocal.add(SliceBlocksLocal(z7, start, end));
+                }
+                bb = bbLocal;
+
+                filePath = filesPath[i];
+                SavingGFF(filesPath[i], i, li, new int[0]);
+                SavingPicture(filesPath[i], k, i, li, iwidth, iheight, new int[0]);
+                SavingSVG(filesPath[i], k, i, li, iwidth, iheight, new int[0]);
+
+                start = end;
             }
-            long eff = (li - gapBp > 0) ? (li - gapBp) : li;
-            repeatslen = (repBp * 100.0) / eff;
-            ssrglobal = (ssrBp * 100.0) / eff;
-            gapslen = gapBp;
-            gaps = (gapBp * 100.0) / li;
-
-            System.out.println("\n" + sname[i]);
-            System.out.println("Target sequence length = " + li + " nt");
-            System.out.println("Sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
-            System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
-            System.out.println("Sequence gap (bp)=" + (int) gapslen + " (" + String.format("%.4f", gaps) + "%)");
-
-            bb = new ArrayList<>();
-            bb.add(ssrLocal);                   // STR blocks (own coordinates)
-            if (uLocal.length > 1) {
-                System.out.println("Clustering started (" + sname[i] + ")...");
-                ClusteringMasking(seqs[i], uLocal, fst);
-            }
-            filePath = filesPath[i];
-            SavingGFF(filesPath[i], i, li, new int[0]);
-            SavingPicture(filesPath[i], k, i, li, iwidth, iheight, new int[0]);
-            SavingSVG(filesPath[i], k, i, li, iwidth, iheight, new int[0]);
-
-            start = end;
+            bb = bbCombined;
         }
     }
 
@@ -1074,6 +1082,22 @@ public final class TotalRepeatsSearching {
         }
     }
 
+    /**
+     * Pangenomic analysis of the combined clustering: classifies repeat
+     * families as core / accessory / unique across the analyzed sequences and
+     * writes a summary report and a presence/absence matrix. Uses the current
+     * {@code bb} (combined clusters) and {@code refclust}, so it must be called
+     * after the combined ClusteringMasking and saving.
+     */
+    private void SavingPangenome(String reportBase, int[] seqslen) throws IOException {
+        if (!pangenome || bb == null || nseq < 2 || seqslen == null || seqslen.length < nseq) {
+            return;
+        }
+        String base = (reportBase == null || reportBase.isEmpty()) ? filePath : reportBase;
+        PangenomeAnalysis pa = new PangenomeAnalysis(bb, seqslen, sname, refclust, refsname);
+        pa.write(base);
+    }
+
     private void SavingGFF(String reportfile, int n, int l, int[] h) throws IOException {
         String b = sname[n];
         long duration = (System.nanoTime() - startTime) / 1000000000;
@@ -1415,4 +1439,5 @@ public final class TotalRepeatsSearching {
     private String[] refseq;
     private String[] refsname;
     private ArrayList<int[]> bb;
+    private boolean pangenome = true;   // generate pangenome (core/accessory/unique) report in combined runs
 }
