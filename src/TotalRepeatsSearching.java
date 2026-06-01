@@ -214,7 +214,7 @@ public final class TotalRepeatsSearching {
 
         if (bb != null) {
             SavingGFF(ReportFilePath, 0, l, seqslen);
-            SavingPicture(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);
+            //SavingPicture(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);
             SavingSVG(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);//(int k, int n, int len, int dw, int dh, int[] seqslen)
             SavingPangenome(ReportFilePath, seqslen);   // pangenome: core / accessory / unique families
 
@@ -517,9 +517,9 @@ public final class TotalRepeatsSearching {
         }
         if (bb != null) {
             SavingGFF(ReportFilePath, 0, l, seqslen);
-            SavingPicture(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);
+            //SavingPicture(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);
             SavingSVG(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);//(int k, int n, int len, int dw, int dh, int[] seqslen)
-            SavingPangenome(ReportFilePath, seqslen);   // pangenome: core / accessory / unique families
+            //SavingPangenome(ReportFilePath, seqslen);   // pangenome: core / accessory / unique families
 
             // --- Individual (per-file) reports and pictures ---
             // Built as exact slices of the COMBINED clustering so each sequence's
