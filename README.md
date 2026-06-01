@@ -12,6 +12,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [What's New](#whats-new)
 - [Key Features](#key-features)
 - [How It Works](#how-it-works)
 - [Requirements](#requirements)
@@ -48,6 +49,17 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 
 ---
 
+## What's New
+
+Latest additions to TotalRepeats:
+
+- **Per-file reports in comparative mode.** In `-combine` runs, every input file now produces its own GFF3 annotation, PNG, and SVG (named after that file), *in addition to* the combined report and image. You can inspect each genome individually while still seeing the joint view.
+- **Pangenome analysis — core / accessory / unique.** `-combine` now also writes a pangenome report that classifies every repeat family by how many of the analyzed sequences it occurs in: **core** (present in all), **accessory** (present in some), and **unique** (present in a single sequence). It includes the family-frequency spectrum, per-sequence statistics, a pairwise shared-family matrix (Jaccard similarity), and a machine-readable presence/absence matrix. See [`-combine`](#-combine--comparative-analysis).
+- **`-fast` alias for `-quick`.** Either flag now enables fully multithreaded clustering.
+- **Performance improvements.** Faster low-complexity/SSR masking and sequence clustering — k-mer encoding and reduced memory traffic in the hot loops — with identical results.
+
+---
+
 ## Key Features
 
 | Feature | Description |
@@ -58,7 +70,7 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 | 📚 **External annotation** | Annotate repeats against Repbase, Dfam/FamDB, or custom species-specific libraries |
 | 📊 **Publication-ready visualization** | Generate PNG and SVG images of repeat landscapes, annotated maps, and comparative views |
 | ⚡ **Multithreaded performance** | Parallel processing across all cores for masking, clustering, and annotation |
-| 🧩 **Pangenome support** | Cross-tool benchmarking and pangenome-scale repeat comparisons via `-combinemask` |
+| 🧩 **Pangenome analysis** | Core / accessory / unique repeat-family classification with a presence/absence matrix across genomes (`-combine`); cross-tool pangenome-scale comparisons (`-combinemask`) |
 
 ---
 
@@ -216,7 +228,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `flanks=N` | Extend each repeat by N bases on both sides | `0` |
 | `-seqshow` | Include repeat sequences in GFF3 output | Off |
 | `-maskonly` | Generate only the masked FASTA (skip clustering/annotation) | Off |
-| `-quick` | Enable multithreaded clustering for faster processing | Off |
+| `-quick` | Enable multithreaded clustering for faster processing (alias: `-fast`) | Off |
 
 ### Advanced Options
 
@@ -291,6 +303,26 @@ Performs synchronized repeat clustering across multiple sequences. All files in 
 ```bash
 java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/sequences/ -combine
 ```
+
+**Output files produced by a `-combine` run:**
+
+| File | Description |
+|---|---|
+| `<file>.gff`, `<file>.png`, `<file>.svg` | Per-file annotation and images for each input sequence |
+| `<file>.msk` | Per-file soft-masked FASTA |
+| `<report>.gff`, `<report>.png`, `<report>.svg` | Combined annotation and image across all sequences |
+| `<report>_pangenome.txt` | Pangenome summary (see below) |
+| `<report>_pangenome.tsv` | Repeat-family presence/absence matrix |
+
+**Pangenome report.** Using the synchronized clustering, each repeat family (CRP cluster) is mapped back to the sequences it occurs in and classified as:
+
+- **core** — present in *all* analyzed sequences (shared content);
+- **accessory** (shell) — present in some but not all sequences;
+- **unique** (cloud) — present in a single sequence (differing content).
+
+`<report>_pangenome.txt` reports the core/accessory/unique breakdown, the family-frequency spectrum (number of families present in exactly *k* sequences), per-sequence statistics (CRP / UCRP / STR content), the genome-specific (unique) families, and a pairwise shared-family matrix with Jaccard similarity. `<report>_pangenome.tsv` is a machine-readable presence/absence matrix — one row per family, one column per sequence — suitable for downstream analysis and plotting. The `ClusterID` column matches the GFF3 `ClusterID`, so the reports cross-reference each other.
+
+The pangenome report is generated automatically for multi-sequence `-combine` runs.
 
 ### `-homology` — Homology Masking
 
@@ -388,6 +420,8 @@ ATCGATCGATCGATCGATCGATCG...
 | **Masked genome** | FASTA | Soft-masked sequence (repeats in lowercase) |
 | **Repeat landscape** | PNG / SVG | Publication-ready visualization of repeat distribution |
 | **Summary statistics** | Text | Genome-wide repeat content, class breakdown, and family counts |
+| **Per-file reports** *(`-combine`)* | GFF3 / PNG / SVG | Individual annotation and images for each input file, alongside the combined output |
+| **Pangenome report** *(`-combine`)* | Text + TSV | Core / accessory / unique repeat-family classification and presence/absence matrix |
 
 ### GFF3 Output Format
 
@@ -545,7 +579,7 @@ Any organism with a DNA sequence. TotalRepeats is organism-agnostic and has been
 RepeatMasker relies on a curated library (Repbase/Dfam) and performs homology-based detection — it can only find repeats represented in its database. TotalRepeats works *de novo*, detecting all repeated sequences regardless of prior annotation. The two tools are complementary: use TotalRepeats for comprehensive discovery and RepeatMasker for precise classification. The `-maskscomp` option lets you compare their outputs directly.
 
 **Q: Can I process multiple genomes at once?**
-Yes. Point TotalRepeats at a directory containing FASTA files, and it will process all of them. Add `-combine` for synchronized cross-genome repeat clustering.
+Yes. Point TotalRepeats at a directory containing FASTA files, and it will process all of them. Add `-combine` for synchronized cross-genome repeat clustering — this produces a per-file report and image for each input, a combined report and image, and a pangenome report (core / accessory / unique families plus a presence/absence matrix).
 
 **Q: What is the maximum genome size TotalRepeats can handle?**
 TotalRepeats has been tested on genomes exceeding 20 Gb (e.g., *Pleurodeles waltl*). The limiting factor is available RAM — allocate sufficient heap memory via `-Xms` and `-Xmx` flags.
@@ -554,7 +588,7 @@ TotalRepeats has been tested on genomes exceeding 20 Gb (e.g., *Pleurodeles walt
 Yes. Use `-readmask` to import masked FASTA files from RepeatMasker or other tools, and `-readgff` to import GFF annotations for visualization.
 
 **Q: What does the `-quick` flag do exactly?**
-It enables multithreaded pairwise comparison during the clustering step. This significantly speeds up processing for large genomes with many repeat families, at no cost to accuracy.
+It enables multithreaded pairwise comparison during the clustering step. This significantly speeds up processing for large genomes with many repeat families, at no cost to accuracy. The flag `-fast` is an alias for `-quick`.
 
 ---
 
