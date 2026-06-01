@@ -38,6 +38,10 @@ public final class TotalRepeatsSearching {
         ReportFilePath = a;
     }
 
+    public void SetPangenome(boolean b) {
+        this.pangenome = b;
+    }
+
     public void SetFileName(String a) {
         filePath = a;
     }
@@ -219,6 +223,7 @@ public final class TotalRepeatsSearching {
             SavingGFF(ReportFilePath, 0, l, seqslen);
             SavingPicture(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);
             SavingSVG(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);//(int k, int n, int len, int dw, int dh, int[] seqslen)            
+            SavingPangenome(ReportFilePath, seqslen);   // pangenome: core / accessory / unique families
         }
     }
 
@@ -1045,6 +1050,22 @@ public final class TotalRepeatsSearching {
         }
     }
 
+    /**
+     * Pangenomic analysis of the combined clustering: classifies repeat families
+     * as core / accessory / unique across the analyzed sequences and writes a
+     * summary report and a presence/absence matrix. Uses the current {@code bb}
+     * (combined clusters) and {@code refclust}, so it must be called after the
+     * combined ClusteringMasking and saving.
+     */
+    private void SavingPangenome(String reportBase, int[] seqslen) throws IOException {
+        if (!pangenome || bb == null || nseq < 2 || seqslen == null || seqslen.length < nseq) {
+            return;
+        }
+        String base = (reportBase == null || reportBase.isEmpty()) ? filePath : reportBase;
+        PangenomeAnalysis pa = new PangenomeAnalysis(bb, seqslen, sname, refclust, refsname);
+        pa.write(base);
+    }
+
     private void SavingGFF(String reportfile, int n, int l, int[] h) throws IOException {
         String b = sname[n];
         long duration = (System.nanoTime() - startTime) / 1000000000;
@@ -1386,4 +1407,5 @@ public final class TotalRepeatsSearching {
     private String[] refseq;
     private String[] refsname;
     private ArrayList<int[]> bb;
+    private boolean pangenome = true;   // generate pangenome (core/accessory/unique) report in combined runs
 }
