@@ -41,7 +41,7 @@ TotalRepeats is a universal, *de novo* tool for genome-wide identification, clas
 
 - **Mobile genetic elements** — transposons, retrotransposons (LINEs, SINEs, LTR elements, DNA transposons)
 - **Tandem arrays** — microsatellites (SSRs), minisatellites, telomeric repeats, centromeric satellite DNA
-- **Genes duplication** — genes duplication, rearrangement and copy-number variants
+- **Gene duplication** — duplicated genes, rearrangements, and copy-number variants
 - **Large-scale structural variations** — segmental duplications, rearrangements
 - **Unique sequence identification** — detection of sequences that occur only once across the entire genome and within individual chromosomes
  
@@ -53,9 +53,11 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 
 Latest additions to TotalRepeats:
 
-- **Per-file reports in comparative mode.** In `-combine` runs, every input file now produces its own GFF3 annotation, PNG, and SVG (named after that file), *in addition to* the combined report and image. You can inspect each genome individually while still seeing the joint view.
-- **Pangenome analysis — core / accessory / unique.** `-combine` now also writes a pangenome report that classifies every repeat family by how many of the analyzed sequences it occurs in: **core** (present in all), **accessory** (present in some), and **unique** (present in a single sequence). It includes the family-frequency spectrum, per-sequence statistics, a pairwise shared-family matrix (Jaccard similarity), and a machine-readable presence/absence matrix. See [`-combine`](#-combine--comparative-analysis).
-- **`-fast` alias for `-quick`.** Either flag now enables fully multithreaded clustering.
+- **Comparative analyses are no longer capped at ~2 GB.** The `-combine`, `-combine2`, and `-combinemask` modes previously failed with `OutOfMemoryError: Requested string length exceeds VM limit` once the *combined* length of all input sequences passed ~2.1 GB — Java's hard limit on the size of a single array/`String`. They now concatenate the inputs **virtually** and address them with **64-bit (long) coordinates**, so a joint analysis scales to pangenome-sized data (tens of Gb) without ever materializing a single oversized string. Each individual sequence/chromosome is still limited to 2 GB; the *total* across files is now effectively bounded only by available RAM.
+- **Per-file reports in every comparative mode.** `-combine`, `-combine2`, and `-combinemask` now each emit an individual GFF3 annotation, PNG, and SVG per input file (named after that file), *in addition to* the combined report. Each genome can be inspected on its own while the joint clustering is preserved — the same family keeps the same `ClusterID`, colour, row, and reference label in both the per-file and combined views.
+- **Pangenome analysis — core / accessory / unique — across all comparative modes.** Every combine run now writes a pangenome report classifying each repeat family by how many sequences it occurs in: **core** (present in all), **accessory** (present in some), and **unique** (present in one). It includes the family-frequency spectrum, per-sequence statistics, a pairwise shared-family matrix (Jaccard similarity), and a machine-readable presence/absence matrix. See [`-combine`](#-combine--comparative-analysis).
+- **Combined image is now SVG.** The joint (cross-file) visualization is written as scalable SVG, which has no pixel-size ceiling and stays sharp at pangenome scale. Per-file images are still produced as both PNG and SVG.
+- **`-fast` alias for `-quick`.** Either flag enables fully multithreaded clustering.
 - **Performance improvements.** Faster low-complexity/SSR masking and sequence clustering — k-mer encoding and reduced memory traffic in the hot loops — with identical results.
 
 ---
@@ -70,7 +72,8 @@ Latest additions to TotalRepeats:
 | 📚 **External annotation** | Annotate repeats against Repbase, Dfam/FamDB, or custom species-specific libraries |
 | 📊 **Publication-ready visualization** | Generate PNG and SVG images of repeat landscapes, annotated maps, and comparative views |
 | ⚡ **Multithreaded performance** | Parallel processing across all cores for masking, clustering, and annotation |
-| 🧩 **Pangenome analysis** | Core / accessory / unique repeat-family classification with a presence/absence matrix across genomes (`-combine`); cross-tool pangenome-scale comparisons (`-combinemask`) |
+| 🧩 **Pangenome analysis** | Core / accessory / unique repeat-family classification with a presence/absence matrix across genomes — produced by every comparative mode (`-combine`, `-combine2`, `-combinemask`) |
+| 🗄️ **Pangenome-scale inputs** | Combined comparative analysis is not limited by the 2 GB single-sequence cap — inputs are concatenated virtually and addressed with 64-bit coordinates |
 
 ---
 
@@ -139,7 +142,7 @@ Latest additions to TotalRepeats:
 
 ```bash
 # 1. Clone the repository (or download the JAR directly)
-git clone https://github.com/<username>/TotalRepeats.git
+git clone https://github.com/rkalendar/TotalRepeats.git
 cd TotalRepeats
 
 # 2. Confirm Java 25+ is available
@@ -217,6 +220,8 @@ When working with large genomes, allocate additional heap memory using JVM flags
 
 > **Tip:** Set `-Xms` to roughly one-quarter of `-Xmx` for a good balance between startup speed and memory efficiency.
 
+> **Comparative runs (`-combine`, `-combine2`, `-combinemask`):** size the heap to the *combined* length of all input files, not the largest single file. These modes now handle a combined size above 2 GB (they no longer build one giant string), so the only practical limit is the heap you provide — allocate accordingly for pangenome-scale inputs.
+
 ### Common Options
 
 | Option | Description | Default |
@@ -234,9 +239,9 @@ When working with large genomes, allocate additional heap memory using JVM flags
 
 | Option | Description |
 |---|---|
-| `-combine` | Pangenome comparative analysis — synchronized repeat clustering across multiple files |
-| `-combine2` | Pangenome comparative analysis — synchronized repeat clustering across multiple files, all target sequences are combined into one single sequence and the identification of repetitions is carried out on this sequence|
-| `-combinemask` | Pangenome comparative analysis — synchronized repeat clustering across multiple masked files; compare multiple masking files for cross-tool benchmarking or pangenome studies |
+| `-combine` | Comparative analysis — synchronized repeat clustering across multiple files; per-file reports + combined report + pangenome (see [Comparing the comparative modes](#comparing-the-comparative-modes)) |
+| `-combine2` | Comparative analysis where all target sequences are treated as a single combined search space — repeat identification is performed over the whole set, then clustered jointly. Produces per-file reports and a pangenome report (see [Comparing the comparative modes](#comparing-the-comparative-modes)) |
+| `-combinemask` | Comparative analysis with mask-based detection — synchronized clustering across files for masking-mode comparison and pangenome studies; per-file reports + combined report + pangenome (no per-file masked FASTA) |
 | `-homology` | Mask all homologous regions to highlight unique sequences between genomes |
 | `-amask` | Perform masking via pairwise sequence alignment (instead of k-mer-based) |
 | `-readmask` | Import existing mask files for clustering, annotation, and visualization |
@@ -292,6 +297,18 @@ Annotate detected repeat families against a curated database. TotalRepeats does 
 java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta -lib=/path/to/library.ref
 ```
 
+### Comparing the comparative modes
+
+All three comparative modes cluster repeats *jointly* across the input files, and all three now produce per-file reports, a combined report, and a pangenome report. They differ mainly in how repeats are detected and in which per-file files are written:
+
+| Mode | Repeat detection | Combined image | Per-file outputs | Pangenome | Typical use |
+|---|---|---|---|---|---|
+| `-combine` | k-mer masking **per sequence**, then joint clustering | SVG | GFF3 · PNG · SVG · masked FASTA | ✅ | Compare homologous chromosomes / assemblies |
+| `-combine2` | sequences treated as **one** combined search space for detection | SVG | GFF3 · PNG · SVG · masked FASTA | ✅ | Treat a set of sequences as a single search space |
+| `-combinemask` | mask-based detection per sequence, then joint clustering | SVG | GFF3 · PNG · SVG | ✅ | Masking-mode comparison / pangenome studies |
+
+> All three handle a *combined* input larger than 2 GB — see [What's New](#whats-new). The combined (cross-file) image is SVG in every mode; per-file images are PNG **and** SVG.
+
 ### `-combine` — Comparative Analysis
 
 Performs synchronized repeat clustering across multiple sequences. All files in the input directory are processed together, enabling direct cross-genome comparison of repeat families.
@@ -311,7 +328,7 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/sequences/ -combine
 |---|---|
 | `<file>.gff`, `<file>.png`, `<file>.svg` | Per-file annotation and images for each input sequence |
 | `<file>.msk` | Per-file soft-masked FASTA |
-| `<report>.gff`, `<report>.png`, `<report>.svg` | Combined annotation and image across all sequences |
+| `<report>.gff`, `<report>.svg` | Combined annotation and image (SVG) across all sequences |
 | `<report>_pangenome.txt` | Pangenome summary (see below) |
 | `<report>_pangenome.tsv` | Repeat-family presence/absence matrix |
 
@@ -323,11 +340,13 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/sequences/ -combine
 
 `<report>_pangenome.txt` reports the core/accessory/unique breakdown, the family-frequency spectrum (number of families present in exactly *k* sequences), per-sequence statistics (CRP / UCRP / STR content), the genome-specific (unique) families, and a pairwise shared-family matrix with Jaccard similarity. `<report>_pangenome.tsv` is a machine-readable presence/absence matrix — one row per family, one column per sequence — suitable for downstream analysis and plotting. The `ClusterID` column matches the GFF3 `ClusterID`, so the reports cross-reference each other.
 
-The pangenome report is generated automatically for multi-sequence `-combine` runs.
+The pangenome report is generated automatically for any multi-sequence comparative run (`-combine`, `-combine2`, or `-combinemask`).
 
 ### `-combinemask` — Pangenome Analysis
 
-Performs pangenome-scale comparative analysis using multiple masking files. Enables synchronized clustering and annotation across assemblies, and supports benchmarking different masking tools or parameters.
+Performs pangenome-scale comparative analysis with mask-based detection. Enables synchronized clustering and annotation across assemblies, and supports comparing different masking strategies or parameters.
+
+Like `-combine`, it now also writes an **individual GFF3 + PNG + SVG per input file**, a **combined GFF + SVG**, and a **pangenome report** (`_pangenome.txt` / `_pangenome.tsv`). It does not write per-file masked FASTA. See [Comparing the comparative modes](#comparing-the-comparative-modes).
 
 ```bash
 java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/sequences/ -combinemask
@@ -406,7 +425,7 @@ NC_017850.1.fasta	NC_017850.1.fasta.msk
 
 ### Input: FASTA
 
-TotalRepeats accepts standard FASTA format or plain-text nucleotide sequences. Multi-entry FASTA files (up to 2 GB per file) are supported.
+TotalRepeats accepts standard FASTA format or plain-text nucleotide sequences. Multi-entry FASTA files are supported. Each individual sequence (chromosome / record) may be up to 2 GB; in the comparative modes (`-combine`, `-combine2`, `-combinemask`) the *combined* size across all files is not limited by that cap.
 
 ```
 >sequence_id Optional description
@@ -421,8 +440,8 @@ ATCGATCGATCGATCGATCGATCG...
 | **Masked genome** | FASTA | Soft-masked sequence (repeats in lowercase) |
 | **Repeat landscape** | PNG / SVG | Publication-ready visualization of repeat distribution |
 | **Summary statistics** | Text | Genome-wide repeat content, class breakdown, and family counts |
-| **Per-file reports** *(`-combine`)* | GFF3 / PNG / SVG | Individual annotation and images for each input file, alongside the combined output |
-| **Pangenome report** *(`-combine`)* | Text + TSV | Core / accessory / unique repeat-family classification and presence/absence matrix |
+| **Per-file reports** *(combine modes)* | GFF3 / PNG / SVG | Individual annotation and images for each input file, alongside the combined output |
+| **Pangenome report** *(combine modes)* | Text + TSV | Core / accessory / unique repeat-family classification and presence/absence matrix |
 
 ### GFF3 Output Format
 
@@ -544,6 +563,8 @@ java -Xms16g -Xmx64g -jar TotalRepeats.jar genome.fasta
 
 > **Tip:** If your machine has limited RAM, try `-maskonly` to skip clustering — the masking step uses significantly less memory.
 
+> **`Requested string length exceeds VM limit` in a comparative run:** this specific error came from the old `-combine`/`-combine2`/`-combinemask` code building a single string of the whole concatenation, which Java caps at ~2.1 GB. It is resolved — these modes now concatenate virtually and use 64-bit coordinates. If you still hit a plain `OutOfMemoryError` (heap), raise `-Xmx` per the table above.
+
 ### No repeats detected
 
 - **Check k-mer size:** For small genomes or short repeats, reduce `kmer` (e.g., `kmer=12`).
@@ -586,10 +607,13 @@ Any organism with a DNA sequence. TotalRepeats is organism-agnostic and has been
 RepeatMasker relies on a curated library (Repbase/Dfam) and performs homology-based detection — it can only find repeats represented in its database. TotalRepeats works *de novo*, detecting all repeated sequences regardless of prior annotation. The two tools are complementary: use TotalRepeats for comprehensive discovery and RepeatMasker for precise classification. The `-maskscomp` option lets you compare their outputs directly.
 
 **Q: Can I process multiple genomes at once?**
-Yes. Point TotalRepeats at a directory containing FASTA files, and it will process all of them. Add `-combine` for synchronized cross-genome repeat clustering — this produces a per-file report and image for each input, a combined report and image, and a pangenome report (core / accessory / unique families plus a presence/absence matrix).
+Yes. Point TotalRepeats at a directory containing FASTA files, and it will process all of them. Add `-combine` (or `-combine2` / `-combinemask`) for synchronized cross-genome repeat clustering — each of these produces a per-file report and image for every input, a combined report and image, and a pangenome report (core / accessory / unique families plus a presence/absence matrix). See [Comparing the comparative modes](#comparing-the-comparative-modes).
 
 **Q: What is the maximum genome size TotalRepeats can handle?**
-TotalRepeats has been tested on genomes exceeding 20 Gb (e.g., *Pleurodeles waltl*). The limiting factor is available RAM — allocate sufficient heap memory via `-Xms` and `-Xmx` flags.
+TotalRepeats has been tested on genomes exceeding 20 Gb (e.g., *Pleurodeles waltl*). A single sequence (one FASTA record) is capped at 2 GB by Java's array/`String` limit, but in the comparative modes the *combined* size across files is not — those modes concatenate virtually and use 64-bit coordinates. The practical limiting factor is available RAM, so allocate sufficient heap via `-Xms` / `-Xmx`.
+
+**Q: My `-combine` run crashed with `Requested string length exceeds VM limit` — is that fixed?**
+Yes. That error came from concatenating all inputs into one string, which Java caps at ~2.1 GB. The comparative modes (`-combine`, `-combine2`, `-combinemask`) now build the concatenation virtually and address it with 64-bit coordinates, so the combined analysis runs at pangenome scale. Any remaining memory issue would be an ordinary heap `OutOfMemoryError` — raise `-Xmx`.
 
 **Q: Can I import results from other tools?**
 Yes. Use `-readmask` to import masked FASTA files from RepeatMasker or other tools, and `-readgff` to import GFF annotations for visualization.
@@ -605,7 +629,26 @@ It enables multithreaded pairwise comparison during the clustering step. This si
 📧 ruslan.kalendar@helsinki.fi
 
 🌐 **Online version:** <https://primerdigital.com/tools/repeats.html>
+💻 **Source code:** <https://github.com/rkalendar/TotalRepeats>
 
+---
+
+## Citation
+
+If you use TotalRepeats in your research, please cite the software and the online resource:
+
+> Kalendar, R. *TotalRepeats: an integrated genome-wide platform for rapid de novo identification, classification, annotation, comparative analysis, and visualization of repetitive elements* [Computer software]. University of Helsinki. <https://github.com/rkalendar/TotalRepeats>
+
+```bibtex
+@software{Kalendar_TotalRepeats,
+  author = {Kalendar, Ruslan},
+  title  = {{TotalRepeats: an integrated genome-wide platform for de novo identification, classification, annotation, comparative analysis, and visualization of repetitive elements}},
+  url    = {https://github.com/rkalendar/TotalRepeats},
+  note   = {Online version: https://primerdigital.com/tools/repeats.html}
+}
+```
+
+If a peer-reviewed article describing TotalRepeats is available, please cite it as well.
 
 ---
 
