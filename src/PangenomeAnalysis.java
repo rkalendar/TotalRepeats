@@ -8,7 +8,7 @@ import java.util.List;
  * Pangenomic analysis of the repeat clusters produced by the combined
  * (multi-file) TotalRepeats run.
  *
- * <p>The combined clustering groups homologous repeat instances detected across
+ * The combined clustering groups homologous repeat instances detected across
  * the concatenated set of input sequences into families (CRP clusters). By
  * mapping every instance back to the input sequence it came from (via the
  * cumulative sequence-boundary array {@code seqslen}), each family gets a
@@ -16,13 +16,13 @@ import java.util.List;
  * families are split into:
  *
  * <ul>
- *   <li><b>core</b> &mdash; present in <i>all</i> genomes (the shared content);</li>
+ *   <li><b>core</b> &mdash; present in all genomes (the shared content);</li>
  *   <li><b>accessory</b> (shell) &mdash; present in some but not all genomes;</li>
  *   <li><b>unique</b> (cloud / singleton) &mdash; present in a single genome
  *       (the differing content).</li>
  * </ul>
  *
- * <p>The class is self-contained: it only needs the cluster blocks, the
+ * The class is self-contained: it only needs the cluster blocks, the
  * sequence boundaries and the genome names, so it can be reused by any of the
  * combined run modes.
  */
@@ -49,7 +49,7 @@ public final class PangenomeAnalysis {
 
     private final int nGenomes;
     private final String[] names;
-    private final int[] seqslen;            // cumulative end coordinates per genome
+    private final long[] seqslen;           // cumulative end coordinates per genome (global, long)
 
     private final List<Family> families = new ArrayList<>();
 
@@ -62,7 +62,7 @@ public final class PangenomeAnalysis {
     private int coreCount, accessoryCount, uniqueCount;
     private long coreBp, accessoryBp, uniqueBp;
 
-    public PangenomeAnalysis(ArrayList<int[]> bb, int[] seqslen, String[] names,
+    public PangenomeAnalysis(ArrayList<long[]> bb, long[] seqslen, String[] names,
                              int[] refclust, String[] refsname) {
         this.nGenomes = names.length;
         this.names = names;
@@ -74,7 +74,7 @@ public final class PangenomeAnalysis {
 
         // bb index 0 = STR, index 1 = UCRP, index >= 2 = CRP families.
         for (int i = 0; i < bb.size(); i++) {
-            int[] z = bb.get(i);
+            long[] z = bb.get(i);
             if (z == null) {
                 continue;
             }
@@ -137,7 +137,7 @@ public final class PangenomeAnalysis {
     }
 
     /** Maps a global start coordinate to its genome index (same rule as SavingGFF). */
-    private int genomeOf(int start) {
+    private int genomeOf(long start) {
         for (int w = 0; w < seqslen.length; w++) {
             if (seqslen[w] > start) {
                 return w;

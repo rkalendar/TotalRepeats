@@ -130,11 +130,74 @@ public final class TotalRepeatsSearching {
         return res;
     }
 
+    // ── long-coordinate helpers for the combined (>2.1 Gb) run ──────────────────
+
+    /**
+     * Copies a LOCAL block array (pairs: start, length; lengths may be negative for
+     * the reverse strand) into a GLOBAL long block array, shifting every start by
+     * {@code sz}. Lengths (and their sign) are preserved. The input array is not
+     * modified, so the caller can keep using the local coordinates afterwards.
+     */
+    private long[] shiftToGlobal(int[] blocks, long sz) {
+        long[] g = new long[blocks.length];
+        for (int j = 0; j + 1 < blocks.length; j += 2) {
+            g[j] = (long) blocks[j] + sz;   // start → global
+            g[j + 1] = blocks[j + 1];       // length (sign preserved)
+        }
+        return g;
+    }
+
+    /** Concatenates two long block arrays (same role as CombineArrays for int[]). */
+    private long[] concatLong(long[] a, long[] b) {
+        long[] r = new long[a.length + b.length];
+        System.arraycopy(a, 0, r, 0, a.length);
+        System.arraycopy(b, 0, r, a.length, b.length);
+        return r;
+    }
+
+    /**
+     * Long-coordinate twin of {@link #SliceBlocksLocal}: extracts the blocks of a
+     * GLOBAL long array that fall inside one sequence's range [seqStart, seqEnd) and
+     * remaps them to that sequence's LOCAL int coordinates. A single sequence is
+     * always < 2.1 Gb, so the local start/length fit in an int. Negative lengths
+     * (reverse strand) are kept.
+     */
+    private int[] sliceBlocksLocalLong(long[] blocks, long seqStart, long seqEnd) {
+        long seqLen = seqEnd - seqStart;
+        ArrayList<Integer> out = new ArrayList<>();
+        for (int j = 0; j + 1 < blocks.length; j += 2) {
+            long start = blocks[j];
+            long len = blocks[j + 1];
+            long absLen = Math.abs(len);
+            if (start >= seqStart && start < seqEnd) {
+                long localStart = start - seqStart;
+                long localLen = absLen;
+                if (localStart + localLen > seqLen) {
+                    localLen = seqLen - localStart;   // clip to the sequence end
+                }
+                if (localLen > 0) {
+                    out.add((int) localStart);
+                    out.add(len < 0 ? -(int) localLen : (int) localLen);
+                }
+            }
+        }
+        int[] res = new int[out.size()];
+        for (int t = 0; t < res.length; t++) {
+            res[t] = out.get(t);
+        }
+        return res;
+    }
+
     public void RunCombine(int k, boolean fst) throws IOException {
         startTime = System.nanoTime();
-        int[] seqslen = new int[nseq];
-        int[] u2 = new int[0];
-        int[] ssr2 = new int[0];
+
+        // Global coordinates are long: the concatenation of all sequences may exceed
+        // the ~2.1 Gb int/String limit even though each individual chromosome fits in
+        // a String. seqslen[i] is the cumulative global end of sequence i; u2/ssr2 are
+        // the masked-repeat / STR blocks remapped to global coordinates.
+        long[] seqslen = new long[nseq];
+        long[] u2 = new long[0];
+        long[] ssr2 = new long[0];
 
         // Per-sequence statistics, remembered for the individual report headers
         // (the per-file output is built afterwards as a slice of the combined run).
@@ -145,13 +208,11 @@ public final class TotalRepeatsSearching {
 
         String[] seqs = seq;     // keep the individual sequences for the per-file reports
 
-        bb = new ArrayList<>();
-
-        int sz = 0;
+        long sz = 0;
         for (int i = 0; i < nseq; i++) {
             repeatslen = 0;
             gapslen = 0;
-            int l = seq[i].length();
+            int l = seq[i].length();   // a single chromosome always fits in an int
 
             System.out.println("\n" + sname[i]);
             System.out.println("Target sequence length = " + l + " nt");
@@ -160,14 +221,11 @@ public final class TotalRepeatsSearching {
             m1.FindAllSSRs(seq[i], telomers, SSRdetection);
             byte[] ssrmsk = m1.MapBytes();
             int[] ssr = m1.IntBlocks();
-            int[] copy = Arrays.copyOf(ssr, ssr.length);
+            int[] copy = Arrays.copyOf(ssr, ssr.length);   // LOCAL blocks for this file's .msk
 
-            if (i > 0) {
-                for (int j = 0; j < ssr.length; j += 2) {
-                    ssr[j] = ssr[j] + sz;
-                }
-            }
-            ssr2 = CombineArrays(ssr2, ssr);
+            // Append this sequence's STR blocks to the combined run in GLOBAL long
+            // coordinates (shift local starts by sz). The local ssr/copy stay untouched.
+            ssr2 = concatLong(ssr2, shiftToGlobal(ssr, sz));
 
             ssrglobal = m1.GetTotalRepeats();
             MaskingSequence ms = new MaskingSequence();
@@ -190,51 +248,55 @@ public final class TotalRepeatsSearching {
             gapLenStat[i] = gapslen;
             gapPctStat[i] = gaps;
 
+            // Per-file mask is written from LOCAL coordinates over seq[i].
             filePath = filesPath[i];
             SavingMask3("", i, u, copy);
 
-            if (i > 0) {
-                for (int j = 0; j < u.length; j += 2) {
-                    u[j] = u[j] + sz;
-                }
-            }
-            u2 = CombineArrays(u2, u);
-            sz = sz + l;
+            // Append this sequence's masked-repeat blocks to the combined run (global).
+            u2 = concatLong(u2, shiftToGlobal(u, sz));
+            sz = sz + l;            // long accumulation (no int overflow at >2.1 Gb)
             seqslen[i] = sz;
         }
 
-        bb.add(ssr2);
+        // Virtual concatenation: a SeqStore replaces String.join("", seq) and never
+        // builds a single >2.1 Gb String, so the "Requested string length exceeds VM
+        // limit" OutOfMemoryError can no longer occur here.
+        SeqStore store = new SeqStore(seqs);
+        long l = store.length();
 
-        String s = String.join("", seq);
-        int l = s.length();
-        seq = new String[]{s};
-        s = "";
+        // Combined cluster table in GLOBAL long coordinates. Index 0 is the STR row
+        // (matching the old bb[0]); ClusteringMaskingCombined then appends UCRP + the
+        // families (so the row/colour/ClusterID layout is identical to before).
+        ArrayList<long[]> bbL = new ArrayList<>();
+        bbL.add(ssr2);
+
         System.out.println("\nClustering started...");
-        ClusteringMasking(seq[0], u2, fst);
+        ClusteringMaskingCombined(store, u2, fst, bbL);
 
-        if (bb != null) {
-            SavingGFF(ReportFilePath, 0, l, seqslen);
-            //SavingPicture(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);
-            SavingSVG(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);//(int k, int n, int len, int dw, int dh, int[] seqslen)
-            SavingPangenome(ReportFilePath, seqslen);   // pangenome: core / accessory / unique families
+        if (bbL != null) {
+            // Combined report + picture use long coordinates and read the sequence
+            // through the SeqStore (so SeqShow works across the whole concatenation).
+            SavingGFFLong(ReportFilePath, l, seqslen, bbL, store);
+            SavingSVGLong(ReportFilePath, k, l, iwidth, iheight, seqslen, bbL);
+            SavingPangenomeCombined(ReportFilePath, seqslen, bbL, l);   // pangenome: core / accessory / unique families
 
             // --- Individual (per-file) reports and pictures ---
-            // Built as exact slices of the COMBINED clustering so that each
-            // sequence's individual report/picture matches its region in the
-            // combined one: the same families keep the same cluster index (hence
-            // the same colour, row and ClusterID) and reference labels; only the
-            // blocks are restricted to this sequence and remapped to its own local
-            // coordinates. refclust stays the combined one (ordering is preserved).
-            ArrayList<int[]> bbCombined = bb;
-            seq = seqs;                          // restore the individual sequences (for SeqShow)
-            int start = 0;
+            // Built as exact slices of the COMBINED clustering so that each sequence's
+            // individual report/picture matches its region in the combined one: the
+            // same families keep the same cluster index (hence the same colour, row and
+            // ClusterID) and reference labels; only the blocks are restricted to this
+            // sequence and remapped to its own LOCAL int coordinates (always < 2.1 Gb),
+            // which lets the unchanged int-based savers be reused as-is. refclust stays
+            // the combined one (ordering is preserved).
+            seq = seqs;                          // individual sequences (for SeqShow)
+            long start = 0;
             for (int i = 0; i < nseq; i++) {
-                int end = seqslen[i];
+                long end = seqslen[i];
                 int li = seqs[i].length();
 
-                ArrayList<int[]> bbLocal = new ArrayList<>(bbCombined.size());
-                for (int[] z7 : bbCombined) {
-                    bbLocal.add(SliceBlocksLocal(z7, start, end));   // same order/count as combined
+                ArrayList<int[]> bbLocal = new ArrayList<>(bbL.size());
+                for (long[] z7 : bbL) {
+                    bbLocal.add(sliceBlocksLocalLong(z7, start, end)); // same order/count as combined
                 }
                 bb = bbLocal;
 
@@ -251,23 +313,31 @@ public final class TotalRepeatsSearching {
 
                 start = end;
             }
-            bb = bbCombined;
         }
     }
 
     public void RunCombineMask(int k, boolean fst) throws IOException {
         startTime = System.nanoTime();
-        int[] seqslen = new int[nseq];
-        int[] u2 = new int[0];
-        int[] ssr2 = new int[0];
 
-        bb = new ArrayList<>();
+        // Same long migration as RunCombine: global coordinates are long and the
+        // sequences are concatenated virtually through a SeqStore, so String.join is
+        // gone and neither a >2.1 Gb String nor an overflowing int counter is built.
+        // The cluster table is kept in a local ArrayList<long[]> with exactly the same
+        // row layout this method produced before: one STR row per input sequence, then
+        // the combined STR row, then UCRP + the families (added by ClusteringMaskingCombined).
+        long[] seqslen = new long[nseq];
+        long[] u2 = new long[0];
+        long[] ssr2 = new long[0];
 
-        int sz = 0;
+        ArrayList<long[]> bbL = new ArrayList<>();
+
+        String[] seqs = seq;     // keep the individual sequences (SeqShow + the combined store)
+
+        long sz = 0;
         for (int i = 0; i < nseq; i++) {
             repeatslen = 0;
             gapslen = 0;
-            int l = seq[i].length();
+            int l = seq[i].length();   // a single sequence always fits in an int
 
             startTime = System.nanoTime();
             System.out.println("Target sequence length = " + l + " nt");
@@ -279,19 +349,17 @@ public final class TotalRepeatsSearching {
             byte[] ssrmsk = m1.MapBytes();
             int[] ssr = m1.IntBlocks();
             ssrglobal = m1.GetTotalRepeats();
-            bb.add(ssr);
+
+            // per-sequence STR row in GLOBAL long coordinates (parallels bb.add(ssr)).
+            bbL.add(shiftToGlobal(ssr, sz));
 
             MaskResult fc = new MaskResult();
             int[] u = fc.ReadMask(seq[i], gap, minlenseq, ssrmsk);
             repeatslen = fc.getRepeatsLen();
             gapslen = fc.getGaps();
 
-            if (i > 0) {
-                for (int j = 0; j < ssr.length; j += 2) {
-                    ssr[j] = ssr[j] + sz;
-                }
-            }
-            ssr2 = CombineArrays(ssr2, ssr);
+            // combined STR blocks (global). The local ssr stays untouched.
+            ssr2 = concatLong(ssr2, shiftToGlobal(ssr, sz));
 
             repeatslen = (repeatslen * 100) / (l - gapslen);
             ssrglobal = (ssrglobal * 100) / (l - gapslen);
@@ -303,29 +371,29 @@ public final class TotalRepeatsSearching {
             maskduration = (System.nanoTime() - startTime) / 1000000000;
             System.out.println("Masking time taken: " + maskduration + " seconds\n");
 
-            if (i > 0) {
-                for (int j = 0; j < u.length; j += 2) {
-                    u[j] = u[j] + sz;
-                }
-            }
-            u2 = CombineArrays(u2, u);
+            // combined masked-repeat blocks (global).
+            u2 = concatLong(u2, shiftToGlobal(u, sz));
 
-            sz = sz + l;
+            sz = sz + l;            // long accumulation (no int overflow at >2.1 Gb)
             seqslen[i] = sz;
         }
 
-        bb.add(ssr2);
+        bbL.add(ssr2);
 
-        String s = String.join("", seq);
-        int l = s.length();
-        seq = new String[]{s};
-        s = "";
+        // Virtual concatenation instead of String.join("", seq): no >2.1 Gb String.
+        SeqStore store = new SeqStore(seqs);
+        long l = store.length();
+        seq = seqs;             // keep individual sequences available
+
         System.out.println("\nClustering started...");
-        ClusteringMasking(seq[0], u2, fst);
+        ClusteringMaskingCombined(store, u2, fst, bbL);
 
-        if (bb != null) {
-            SavingGFF(ReportFilePath, 0, l, seqslen);
-            SavingPicture(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);
+        if (bbL != null) {
+            // Combined report + picture in long coordinates. The combined picture is
+            // emitted as SVG (vector, unlimited size) instead of the former int PNG,
+            // which could not address a >2.1 Gb concatenation — same choice as RunCombine.
+            SavingGFFLong(ReportFilePath, l, seqslen, bbL, store);
+            SavingSVGLong(ReportFilePath, k, l, iwidth, iheight, seqslen, bbL);
         }
     }
 
@@ -438,105 +506,130 @@ public final class TotalRepeatsSearching {
 
     public void RunCombine2(int k, boolean fst) throws IOException {
         startTime = System.nanoTime();
-        int[] seqslen = new int[nseq];
-        int sz = 0;
-        for (int i = 0; i < nseq; i++) {
-            int l = seq[i].length();
-            sz = sz + l;
-            seqslen[i] = sz; // end coordinate 
-            System.out.println("\n" + sname[i]);
-            System.out.println("Target sequence length = " + l + " nt");
-        }
+
+        // Long migration of RunCombine2. The original concatenated everything into a
+        // single String (String.join) plus a single >2.1 Gb byte[] and ran SSR/repeat
+        // detection once over the whole concatenation, masking `gap` bases at every
+        // junction so repeats could not cross sequence boundaries. Because the bundled
+        // LowComplexitySequence / MaskingSequence operate on a String (which cannot
+        // exceed ~2.1 Gb), detection is now performed per sequence — which is exactly
+        // what the junction masking emulated — and the per-sequence blocks are combined
+        // in GLOBAL long coordinates. Clustering then runs over the virtual SeqStore
+        // concatenation, so no >2.1 Gb String or byte[] is ever allocated.
+        long[] seqslen = new long[nseq];
+        long[] u2 = new long[0];
+        long[] ssr2 = new long[0];
 
         String[] seqs = seq;            // keep individual sequences for per-file output
-        String s = String.join("", seq);
-        int l = s.length();
-        seq = new String[]{s};
-        byte[] c = s.toUpperCase().getBytes();
-        s = "";
 
-        repeatslen = 0;
-        gapslen = 0;
-        bb = new ArrayList<>();
+        // combined-header aggregates (summed across all sequences)
+        long repBpAll = 0, ssrBpAll = 0, gapBpAll = 0, lenAll = 0;
 
-        LowComplexitySequence m1 = new LowComplexitySequence();
-        m1.FindAllSSRs(seq[0], telomers, SSRdetection);
-        byte[] ssrmsk = m1.MapBytes();
-        int[] ssr = m1.IntBlocks();
-        ssrglobal = m1.GetTotalRepeats();
-
-        for (int i = 0; i < nseq - 1; i++) {
-            for (int j = seqslen[i] - gap - 1; j < seqslen[i]; j++) {
-                ssrmsk[j] = 99;
-            }
-        }
-
-        bb.add(ssr);
-        MaskingSequence ms = new MaskingSequence();
-
-        int[] u = ms.mask(seq[0], ssrmsk, kmerln, minlenseq);
-        repeatslen += ms.repeatLength();
-        gapslen = ms.gapsLength();
-        repeatslen = (repeatslen * 100) / (l - gapslen);
-        ssrglobal = (ssrglobal * 100) / (l - gapslen);
-        gaps = (gapslen * 100) / l;
-
-        System.out.println("Sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
-        System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
-        System.out.println("Sequence gap (bp)=" + (int) gapslen + " (" + String.format("%.4f", gaps) + "%)\n");
-        for (int j = 0; j < u.length; j += 2) {
-            int from = Math.max(0, u[j]);
-            int to = Math.min(l, u[j] + u[j + 1]);
-            for (int i = from; i < to; i++) {
-                byte b = c[i];
-                if (b >= 'A' && b < 'Z') {
-                    c[i] = (byte) (b + 32);
-                }
-            }
-        }
-        for (int j = 0; j < ssr.length; j += 2) {
-            int from = Math.max(0, ssr[j]);
-            int to = Math.min(l, ssr[j] + ssr[j + 1]);
-            for (int i = from; i < to; i++) {
-                byte b = c[i];
-                if (b >= 'A' && b < 'Z') {
-                    c[i] = (byte) (b + 32);
-                }
-            }
-        }
-
-        int x1 = 0;
+        long sz = 0;
         for (int i = 0; i < nseq; i++) {
+            int l = seq[i].length();    // a single sequence always fits in an int
+
+            System.out.println("\n" + sname[i]);
+            System.out.println("Target sequence length = " + l + " nt");
+
+            LowComplexitySequence m1 = new LowComplexitySequence();
+            m1.FindAllSSRs(seq[i], telomers, SSRdetection);
+            byte[] ssrmsk = m1.MapBytes();
+            int[] ssr = m1.IntBlocks();             // LOCAL STR blocks for this sequence
+            long ssrThis = m1.GetTotalRepeats();
+
+            MaskingSequence ms = new MaskingSequence();
+            int[] u = ms.mask(seq[i], ssrmsk, kmerln, minlenseq);  // LOCAL masked-repeat blocks
+            long repThis = ms.repeatLength();
+            long gapThis = ms.gapsLength();
+
+            // combined blocks in GLOBAL long coordinates (the local arrays stay untouched)
+            ssr2 = concatLong(ssr2, shiftToGlobal(ssr, sz));
+            u2 = concatLong(u2, shiftToGlobal(u, sz));
+
+            // per-file masked output (.msk) in LOCAL coordinates, same byte format as
+            // the original SavingMask2 (lowercase the masked-repeat and STR positions).
+            byte[] ci = seqs[i].toUpperCase().getBytes();
+            for (int j = 0; j + 1 < u.length; j += 2) {
+                int from = Math.max(0, u[j]);
+                int to = Math.min(l, u[j] + u[j + 1]);
+                for (int p = from; p < to; p++) {
+                    byte bch = ci[p];
+                    if (bch >= 'A' && bch < 'Z') {
+                        ci[p] = (byte) (bch + 32);
+                    }
+                }
+            }
+            for (int j = 0; j + 1 < ssr.length; j += 2) {
+                int from = Math.max(0, ssr[j]);
+                int to = Math.min(l, ssr[j] + ssr[j + 1]);
+                for (int p = from; p < to; p++) {
+                    byte bch = ci[p];
+                    if (bch >= 'A' && bch < 'Z') {
+                        ci[p] = (byte) (bch + 32);
+                    }
+                }
+            }
             filePath = filesPath[i];
-            SavingMask2(i, c, x1, seqslen[i]);
-            x1 = seqslen[i];
+            SavingMask2(i, ci, 0, l);
+
+            repBpAll += repThis;
+            ssrBpAll += ssrThis;
+            gapBpAll += gapThis;
+            lenAll += l;
+
+            sz = sz + l;            // long accumulation (no int overflow at >2.1 Gb)
+            seqslen[i] = sz;        // end coordinate
         }
-        if (u.length > 1) {
+
+        // Combined-run header statistics (aggregate of the per-sequence figures).
+        long effAll = (lenAll - gapBpAll > 0) ? (lenAll - gapBpAll) : lenAll;
+        repeatslen = (repBpAll * 100.0) / effAll;
+        ssrglobal = (ssrBpAll * 100.0) / effAll;
+        gapslen = gapBpAll;
+        gaps = (gapBpAll * 100.0) / lenAll;
+        System.out.println("\nCombined: sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
+        System.out.println("Combined: short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
+        System.out.println("Combined: sequence gap (bp)=" + (long) gapslen + " (" + String.format("%.4f", gaps) + "%)");
+
+        // Virtual concatenation instead of String.join + byte[]: no >2.1 Gb allocation.
+        SeqStore store = new SeqStore(seqs);
+        long l = store.length();
+        seq = seqs;
+
+        // Combined cluster table in GLOBAL long coordinates: index 0 = STR row, then
+        // ClusteringMaskingCombined appends UCRP + the families (ids 3..ncl). This is
+        // the same [STR, UCRP, families...] layout the int path produced, so it is
+        // directly compatible with PangenomeAnalysis.
+        ArrayList<long[]> bbL = new ArrayList<>();
+        bbL.add(ssr2);
+
+        if (u2.length > 1) {
             System.out.println("Clustering started...");
-            ClusteringMasking(seq[0], u, fst);
+            ClusteringMaskingCombined(store, u2, fst, bbL);
         }
-        if (bb != null) {
-            SavingGFF(ReportFilePath, 0, l, seqslen);
-            //SavingPicture(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);
-            SavingSVG(ReportFilePath, k, 0, l, iwidth, iheight, seqslen);//(int k, int n, int len, int dw, int dh, int[] seqslen)
-            //SavingPangenome(ReportFilePath, seqslen);   // pangenome: core / accessory / unique families
+
+        if (bbL != null) {
+            // Combined report + picture (long). The picture is SVG (vector, unlimited
+            // size); the int PNG stays disabled, as in the original. The pangenome
+            // report is now produced as well, since PangenomeAnalysis is long-aware.
+            SavingGFFLong(ReportFilePath, l, seqslen, bbL, store);
+            SavingSVGLong(ReportFilePath, k, l, iwidth, iheight, seqslen, bbL);
+            SavingPangenomeCombined(ReportFilePath, seqslen, bbL, l);
 
             // --- Individual (per-file) reports and pictures ---
-            // Built as exact slices of the COMBINED clustering so each sequence's
-            // individual report/picture matches its region in the combined one:
-            // the same families keep the same cluster index (hence colour, row and
-            // ClusterID) and reference labels; only the blocks are restricted to
-            // this sequence and remapped to its own local coordinates. Per-sequence
+            // Exact slices of the COMBINED clustering, remapped to each sequence's LOCAL
+            // int coordinates (always < 2.1 Gb), so the unchanged int savers are reused
+            // and every family keeps the same cluster index/colour/ID. Per-sequence
             // statistics are recomputed from the sliced blocks (gaps = N/n bases).
-            ArrayList<int[]> bbCombined = bb;
-            seq = seqs;                          // restore individual sequences (for SeqShow)
-            int start = 0;
+            seq = seqs;
+            long start = 0;
             for (int i = 0; i < nseq; i++) {
-                int end = seqslen[i];
+                long end = seqslen[i];
                 int li = seqs[i].length();
 
-                int[] ssrLocal = SliceBlocksLocal(ssr, start, end);
-                int[] uLocal = SliceBlocksLocal(u, start, end);
+                int[] ssrLocal = sliceBlocksLocalLong(ssr2, start, end);
+                int[] uLocal = sliceBlocksLocalLong(u2, start, end);
 
                 long repBp = 0;
                 for (int j = 1; j < uLocal.length; j += 2) {
@@ -566,9 +659,9 @@ public final class TotalRepeatsSearching {
                 System.out.println("Sequence gap (bp)=" + (int) gapslen + " (" + String.format("%.4f", gaps) + "%)");
 
                 // per-file bb = slice of the combined clustering (same order/count -> same colours/IDs)
-                ArrayList<int[]> bbLocal = new ArrayList<>(bbCombined.size());
-                for (int[] z7 : bbCombined) {
-                    bbLocal.add(SliceBlocksLocal(z7, start, end));
+                ArrayList<int[]> bbLocal = new ArrayList<>(bbL.size());
+                for (long[] z7 : bbL) {
+                    bbLocal.add(sliceBlocksLocalLong(z7, start, end));
                 }
                 bb = bbLocal;
 
@@ -579,7 +672,6 @@ public final class TotalRepeatsSearching {
 
                 start = end;
             }
-            bb = bbCombined;
         }
     }
 
@@ -796,12 +888,24 @@ public final class TotalRepeatsSearching {
         }
     }
 
+    // Single-sequence clustering. A single sequence always fits in one String
+    // (and therefore one int-addressable segment), so it is wrapped in a one-segment
+    // SeqStore and the int block offsets are promoted to the global long coordinates
+    // the new SequencesClustering expects. The long results are safely narrowed back
+    // to int for bb (every coordinate here is < 2.1 Gb). For the >2.1 Gb combined
+    // case use ClusteringMaskingCombined instead.
     private int ClusteringMasking(String seq, int[] z2, boolean fst) {
-        int[][] d;   // d[j][0] = x1; d[j][1] = length;
+        long[][] d;  // d[j][0] = global start; d[j][1] = length
         int[] q;     // cluster ID for each block
         int ncl;
 
-        SequencesClustering sc = new SequencesClustering(seq, refseq, z2, fst);
+        SeqStore store = new SeqStore(new String[]{seq});
+        long[] offsets = new long[z2.length];
+        for (int t = 0; t < z2.length; t++) {
+            offsets[t] = z2[t];
+        }
+
+        SequencesClustering sc = new SequencesClustering(store, refseq, offsets, fst);
         d = sc.getSequenceOffsets();
         q = sc.getClusterIds();
         refclust = sc.getReferenceIds(); // ID+1 for each cluster
@@ -821,6 +925,49 @@ public final class TotalRepeatsSearching {
             ArrayList<Integer> z = new ArrayList<>();
             for (int i = 0; i < q.length; i++) {
                 if (q[i] == j) {
+                    z.add((int) d[i][0]);
+                    z.add((int) d[i][1]);
+                }
+                if (-q[i] == j) {
+                    z.add((int) d[i][0]);
+                    z.add(-(int) d[i][1]);
+                }
+            }
+
+            bb.add(z.stream().mapToInt(Integer::intValue).toArray());
+        }
+        return bb.size();
+    }
+
+    // Combined clustering for the virtually-concatenated SeqStore: identical logic
+    // to ClusteringMasking, but keeps GLOBAL long coordinates (the combined space can
+    // exceed the ~2.1 Gb int limit). Cluster rows are appended to {@code bbL} in the
+    // same order as the single-sequence path: index 0 is reserved by the caller for
+    // the STR row, this method appends the UCRP row (cluster id 2) and then every
+    // family (cluster ids 3..ncl), keeping empty rows as placeholders so that the
+    // bb index aligns with the cluster id and with refclust exactly as before.
+    private void ClusteringMaskingCombined(SeqStore store, long[] offsets, boolean fst,
+                                           ArrayList<long[]> bbL) {
+        SequencesClustering sc = new SequencesClustering(store, refseq, offsets, fst);
+        long[][] d = sc.getSequenceOffsets();
+        int[] q = sc.getClusterIds();
+        refclust = sc.getReferenceIds(); // ID+1 for each cluster
+        int ncl = sc.getClusterCount();
+
+        if (ncl < 1) {
+            return;
+        }
+
+        for (int i = 0; i < q.length; i++) {
+            if (q[i] == 0) {
+                q[i] = 2;
+            }
+        }
+
+        for (int j = 2; j <= ncl; j++) {
+            ArrayList<Long> z = new ArrayList<>();
+            for (int i = 0; i < q.length; i++) {
+                if (q[i] == j) {
                     z.add(d[i][0]);
                     z.add(d[i][1]);
                 }
@@ -829,10 +976,12 @@ public final class TotalRepeatsSearching {
                     z.add(-d[i][1]);
                 }
             }
-
-            bb.add(z.stream().mapToInt(Integer::intValue).toArray());
+            long[] row = new long[z.size()];
+            for (int t = 0; t < row.length; t++) {
+                row[t] = z.get(t);
+            }
+            bbL.add(row);
         }
-        return bb.size();
     }
 
     private void SavingMask(int n, int[] m, int[] ssr) throws IOException {
@@ -1093,10 +1242,308 @@ public final class TotalRepeatsSearching {
         if (!pangenome || bb == null || nseq < 2 || seqslen == null || seqslen.length < nseq) {
             return;
         }
+        // PangenomeAnalysis is now long-based; promote the int bb/seqslen to long so this
+        // entry point (single-segment / <2.1 Gb callers) keeps working unchanged.
+        long[] seqslenL = new long[seqslen.length];
+        for (int i = 0; i < seqslen.length; i++) {
+            seqslenL[i] = seqslen[i];
+        }
+        ArrayList<long[]> bbL = new ArrayList<>(bb.size());
+        for (int[] row : bb) {
+            long[] r = new long[row.length];
+            for (int j = 0; j < row.length; j++) {
+                r[j] = row[j];
+            }
+            bbL.add(r);
+        }
         String base = (reportBase == null || reportBase.isEmpty()) ? filePath : reportBase;
-        PangenomeAnalysis pa = new PangenomeAnalysis(bb, seqslen, sname, refclust, refsname);
+        PangenomeAnalysis pa = new PangenomeAnalysis(bbL, seqslenL, sname, refclust, refsname);
         pa.write(base);
     }
+
+    // ===================================================================
+    //  Long-coordinate combined writers (used only by RunCombine).
+    //  These mirror the int versions above but address the whole virtual
+    //  concatenation with long global coordinates and read sequence through
+    //  the SeqStore, so no >2.1 Gb String is ever built. The per-file
+    //  reports continue to use the unchanged int writers on local slices.
+    // ===================================================================
+
+    private void SavingGFFLong(String reportfile, long l, long[] h, ArrayList<long[]> bbL, SeqStore store) throws IOException {
+        String b = (sname != null && sname.length > 0) ? sname[0] : "";
+        long duration = (System.nanoTime() - startTime) / 1000000000;
+
+        if (reportfile.length() == 0) {
+            reportfile = filePath + "_1.gff";
+            if (h.length > 0) {
+                reportfile = filePath + ".gff";
+            }
+        } else {
+            reportfile = reportfile + ".gff";
+        }
+
+        try (FileWriter fileWriter = new FileWriter(reportfile); BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+            System.out.println("Saving report file: " + reportfile);
+            StringBuilder sr = new StringBuilder();
+            sr.append("#TotalRepeats (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi) https://github.com/rkalendar/TotalRepeats\n");
+            sr.append("#kmer=").append(kmerln).append("\n").append("#Minimal repeat block size=").append(minlenseq).append("\n");
+            sr.append("#Sequence length (bp)=").append(l).append("\n");
+            sr.append("#Sequence coverage by repeats=").append(String.format("%.2f", repeatslen)).append("%\n");
+            sr.append("#Short tandem repeat (STR) sequence coverage=").append(String.format("%.2f", ssrglobal)).append("%\n");
+            sr.append("#Sequence gap (bp)=").append((long) gapslen).append(" (").append(String.format("%.4f", gaps)).append("%)\n");
+            sr.append("#Masking time taken: ").append(maskduration).append(" seconds\n");
+            sr.append("#Total duration: ").append(duration).append(" seconds\n");
+            sr.append("#Repeats search for: ");
+
+            if (h.length > 0) {
+                for (String filesPath1 : filesPath) {
+                    sr.append(filesPath1).append("\n");
+                }
+            } else {
+                sr.append(b).append("\n");
+            }
+
+            if (SeqShow) {
+                sr.append("\nSeqid\tRepeat\tClusterID\tStart\tStop\tLength\tStrand\tPhase\tSequence\n");
+            } else {
+                sr.append("\nSeqid\tRepeat\tClusterID\tStart\tStop\tLength\tStrand\tPhase\n");
+            }
+
+            bufferedWriter.write(sr.toString());
+            int k = 0;
+            for (int i = 0; i < bbL.size(); i++) {
+                long[] z7 = bbL.get(i);
+                k++;
+
+                String gf = "CRP";
+                if (k > 1) {
+                    if (refclust != null && k < refclust.length) {
+                        if (refclust[k] > 0) {
+                            gf = refclust[k] + ":" + refsname[refclust[k] - 1];
+                        }
+                    }
+                }
+
+                for (int j = 0; j < z7.length - 1; j += 2) {
+
+                    for (int w = 0; w < h.length; w++) {
+                        if (h[w] > z7[j]) {
+                            b = sname[w];
+                            break;
+                        }
+                    }
+
+                    String s0 = "";
+                    long x = z7[j] + Math.abs(z7[j + 1]) - 1;
+                    if (SeqShow) {
+                        if (x > l) {
+                            s0 = store.substring(z7[j], l);
+                        } else {
+                            s0 = store.substring(z7[j], x);
+                        }
+                        if (flanks > 0) {
+                            String s1 = "";
+                            String s2 = "";
+                            if (z7[j] - flanks > 0) {
+                                s1 = store.substring(z7[j] - flanks, z7[j]).toUpperCase();
+                            } else {
+                                if (z7[j] > 1) {
+                                    long e = z7[1] - 1;     // faithful to the int version's fixed index
+                                    if (e > 1) {
+                                        s1 = store.substring(1, e).toUpperCase();
+                                    }
+                                }
+                            }
+                            if (x + flanks < l) {
+                                s2 = store.substring(x, x + flanks).toUpperCase();
+                            } else {
+                                if (l - x > 0) {
+                                    s2 = store.substring(x, l).toUpperCase();
+                                }
+                            }
+                            s0 = s1 + s0 + s2;
+                        }
+                        if (z7[j + 1] < 0) {
+                            s0 = dna.ComplementDNA2(s0);
+                        }
+                    }
+                    sr = new StringBuilder();
+                    String type = (k == 1) ? "STR" : (k == 2) ? "UCRP" : gf;
+                    String strand = (z7[j + 1] > 0 || k <= 2) ? "+" : "-";
+                    long end = (strand.equals("+")) ? z7[j + 1] : -z7[j + 1];
+                    sr.append(b)
+                            .append("\t").append(type)
+                            .append("\t").append(k)
+                            .append("\t").append(z7[j] + 1)
+                            .append("\t").append(x + 1)
+                            .append("\t").append(end)
+                            .append("\t").append(strand)
+                            .append("\t").append(s0).append("\n");
+                    bufferedWriter.write(sr.toString());
+                }
+            }
+        }
+    }
+
+    // Long counterpart of formatThousands (the value can exceed int beyond 2.1 Gb).
+    private static String formatThousandsLong(long v) {
+        return String.format("%,d", v);
+    }
+
+    private void SavingSVGLong(String reportfile, int k, long len, int dw, int dh, long[] seqslen, ArrayList<long[]> bbL) throws IOException {
+        int maxClusters = 500;
+        int maxImageDimension = 120000;
+        int minImageWidth = 4000;
+        int minImageHeight = 100;
+        int stepPadding = 20;
+        int b = Math.min(bbL.size(), maxClusters);
+        int z = calculateClusterStep(b);
+        float dotSize = calculateDotSize(b);
+        // width is computed inline in long to avoid the int overflow that
+        // calculateWidth(int l, ...) would hit for a >2.1 Gb concatenation.
+        double rawWidth = (dw > 0) ? dw : k * Math.sqrt((double) len);
+        int width = (int) Math.max(Math.min(rawWidth, maxImageDimension), minImageWidth);
+        int height = calculateHeight(b, z, dh, maxImageDimension, minImageHeight, stepPadding);
+
+        SaveSVGLong(reportfile, k, len, b, z, width, height, dotSize, seqslen, bbL);
+    }
+
+    private void SaveSVGLong(String svgfile, int k, long l, int b, int z, int width, int height, float dotSize, long[] seqslen, ArrayList<long[]> bbL) throws IOException {
+        final double nucleotidesPerPixel = (double) width / l;
+        if (svgfile.length() == 0) {
+            svgfile = filePath + "_1.svg";
+            if (nseq == 1) {
+                svgfile = filePath + ".svg";
+            }
+        } else {
+            svgfile = svgfile + ".svg";
+        }
+
+        System.out.println("Saving SVG " + (width + 100) + "x" + (height + 200) + " : " + svgfile);
+        StringBuilder sb = new StringBuilder(1 << 20); // pre-allocate
+        // SVG header
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" ")
+                .append("xmlns:xlink=\"http://www.w3.org/1999/xlink\" ")
+                .append("width=\"").append(width + 100).append("\" ")
+                .append("height=\"").append(height + 200).append("\" ")
+                .append("viewBox=\"0 0 ").append(width + 100).append(" ").append(height + 200).append("\">\n");
+
+        // Background
+        sb.append("  <rect x=\"0\" y=\"0\" width=\"").append(width + 100).append("\" height=\"").append(height + 200).append("\" fill=\"#FFFFFF\"/>\n");
+
+        // Styles (adjustable)
+        sb.append("  <style><![CDATA[\n")
+                .append("    .axis { stroke:#000; stroke-width:1; }\n")
+                .append("    .tick { stroke:#000; stroke-width:1; }\n")
+                .append("    .labelBig { font-family:monospace; font-size:18px; font-weight:bold; fill:#000; }\n")
+                .append("    .labelSmall { font-family:monospace; font-size:8px; fill:#000; }\n")
+                .append("    .labelMed { font-family:monospace; font-size:16px; fill:#000; }\n")
+                .append("    .brown { stroke:#663300; }\n") // Brown
+                .append("    .blue { stroke:#0000FF; }\n")
+                .append("    .red { stroke:#FF0000; }\n")
+                .append("    .darkgreen { stroke:#006600; }\n")
+                .append("  ]]></style>\n");
+
+        // Top ruler line
+        sb.append("  <line class=\"axis\" x1=\"50\" y1=\"55\" x2=\"").append(50 + width).append("\" y2=\"55\"/>\n");
+
+        // Ruler ticks + numeric labels (emulating drawLinesAndLabels)
+        int f = k + 5;
+        int w = width / f;
+        long d = l / f;
+
+        for (int i = 0; i <= f; i++) {
+            int xTick = 50 + i * w;
+            sb.append("  <line class=\"tick\" x1=\"").append(xTick).append("\" y1=\"45\" x2=\"").append(xTick).append("\" y2=\"55\"/>\n");
+            long v = 1 + (long) i * d;
+            if (v > l) {
+                v = l;
+            }
+            // Map cumulative coordinate into per-sequence coordinate if multiple seqs
+            if (seqslen != null && seqslen.length > 0) {
+                for (int j = 1; j < seqslen.length; j++) {
+                    if (v >= seqslen[j - 1] && v <= seqslen[j]) {
+                        v = 1 + v - seqslen[j - 1];
+                        break;
+                    }
+                }
+            }
+            sb.append("  <text class=\"labelMed\" x=\"").append(40 + i * w).append("\" y=\"44\">").append(formatThousandsLong(v)).append("</text>\n");
+        }
+
+        // Sequence boundary ticks and names (top-left area)
+        if (seqslen != null && seqslen.length > 0) {
+            long x1 = 0;
+            for (int i = 0; i < seqslen.length; i++) {
+                int tx = (int) (x1 * nucleotidesPerPixel);
+                int xTick = 50 + tx;
+                sb.append("  <line class=\"tick\" x1=\"").append(xTick).append("\" y1=\"1\" x2=\"").append(xTick).append("\" y2=\"55\"/>\n");
+                sb.append("  <text class=\"labelBig\" x=\"").append(xTick + 15).append("\" y=\"18\">").append(esc(sname[i])).append("</text>\n");
+                sb.append("  <text class=\"labelBig\" x=\"").append(xTick + 5).append("\" y=\"50\">1</text>\n");
+                x1 = seqslen[i];
+            }
+        } else {
+            sb.append("  <line class=\"tick\" x1=\"50\" y1=\"1\" x2=\"50\" y2=\"20\"/>\n");
+            sb.append("  <text class=\"labelBig\" x=\"65\" y=\"18\">").append(esc(sname[0])).append("</text>\n");
+        }
+
+        // Baseline (brown) + colored cluster segments, same layout rules as SaveSVG.
+        for (int i = 0; i < b; i++) {
+            long[] z7 = bbL.get(i);
+
+            // baseline (brown)
+            for (int j = 0; j < z7.length - 1; j += 2) {
+                int x1 = 50 + (int) Math.round(z7[j] * nucleotidesPerPixel);
+                int x2;
+                if (z7[j + 1] > 0) {
+                    x2 = 50 + (int) Math.round((z7[j] + z7[j + 1]) * nucleotidesPerPixel);
+                } else {
+                    x2 = 50 + (int) Math.round((z7[j] - z7[j + 1]) * nucleotidesPerPixel);
+                }
+                sb.append("  <line class=\"brown\" x1=\"").append(x1).append("\" y1=\"60\" x2=\"").append(x2).append("\" y2=\"60\" stroke-width=\"").append(dotSize).append("\"/>\n");
+            }
+
+            int y = (i == 0) ? 90 : (i == 1) ? 130 : 180 + i * z;
+            // colored spans
+            for (int j = 0; j < z7.length - 1; j += 2) {
+                int x1 = 50 + (int) Math.round(z7[j] * nucleotidesPerPixel);
+                int x2;
+                String cssClass;
+                if (z7[j + 1] > 0) {
+                    x2 = 50 + (int) Math.round((z7[j] + z7[j + 1]) * nucleotidesPerPixel);
+                    cssClass = (i == 0) ? "darkgreen" : "blue";
+                } else {
+                    x2 = 50 + (int) Math.round((z7[j] - z7[j + 1]) * nucleotidesPerPixel);
+                    cssClass = "red";
+                }
+                sb.append("  <line class=\"").append(cssClass).append("\" x1=\"").append(x1).append("\" y1=\"").append(y).append("\" x2=\"").append(x2).append("\" y2=\"").append(y).append("\" stroke-width=\"").append(dotSize).append("\"/>\n");
+                if (i > 1) {
+                    sb.append("  <text class=\"labelSmall\" x=\"").append(x2 + 1).append("\" y=\"").append(y).append("\">").append(i).append("</text>\n");
+                }
+            }
+        }
+        sb.append("</svg>\n");
+        try (BufferedWriter w1 = new BufferedWriter(new FileWriter(svgfile))) {
+            w1.write(sb.toString());
+        }
+    }
+
+    /**
+     * Pangenomic analysis for the combined run. PangenomeAnalysis is now long-based,
+     * so the combined clusters/boundaries are passed straight through in global long
+     * coordinates and the report is produced at any size (no int-limit restriction).
+     * {@code l} is accepted for call-site uniformity across the combine modes.
+     */
+    private void SavingPangenomeCombined(String reportBase, long[] seqslen, ArrayList<long[]> bbL, long l) throws IOException {
+        if (!pangenome || bbL == null || nseq < 2 || seqslen == null || seqslen.length < nseq) {
+            return;
+        }
+        String base = (reportBase == null || reportBase.isEmpty()) ? filePath : reportBase;
+        PangenomeAnalysis pa = new PangenomeAnalysis(bbL, seqslen, sname, refclust, refsname);
+        pa.write(base);
+    }
+
 
     private void SavingGFF(String reportfile, int n, int l, int[] h) throws IOException {
         String b = sname[n];
