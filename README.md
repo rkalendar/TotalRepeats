@@ -78,12 +78,12 @@ Latest additions to TotalRepeats:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│                       TotalRepeats Pipeline                             │
+│                       TotalRepeats Pipeline                              │
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  1. INPUT                    2. MASKING                                  │
 │  ┌────────────────┐          ┌─────────────────────────────┐             │
-│  │ FASTA files    │────────▶│ K-mer decomposition         │             │
+│  │ FASTA files    │────────▶ │ K-mer decomposition        │             │
 │  │ (single or dir)│          │ Identify repeated k-mers    │             │
 │  └────────────────┘          │ Merge overlapping regions   │             │
 │                              └─────────────┬───────────────┘             │
@@ -235,8 +235,9 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | Option | Description |
 |---|---|
 | `-combine` | Pangenome comparative analysis — synchronized repeat clustering across multiple files |
+| `-combine2` | Pangenome comparative analysis — synchronized repeat clustering across multiple files, all target sequences are combined into one single sequence and the identification of repetitions is carried out on this sequence|
+| `-combinemask` | Pangenome comparative analysis — synchronized repeat clustering across multiple masked files; compare multiple masking files for cross-tool benchmarking or pangenome studies |
 | `-homology` | Mask all homologous regions to highlight unique sequences between genomes |
-| `-combinemask` | Compare multiple masking files for cross-tool benchmarking or pangenome studies |
 | `-amask` | Perform masking via pairwise sequence alignment (instead of k-mer-based) |
 | `-readmask` | Import existing mask files for clustering, annotation, and visualization |
 | `-readgff` | Import GFF annotation files for direct visualization |
@@ -324,6 +325,14 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/sequences/ -combine
 
 The pangenome report is generated automatically for multi-sequence `-combine` runs.
 
+### `-combinemask` — Pangenome Analysis
+
+Performs pangenome-scale comparative analysis using multiple masking files. Enables synchronized clustering and annotation across assemblies, and supports benchmarking different masking tools or parameters.
+
+```bash
+java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/sequences/ -combinemask
+```
+
 ### `-homology` — Homology Masking
 
 Masks all homologous regions (both within and between input sequences) to reveal **unique, non-shared sequence**. This inverts the usual repeat-finding question: instead of "what's repeated?", it answers "what's unique?"
@@ -335,14 +344,6 @@ Masks all homologous regions (both within and between input sequences) to reveal
 
 ```bash
 java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/sequences/ -homology
-```
-
-### `-combinemask` — Pangenome Analysis
-
-Performs pangenome-scale comparative analysis using multiple masking files. Enables synchronized clustering and annotation across assemblies, and supports benchmarking different masking tools or parameters.
-
-```bash
-java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/sequences/ -combinemask
 ```
 
 ### `imgx=` — Image Width Scaling
@@ -496,6 +497,12 @@ java -Xms16g -Xmx64g -jar TotalRepeats.jar /data/genomes/Pleurodeles_waltl/ imgx
 ```bash
 # Compare bacterial strains — synchronized repeat clustering
 java -Xms16g -Xmx32g -jar TotalRepeats.jar /data/genomes/Shigella/ -combine
+
+# Compare bacterial strains — synchronized repeat clustering
+java -Xms16g -Xmx32g -jar TotalRepeats.jar /data/genomes/Shigella/ -combine2
+
+# Compare bacterial strains — synchronized repeat clustering
+java -Xms16g -Xmx32g -jar TotalRepeats.jar /data/genomes/Shigella/ -combinemask
 
 # Identify unique regions between related fungal genomes
 java -Xms16g -Xmx32g -jar TotalRepeats.jar /data/genomes/Pyricularia_oryzae/ -homology
