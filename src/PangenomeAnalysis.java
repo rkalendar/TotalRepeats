@@ -8,7 +8,7 @@ import java.util.List;
  * Pangenomic analysis of the repeat clusters produced by the combined
  * (multi-file) TotalRepeats run.
  *
- * The combined clustering groups homologous repeat instances detected across
+ * <p>The combined clustering groups homologous repeat instances detected across
  * the concatenated set of input sequences into families (CRP clusters). By
  * mapping every instance back to the input sequence it came from (via the
  * cumulative sequence-boundary array {@code seqslen}), each family gets a
@@ -16,13 +16,13 @@ import java.util.List;
  * families are split into:
  *
  * <ul>
- *   <li><b>core</b> &mdash; present in all genomes (the shared content);</li>
+ *   <li><b>core</b> &mdash; present in <i>all</i> genomes (the shared content);</li>
  *   <li><b>accessory</b> (shell) &mdash; present in some but not all genomes;</li>
  *   <li><b>unique</b> (cloud / singleton) &mdash; present in a single genome
  *       (the differing content).</li>
  * </ul>
  *
- * The class is self-contained: it only needs the cluster blocks, the
+ * <p>The class is self-contained: it only needs the cluster blocks, the
  * sequence boundaries and the genome names, so it can be reused by any of the
  * combined run modes.
  */

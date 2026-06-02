@@ -319,17 +319,25 @@ public final class TotalRepeatsSearching {
     public void RunCombineMask(int k, boolean fst) throws IOException {
         startTime = System.nanoTime();
 
-        // Same long migration as RunCombine: global coordinates are long and the
-        // sequences are concatenated virtually through a SeqStore, so String.join is
-        // gone and neither a >2.1 Gb String nor an overflowing int counter is built.
-        // The cluster table is kept in a local ArrayList<long[]> with exactly the same
-        // row layout this method produced before: one STR row per input sequence, then
-        // the combined STR row, then UCRP + the families (added by ClusteringMaskingCombined).
+        // Long migration of RunCombineMask, now structured exactly like RunCombine so
+        // that it also emits the individual (per-file) reports/pictures. Global
+        // coordinates are long and the sequences are concatenated virtually through a
+        // SeqStore (no String.join, no >2.1 Gb String, no overflowing int counter).
+        // The combined cluster table uses the canonical layout — index 0 = STR row, then
+        // UCRP + the families (appended by ClusteringMaskingCombined), the same layout
+        // RunCombine uses. That canonical order is what makes the per-file slices, their
+        // colours/ClusterIDs and the pangenome report line up correctly. (The previous
+        // version kept one STR row per input sequence ahead of UCRP, which is why it
+        // could not produce correct per-file reports nor a pangenome.)
         long[] seqslen = new long[nseq];
         long[] u2 = new long[0];
         long[] ssr2 = new long[0];
 
-        ArrayList<long[]> bbL = new ArrayList<>();
+        // Per-sequence statistics, remembered for the individual report headers.
+        double[] repStat = new double[nseq];
+        double[] ssrStat = new double[nseq];
+        double[] gapLenStat = new double[nseq];
+        double[] gapPctStat = new double[nseq];
 
         String[] seqs = seq;     // keep the individual sequences (SeqShow + the combined store)
 
@@ -340,7 +348,6 @@ public final class TotalRepeatsSearching {
             int l = seq[i].length();   // a single sequence always fits in an int
 
             startTime = System.nanoTime();
-            System.out.println("Target sequence length = " + l + " nt");
             System.out.println("\n" + sname[i]);
             System.out.println("Target sequence length = " + l + " nt");
 
@@ -350,50 +357,89 @@ public final class TotalRepeatsSearching {
             int[] ssr = m1.IntBlocks();
             ssrglobal = m1.GetTotalRepeats();
 
-            // per-sequence STR row in GLOBAL long coordinates (parallels bb.add(ssr)).
-            bbL.add(shiftToGlobal(ssr, sz));
+            // combined STR blocks in GLOBAL long coordinates (the local ssr stays untouched).
+            ssr2 = concatLong(ssr2, shiftToGlobal(ssr, sz));
 
             MaskResult fc = new MaskResult();
             int[] u = fc.ReadMask(seq[i], gap, minlenseq, ssrmsk);
             repeatslen = fc.getRepeatsLen();
             gapslen = fc.getGaps();
-
-            // combined STR blocks (global). The local ssr stays untouched.
-            ssr2 = concatLong(ssr2, shiftToGlobal(ssr, sz));
-
             repeatslen = (repeatslen * 100) / (l - gapslen);
             ssrglobal = (ssrglobal * 100) / (l - gapslen);
             gaps = (gapslen * 100) / l;
             System.out.println("Sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
             System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
             System.out.println("Sequence gap (bp)=" + (int) gapslen + " (" + String.format("%.4f", gaps) + "%)");
-
             maskduration = (System.nanoTime() - startTime) / 1000000000;
             System.out.println("Masking time taken: " + maskduration + " seconds\n");
 
+            // remember this sequence's own statistics for the individual report
+            repStat[i] = repeatslen;
+            ssrStat[i] = ssrglobal;
+            gapLenStat[i] = gapslen;
+            gapPctStat[i] = gaps;
+
             // combined masked-repeat blocks (global).
             u2 = concatLong(u2, shiftToGlobal(u, sz));
-
             sz = sz + l;            // long accumulation (no int overflow at >2.1 Gb)
             seqslen[i] = sz;
         }
 
-        bbL.add(ssr2);
-
         // Virtual concatenation instead of String.join("", seq): no >2.1 Gb String.
         SeqStore store = new SeqStore(seqs);
         long l = store.length();
-        seq = seqs;             // keep individual sequences available
+
+        // Canonical combined cluster table: index 0 = STR row, then ClusteringMaskingCombined
+        // appends UCRP + the families (ids 3..ncl) — identical layout to RunCombine.
+        ArrayList<long[]> bbL = new ArrayList<>();
+        bbL.add(ssr2);
 
         System.out.println("\nClustering started...");
         ClusteringMaskingCombined(store, u2, fst, bbL);
 
         if (bbL != null) {
-            // Combined report + picture in long coordinates. The combined picture is
-            // emitted as SVG (vector, unlimited size) instead of the former int PNG,
-            // which could not address a >2.1 Gb concatenation — same choice as RunCombine.
+            // Combined report + picture in long coordinates (read through the SeqStore so
+            // SeqShow works across the whole concatenation). The combined picture is SVG
+            // (vector, unlimited size) instead of the former int PNG, which could not
+            // address a >2.1 Gb concatenation — same choice as RunCombine. The pangenome
+            // report is produced too (the canonical layout is compatible with it).
             SavingGFFLong(ReportFilePath, l, seqslen, bbL, store);
             SavingSVGLong(ReportFilePath, k, l, iwidth, iheight, seqslen, bbL);
+            SavingPangenomeCombined(ReportFilePath, seqslen, bbL, l);   // pangenome: core / accessory / unique families
+
+            // --- Individual (per-file) reports and pictures ---
+            // Built as exact slices of the COMBINED clustering so that each sequence's
+            // individual report/picture matches its region in the combined one: the same
+            // families keep the same cluster index (hence the same colour, row and
+            // ClusterID) and reference labels; only the blocks are restricted to this
+            // sequence and remapped to its own LOCAL int coordinates (always < 2.1 Gb),
+            // which lets the unchanged int-based savers be reused as-is. refclust stays
+            // the combined one (ordering is preserved). Identical to RunCombine's pass.
+            seq = seqs;                          // individual sequences (for SeqShow)
+            long start = 0;
+            for (int i = 0; i < nseq; i++) {
+                long end = seqslen[i];
+                int li = seqs[i].length();
+
+                ArrayList<int[]> bbLocal = new ArrayList<>(bbL.size());
+                for (long[] z7 : bbL) {
+                    bbLocal.add(sliceBlocksLocalLong(z7, start, end)); // same order/count as combined
+                }
+                bb = bbLocal;
+
+                // restore this sequence's own statistics for the report header
+                repeatslen = repStat[i];
+                ssrglobal = ssrStat[i];
+                gapslen = gapLenStat[i];
+                gaps = gapPctStat[i];
+
+                filePath = filesPath[i];
+                SavingGFF(filesPath[i], i, li, new int[0]);
+                SavingPicture(filesPath[i], k, i, li, iwidth, iheight, new int[0]);
+                SavingSVG(filesPath[i], k, i, li, iwidth, iheight, new int[0]);
+
+                start = end;
+            }
         }
     }
 
