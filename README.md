@@ -172,6 +172,9 @@ java -version
 ## Quick Start
 
 ```bash
+# Show usage / help (also printed when no input file is given)
+java -jar TotalRepeats.jar --help
+
 # Analyse a single genome
 java -jar TotalRepeats.jar genome.fasta
 
@@ -201,6 +204,7 @@ java [JVM flags] -jar TotalRepeats.jar <input_file_or_directory> [options]
 - **Input** can be a single FASTA file or a directory containing multiple genomes.
 - **Options** are space-separated and follow the input path.
 - No additional dependencies are required.
+- **Need help?** Run with `-help`, `--help`, `-h`, `-?`, `/?`, or `/h` (or with no arguments at all) to print the full usage guide and exit. The usage guide is also shown if the supplied input file or folder does not exist.
 
 ### Memory Configuration
 
@@ -234,6 +238,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `-seqshow` | Include repeat sequences in GFF3 output | Off |
 | `-maskonly` | Generate only the masked FASTA (skip clustering/annotation) | Off |
 | `-quick` | Enable multithreaded clustering for faster processing (alias: `-fast`) | Off |
+| `-help` | Show the usage guide and exit (aliases: `--help`, `-h`, `-?`, `/?`, `/h`) | — |
 
 ### Advanced Options
 
@@ -537,6 +542,29 @@ java -jar TotalRepeats.jar comparison_list.txt -maskscomp
 ---
 
 ## Troubleshooting
+
+### No input file (usage is printed instead of results)
+
+If you launch TotalRepeats with no arguments, with an explicit help flag, or with a first argument that is not an existing file or folder, the program prints the usage guide and exits without analysing anything:
+
+```bash
+# Explicit help request — prints usage and exits
+java -jar TotalRepeats.jar --help
+
+# Missing input (options only) — prints usage
+java -jar TotalRepeats.jar -kmer=18 -seqshow
+
+# Wrong path — prints "input file or folder not found" + usage
+java -jar TotalRepeats.jar /no/such/genome.fasta
+```
+
+Make sure the **input file or folder is the first argument**, before any options:
+
+```bash
+java -jar TotalRepeats.jar genome.fasta -kmer=18 -seqshow   # correct
+```
+
+The recognised help flags are `-help`, `--help`, `-h`, `-?`, `/?`, `/h`, and `/help` (case-insensitive).
 
 ### Java version errors
 
