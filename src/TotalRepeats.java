@@ -13,6 +13,10 @@ public class TotalRepeats {
 
     public static void main(String[] args) throws IOException {
         if (args.length > 0) {
+            if (isHelpRequest(args)) { // -help, --help, -h, -?, /?, /h, help, usage, ...
+                printHelp();
+                return;
+            }
             String infile = args[0]; // file path or Folder
             String reffile = "";
             String argsRaw = String.join(" ", args) + " ";   // case-preserving (for paths)
@@ -246,10 +250,42 @@ public class TotalRepeats {
 
                     TotalRepeatsResult(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, ssrdetect, outdir);
                 }
+            } else {
+                // No file or folder to analyse: report the problem and show usage.
+                System.err.println();
+                System.err.println("ERROR: input file or folder not found: " + infile);
+                System.err.println("There is no sequence file to analyse. Provide the input path as the first argument.\n");
+                printHelp();
             }
         } else {
             printHelp();
         }
+    }
+
+    /**
+     * Returns {@code true} if the command line is an explicit request for help
+     * or usage information. Recognised case-insensitively, anywhere in the
+     * argument list: {@code -help}, {@code --help}, {@code -h}, {@code --h},
+     * {@code -?}, {@code --?}, {@code /?}, {@code /h}, {@code /help},
+     * {@code help}, {@code ?}, {@code -usage}, {@code --usage}, {@code /usage}.
+     */
+    private static boolean isHelpRequest(String[] args) {
+        if (args == null) {
+            return false;
+        }
+        for (String arg : args) {
+            if (arg == null) {
+                continue;
+            }
+            switch (arg.trim().toLowerCase()) {
+                case "-help", "--help", "-h", "--h",
+                     "-?", "--?", "/?", "/h", "/help",
+                     "help", "?", "-usage", "--usage", "/usage" -> {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static void printHelp() {
@@ -262,6 +298,10 @@ public class TotalRepeats {
             "",
             "BASIC USAGE:",
             "  " + jar + " <input_file_or_folder> [options]",
+            "",
+            "HELP:",
+            "  -help, --help, -h, -?, /?, /h    Show this help message and exit",
+            "                                  (also shown when no input file is given)",
             "",
             "CORE OPTIONS:",
             "  -kmer=<9-21>         K-mer size for repeat detection (default: 19)",
