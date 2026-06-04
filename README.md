@@ -57,7 +57,7 @@ Latest additions to TotalRepeats:
 - **Per-file reports in every comparative mode.** `-combine`, `-combine2`, and `-combinemask` now each emit an individual GFF3 annotation, PNG, and SVG per input file (named after that file), *in addition to* the combined report. Each genome can be inspected on its own while the joint clustering is preserved — the same family keeps the same `ClusterID`, colour, row, and reference label in both the per-file and combined views.
 - **Pangenome analysis — core / accessory / unique — across all comparative modes.** Every combine run now writes a pangenome report classifying each repeat family by how many sequences it occurs in: **core** (present in all), **accessory** (present in some), and **unique** (present in one). It includes the family-frequency spectrum, per-sequence statistics, a pairwise shared-family matrix (Jaccard similarity), and a machine-readable presence/absence matrix. See [`-combine`](#-combine--comparative-analysis).
 - **Combined image is now SVG.** The joint (cross-file) visualization is written as scalable SVG, which has no pixel-size ceiling and stays sharp at pangenome scale. Per-file images are still produced as both PNG and SVG.
-- **`-fast` alias for `-quick`.** Either flag enables fully multithreaded clustering.
+- **`-fast` alias for `-quick`.** Either flag enables fully multithreaded clustering. The parallel clustering is now **deterministic and reproducible** — repeated runs on the same input produce identical cluster assignments and `ClusterID`s, independent of how many worker threads are used.
 - **Performance improvements.** Faster low-complexity/SSR masking and sequence clustering — k-mer encoding and reduced memory traffic in the hot loops — with identical results.
 
 ---
@@ -71,7 +71,7 @@ Latest additions to TotalRepeats:
 | 🔀 **Polymorphism detection** | Identify interspecific repeat polymorphisms without whole-genome alignment |
 | 📚 **External annotation** | Annotate repeats against Repbase, Dfam/FamDB, or custom species-specific libraries |
 | 📊 **Publication-ready visualization** | Generate PNG and SVG images of repeat landscapes, annotated maps, and comparative views |
-| ⚡ **Multithreaded performance** | Parallel processing across all cores for masking, clustering, and annotation |
+| ⚡ **Multithreaded performance** | Parallel processing across all cores for masking, clustering, and annotation; multithreaded clustering is **deterministic** — identical, reproducible results on every run |
 | 🧩 **Pangenome analysis** | Core / accessory / unique repeat-family classification with a presence/absence matrix across genomes — produced by every comparative mode (`-combine`, `-combine2`, `-combinemask`) |
 | 🗄️ **Pangenome-scale inputs** | Combined comparative analysis is not limited by the 2 GB single-sequence cap — inputs are concatenated virtually and addressed with 64-bit coordinates |
 
@@ -287,6 +287,26 @@ Sets the minimum length (bp) for a repeat region to be included in the output. S
 ```bash
 java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta sln=100
 ```
+
+### `-quick` / `-fast` — Multithreaded Clustering
+
+Enables multithreaded clustering. The pairwise k-mer-vector comparison that dominates the clustering step is spread across CPU cores, giving a large speed-up on genomes with many repeat families. `-fast` is an alias for `-quick`; the two are interchangeable.
+
+The parallel clustering is **deterministic**: repeated runs on the same input produce identical cluster assignments and `ClusterID`s, and the result does not depend on the number of worker threads. Output is therefore fully reproducible — across repeated runs and across machines with different core counts — which matters for published analyses. Changing the thread count affects only runtime, not the result.
+
+```bash
+java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta -quick
+```
+
+**Controlling the number of threads.** Multithreaded clustering uses Java's common Fork/Join worker pool, which by default draws on all available CPU cores. To cap the worker-thread count — for example on a shared cluster node, or to leave cores free for other jobs — set the standard JVM property *before* `-jar`:
+
+```bash
+# Limit clustering to 8 worker threads
+java -Djava.util.concurrent.ForkJoinPool.common.parallelism=8 -Xms16g -Xmx32g \
+    -jar TotalRepeats.jar genome.fasta -quick
+```
+
+Setting the value to `1` forces single-threaded execution.
 
 ### `-lib=` — External Repeat Library
 
@@ -621,6 +641,8 @@ Enable multithreaded clustering:
 java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta -quick
 ```
 
+By default this uses all available CPU cores. To cap the worker-thread count (e.g. on a shared node), add `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N` before `-jar`. The clustering result is deterministic, so the thread count changes only the runtime, not the output.
+
 ---
 
 ## FAQ
@@ -647,7 +669,7 @@ Yes. That error came from concatenating all inputs into one string, which Java c
 Yes. Use `-readmask` to import masked FASTA files from RepeatMasker or other tools, and `-readgff` to import GFF annotations for visualization.
 
 **Q: What does the `-quick` flag do exactly?**
-It enables multithreaded pairwise comparison during the clustering step. This significantly speeds up processing for large genomes with many repeat families, at no cost to accuracy. The flag `-fast` is an alias for `-quick`.
+It enables multithreaded pairwise comparison during the clustering step, which significantly speeds up processing for large genomes with many repeat families. The parallel clustering is deterministic — repeated runs produce identical cluster assignments and `ClusterID`s regardless of the thread count, so results stay reproducible. The flag `-fast` is an alias for `-quick`. To cap the number of worker threads, add `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N` before `-jar` (see the `-quick` / `-fast` entry under [Detailed Option Reference](#detailed-option-reference)).
 
 ---
 
