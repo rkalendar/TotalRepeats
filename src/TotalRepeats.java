@@ -1,3 +1,4 @@
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -103,6 +104,7 @@ public class TotalRepeats {
                 extract = true;
             }
             if (s.contains("combine")) {
+                fastclustering = true;
                 combine = 1;
                 if (s.contains("combine2")) {
                     combine = 2;
@@ -278,9 +280,7 @@ public class TotalRepeats {
                 continue;
             }
             switch (arg.trim().toLowerCase()) {
-                case "-help", "--help", "-h", "--h",
-                     "-?", "--?", "/?", "/h", "/help",
-                     "help", "?", "-usage", "--usage", "/usage" -> {
+                case "-help", "--help", "-h", "--h", "-?", "--?", "/?", "/h", "/help", "help", "?", "-usage", "--usage", "/usage" -> {
                     return true;
                 }
             }
@@ -381,9 +381,9 @@ public class TotalRepeats {
     }
 
     /**
-     * Returns the integer value following the first matching {@code key}
-     * (e.g. "kmer=") in the lowercased argument string {@code s}, or
-     * {@code def} if none of the keys is present.
+     * Returns the integer value following the first matching {@code key} (e.g.
+     * "kmer=") in the lowercased argument string {@code s}, or {@code def} if
+     * none of the keys is present.
      */
     private static int intArg(String s, int def, String... keys) {
         for (String key : keys) {
@@ -401,7 +401,8 @@ public class TotalRepeats {
     /**
      * Extracts the case-preserving value following {@code key} from the raw
      * argument string, or {@code null} if the key is absent. The key is matched
-     * case-insensitively via {@code rawLower}; the value is taken from {@code raw}.
+     * case-insensitively via {@code rawLower}; the value is taken from
+     * {@code raw}.
      */
     private static String strArg(String raw, String rawLower, String key) {
         int j = rawLower.indexOf(key);
