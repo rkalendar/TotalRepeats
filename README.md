@@ -304,7 +304,7 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta
 java -Djava.util.concurrent.ForkJoinPool.common.parallelism=8 -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta
 ```
 
-Setting the value to 1 forces single-threaded execution. Use the `-normal` flag to prevent multithreaded clustering.
+Setting the value to 1 forces single-threaded execution or use the `-normal` flag to prevent multithreaded clustering.
 
 ```bash
 # Limit clustering to 1 worker threads
