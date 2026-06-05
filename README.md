@@ -400,8 +400,8 @@ Controls the horizontal resolution of output images (PNG and SVG). Higher values
 | Value | Effect |
 |---|---|
 | `1` | Maximum compression — overview of entire genome |
-| `5` | Default — good for most chromosome-level views |
-| `10–20` | Stretched — detailed inspection of individual regions |
+| `10` | Default — good for most chromosome-level views |
+| `20–30` | Stretched — detailed inspection of individual regions |
 
 ```bash
 java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta imgx=20
