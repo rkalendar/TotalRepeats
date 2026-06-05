@@ -237,7 +237,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `flanks=N` | Extend each repeat by N bases on both sides | `0` |
 | `-seqshow` | Include repeat sequences in GFF3 output | Off |
 | `-maskonly` | Generate only the masked FASTA (skip clustering/annotation) | Off |
-| `-normal` | Preventing multithreaded clustering for faster processing| Off |
+| `-normal` | Preventing multithreaded clustering | Off |
 | `-help` | Show the usage guide and exit (aliases: `--help`, `-h`, `-?`, `/?`, `/h`) | — |
 
 ### Advanced Options
