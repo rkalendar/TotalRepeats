@@ -1,4 +1,3 @@
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -33,7 +32,7 @@ public class TotalRepeats {
             boolean amask = false;         // masking is performed by Pairwise Sequence Alignment: Repeater2 based 
             boolean maskonly = false;      // The process of masking is performed without the use of clustering or annotation.
             boolean seqshow = false;
-            boolean fastclustering = false; // Multithreading clustering 
+            boolean fastclustering = true; // Multithreading clustering 
             boolean readmask = false;       // reading masked FASTA for clustering and annotation
             boolean extupmask = false;      // extraction of the UPPER blocks of the masked chromosome contain unique sequences.
             boolean readgff = false;
@@ -82,8 +81,8 @@ public class TotalRepeats {
             if (s.contains("-nossr")) {
                 ssrdetect = false;
             }
-            if (s.contains("-fast") || s.contains("-quick")) {// (Multithreading clustering) Using fully multithreading significantly accelerates the classification of sequences into individual clusters.
-                fastclustering = true;
+            if (s.contains("-normal")) {// (Prevent Multithreading clustering) Using fully multithreading significantly accelerates the classification of sequences into individual clusters.
+                fastclustering = false;
             }
             if (s.contains("extunique")) { // -seqlen>100
                 extupmask = true;
@@ -104,7 +103,6 @@ public class TotalRepeats {
                 extract = true;
             }
             if (s.contains("combine")) {
-                fastclustering = true;
                 combine = 1;
                 if (s.contains("combine2")) {
                     combine = 2;
@@ -324,9 +322,9 @@ public class TotalRepeats {
             "COMPARATIVE / GENOME-WIDE OPTIONS:",
             "  -combine             Genome-wide analysis: each sequence analyzed individually",
             "  -combine2            Genome-wide analysis: all sequences analyzed together",
-            "  -homology            Comparative Homology Masking: cross-file analysis of homologous",
-            "                       regions and repeats between target sequences (e.g. chromosomes)",
             "  -combinemask         Genome-wide comparative analysis using masking files as input",
+            "  -homology            Comparative Homology Masking: cross-file analysis of homologous",
+            "                       regions and repeats between target sequences (e.g. chromosomes)",            
             "",
             "INPUT / OUTPUT OPTIONS:",
             "  -readmask            Load a masking file (single FASTA entry) for clustering and",
