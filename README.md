@@ -642,7 +642,7 @@ java -jar TotalRepeats.jar genome.fasta image=4000x2000
 Enable multithreaded clustering:
 
 ```bash
-java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta -quick
+java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta
 ```
 
 By default this uses all available CPU cores. To cap the worker-thread count (e.g. on a shared node), add `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N` before `-jar`. The clustering result is deterministic, so the thread count changes only the runtime, not the output.
