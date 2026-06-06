@@ -57,7 +57,7 @@ Latest additions to TotalRepeats:
 - **Per-file reports in every comparative mode.** `-combine`, `-combine2`, and `-combinemask` now each emit an individual GFF3 annotation, PNG, and SVG per input file (named after that file), *in addition to* the combined report. Each genome can be inspected on its own while the joint clustering is preserved — the same family keeps the same `ClusterID`, colour, row, and reference label in both the per-file and combined views.
 - **Pangenome analysis — core / accessory / unique — across all comparative modes.** Every combine run now writes a pangenome report classifying each repeat family by how many sequences it occurs in: **core** (present in all), **accessory** (present in some), and **unique** (present in one). It includes the family-frequency spectrum, per-sequence statistics, a pairwise shared-family matrix (Jaccard similarity), and a machine-readable presence/absence matrix. See [`-combine`](#-combine--comparative-analysis).
 - **Combined image is now SVG.** The joint (cross-file) visualization is written as scalable SVG, which has no pixel-size ceiling and stays sharp at pangenome scale. Per-file images are still produced as both PNG and SVG.
-- The parallel clustering is now **deterministic and reproducible** — repeated runs on the same input produce identical cluster assignments and `ClusterID`s, independent of how many worker threads are used.
+- **Multithreaded clustering is now the default.** Clustering runs across all CPU cores out of the box — the old `-quick`/`-fast` flag is gone; pass `-normal` to force the single-threaded path instead. The multithreaded path is **deterministic and reproducible** — repeated runs on the same input produce identical cluster assignments and `ClusterID`s, independent of how many worker threads are used.
 - **Performance improvements.** Faster low-complexity/SSR masking and sequence clustering — k-mer encoding and reduced memory traffic in the hot loops — with identical results.
 
 ---
@@ -71,7 +71,7 @@ Latest additions to TotalRepeats:
 | 🔀 **Polymorphism detection** | Identify interspecific repeat polymorphisms without whole-genome alignment |
 | 📚 **External annotation** | Annotate repeats against Repbase, Dfam/FamDB, or custom species-specific libraries |
 | 📊 **Publication-ready visualization** | Generate PNG and SVG images of repeat landscapes, annotated maps, and comparative views |
-| ⚡ **Multithreaded performance** | Parallel processing across all cores for masking, clustering, and annotation; multithreaded clustering is **deterministic** — identical, reproducible results on every run |
+| ⚡ **Multithreaded performance** | Parallel processing across all cores for masking, clustering, and annotation (multithreaded by default; `-normal` forces single-threaded); multithreaded clustering is **deterministic** — identical, reproducible results on every run |
 | 🧩 **Pangenome analysis** | Core / accessory / unique repeat-family classification with a presence/absence matrix across genomes — produced by every comparative mode (`-combine`, `-combine2`, `-combinemask`) |
 | 🗄️ **Pangenome-scale inputs** | Combined comparative analysis is not limited by the 2 GB single-sequence cap — inputs are concatenated virtually and addressed with 64-bit coordinates |
 
@@ -237,7 +237,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `flanks=N` | Extend each repeat by N bases on both sides | `0` |
 | `-seqshow` | Include repeat sequences in GFF3 output | Off |
 | `-maskonly` | Generate only the masked FASTA (skip clustering/annotation) | Off |
-| `-normal` | Preventing multithreaded clustering | Off |
+| `-normal` | Use single-threaded clustering (multithreaded is the default) | Off |
 | `-help` | Show the usage guide and exit (aliases: `--help`, `-h`, `-?`, `/?`, `/h`) | — |
 
 ### Advanced Options
@@ -290,27 +290,30 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta sln=100
 
 ### Multithreaded Clustering
 
-Enables multithreaded clustering. The pairwise k-mer-vector comparison that dominates the clustering step is spread across CPU cores, giving a large speed-up on genomes with many repeat families. 
-The parallel clustering is **deterministic**: repeated runs on the same input produce identical cluster assignments and `ClusterID`s, and the result does not depend on the number of worker threads. Output is therefore fully reproducible — across repeated runs and across machines with different core counts — which matters for published analyses. Changing the thread count affects only runtime, not the result.
+Clustering is **multithreaded by default** — no flag is required. The pairwise k-mer-vector comparison that dominates the clustering step is spread across all available CPU cores, giving a large speed-up on genomes with many repeat families.
+
+The multithreaded clustering is **deterministic**: repeated runs on the same input produce identical cluster assignments and `ClusterID`s, and the result does not depend on the number of worker threads. Output is therefore fully reproducible — across repeated runs and across machines with different core counts — which matters for published analyses. The thread count affects only runtime, not the result.
 
 ```bash
-java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta 
+# Multithreaded by default — no flag needed
+java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta
 ```
 
-**Controlling the number of threads.** Multithreaded clustering uses Java's common Fork/Join worker pool, which by default draws on all available CPU cores. To cap the worker-thread count — for example on a shared cluster node, or to leave cores free for other jobs — set the standard JVM property *before* `-jar`:
+**`-normal` — single-threaded clustering.** Pass `-normal` to run the clustering on a single thread instead of in parallel. This is slower on large genomes, but is useful for debugging or when you want the single-threaded code path.
 
 ```bash
-# Limit clustering to 8 worker threads
+java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta -normal
+```
+
+**Capping threads without `-normal`.** To keep multithreading but limit how many worker threads it uses — for example on a shared cluster node, or to leave cores free for other jobs — set the standard JVM property *before* `-jar`. This bounds Java's common Fork/Join pool, which the parallel clustering uses:
+
+```bash
+# Keep multithreading, but limit it to 8 worker threads
 java -Djava.util.concurrent.ForkJoinPool.common.parallelism=8 -Xms16g -Xmx32g -jar \
     TotalRepeats.jar genome.fasta
 ```
 
-Setting the value to 1 forces single-threaded execution or use the `-normal` flag to prevent multithreaded clustering.
-
-```bash
-# Limit clustering to 1 worker threads
-java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta -normal
-```
+Setting that value to `1` runs the parallel code path on a single thread; `-normal` instead selects a separate single-threaded code path. Both end up using one thread, so either works when you need to disable parallelism.
 
 ### `-lib=` — External Repeat Library
 
@@ -639,13 +642,14 @@ java -jar TotalRepeats.jar genome.fasta image=4000x2000
 
 ### Slow clustering on large genomes
 
-Enable multithreaded clustering:
+Clustering is multithreaded by default and already uses all available CPU cores — first make sure you have **not** passed `-normal`, which forces the slower single-threaded path:
 
 ```bash
+# Multithreaded by default — do NOT add -normal
 java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta
 ```
 
-By default this uses all available CPU cores. To cap the worker-thread count (e.g. on a shared node), add `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N` before `-jar`. The clustering result is deterministic, so the thread count changes only the runtime, not the output.
+To cap the worker-thread count (e.g. on a shared node) while keeping multithreading, add `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N` before `-jar`. Multithreaded clustering is deterministic, so the thread count changes only the runtime, not the output.
 
 ---
 
@@ -673,7 +677,7 @@ Yes. That error came from concatenating all inputs into one string, which Java c
 Yes. Use `-readmask` to import masked FASTA files from RepeatMasker or other tools, and `-readgff` to import GFF annotations for visualization.
 
 **Q: What does the `-normal` flag do exactly?**
-It prevent multithreaded pairwise comparison during the clustering step, which significantly speeds down processing for large genomes with many repeat families. The parallel clustering is deterministic — repeated runs produce identical cluster assignments and `ClusterID`s regardless of the thread count, so results stay reproducible. To cap the number of worker threads, add `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N` before `-jar` (see the `-normal` entry under [Detailed Option Reference](#detailed-option-reference)).
+By default, clustering is multithreaded — the pairwise comparison step runs across all CPU cores, which greatly speeds up large genomes with many repeat families. Passing `-normal` turns that off and runs the clustering on a single thread: slower, but useful for debugging or when you want the single-threaded code path. If you want to keep multithreading but only limit the number of worker threads, add `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N` before `-jar` instead (see [Multithreaded Clustering](#multithreaded-clustering)). The multithreaded path is deterministic: repeated runs produce identical cluster assignments and `ClusterID`s regardless of thread count.
 
 ---
 
