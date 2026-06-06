@@ -173,7 +173,7 @@ java -version
 
 ```bash
 # Show usage / help (also printed when no input file is given)
-java -jar TotalRepeats.jar --help
+java -jar TotalRepeats.jar --help >help.txt
 
 # Analyse a single genome
 java -jar TotalRepeats.jar genome.fasta
