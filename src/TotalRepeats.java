@@ -32,7 +32,7 @@ public class TotalRepeats {
             boolean amask = false;         // masking is performed by Pairwise Sequence Alignment: Repeater2 based 
             boolean maskonly = false;      // The process of masking is performed without the use of clustering or annotation.
             boolean seqshow = false;
-            boolean fastclustering = true; // Multithreading clustering 
+            boolean fastclustering = true; // Multithreaded clustering: ON by default; disabled by the -normal flag
             boolean readmask = false;       // reading masked FASTA for clustering and annotation
             boolean extupmask = false;      // extraction of the UPPER blocks of the masked chromosome contain unique sequences.
             boolean readgff = false;
@@ -81,7 +81,7 @@ public class TotalRepeats {
             if (s.contains("-nossr")) {
                 ssrdetect = false;
             }
-            if (s.contains("-normal")) {// (Prevent Multithreading clustering) Using fully multithreading significantly accelerates the classification of sequences into individual clusters.
+            if (s.contains("-normal")) { // Force single-threaded clustering. Clustering is multithreaded by default, which significantly accelerates grouping sequences into individual clusters; -normal disables that and uses the single-threaded path.
                 fastclustering = false;
             }
             if (s.contains("extunique")) { // -seqlen>100
@@ -317,7 +317,7 @@ public class TotalRepeats {
             "  -amask               Mask using pairwise sequence alignment (Repeater2-based)",
             "  -seqshow             Extract and output repeat sequences (default: off)",
             "  -nossr               Disable SSR (Simple Sequence Repeat) detection (default: on)",
-            "  -quick               Accelerate repeat classification using multithreading (default: off)",
+            "  -normal              Use single-threaded repeat classification (default: multithreaded)",
             "",
             "COMPARATIVE / GENOME-WIDE OPTIONS:",
             "  -combine             Genome-wide analysis: each sequence analyzed individually",
@@ -482,6 +482,21 @@ public class TotalRepeats {
         String[] nms = names.toArray(String[]::new);
         String[] sqs = seqs.toArray(String[]::new);
         String[] fnms = fnames.toArray(String[]::new);
+
+        // Per-file outputs must honour -out= the same way the single-file Run path does
+        // (resolveOutputDir + File.getName). Each per-file base is built from the INPUT
+        // path, so without this remap the per-file .gff/.png/.svg/.msk would be written
+        // next to the input files, ignoring -out=. Here we move each base into the output
+        // folder by its basename (the multi-record "_i_" suffix in the name is preserved).
+        // When -out= is not given, the bases are left untouched, so each per-file report is
+        // still written next to its own input, exactly as before. The combined report base
+        // (combinedFile) already honours -out= via getReportFile, so it is left as is.
+        if (outdir != null && !outdir.isEmpty()) {
+            Path od = Paths.get(outdir);
+            for (int i = 0; i < fnms.length; i++) {
+                fnms[i] = od.resolve(new File(fnms[i]).getName()).toString();
+            }
+        }
 
         TotalRepeatsSearching s2 = new TotalRepeatsSearching();
         s2.SetSequences(sqs, nms);
