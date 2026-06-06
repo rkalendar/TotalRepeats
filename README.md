@@ -179,7 +179,7 @@ java -jar TotalRepeats.jar --help
 java -jar TotalRepeats.jar genome.fasta
 
 # Analyse all genomes in a directory
-java -jar TotalRepeats.jar /path/to/genomes/
+java -jar TotalRepeats.jar /path/to/genomes/ -out=/path/to/report/
 
 # Large genome with memory allocation
 java -Xms32g -Xmx64g -jar TotalRepeats.jar large_genome.fasta
@@ -198,7 +198,7 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -combine
 ### Basic Syntax
 
 ```bash
-java [JVM flags] -jar TotalRepeats.jar <input_file_or_directory> [options]
+java [JVM flags] -jar TotalRepeats.jar <input_file_or_directory> [options] <output_directory>
 ```
 
 - **Input** can be a single FASTA file or a directory containing multiple genomes.
