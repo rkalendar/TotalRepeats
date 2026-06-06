@@ -7,15 +7,15 @@ Go to the target folder and type the following; an individual file or a file fol
 
 To run the project from the command line, go to the dist folder and type the following:
 
-java -jar TotalRepeats.jar <target_file_path/Folder_path>
+java -jar TotalRepeats.jar <target_file_path/Folder_path> --help >help.txt
 
 For large chromosomes exceeding 100 Mbp in size, the software requires a minimum of 32 GB of system memory to ensure optimal performance. 
 Users must allocate the desired amount of memory by specifying the initial Java heap size using the -Xms flag. 
 For example, to allocate 32 GB of memory, the following command should be used: 
 
-java -jar -Xms32g TotalRepeats.jar <inputfile/folder>
+java -jar -Xms32g TotalRepeats.jar <inputfile/folder> <outputfolder>
 
-java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\
+java -jar -Xms32g C:\TotalRepeats\dist\TotalRepeats.jar E:\Genomes\T2T-CHM13v2.0\ -out=E:\report\
 
 This parameter sets the initial heap size allocated to the Java Virtual Machine (JVM). In this example, -Xms32g tells the JVM to allocate 32 gigabytes of memory at startup. This is especially important for processing large genomes, as it helps prevent memory-related errors and ensures efficient performance during analysis. 
 Optional: -Xmx flag. The -Xmx parameter defines the maximum heap size that the JVM is allowed to use. For example, -Xmx64g would allow the program to use up to 64 GB of RAM if needed. If not specified, the JVM uses a platform-dependent default maximum, which may be insufficient for large-scale analyses:
