@@ -7,7 +7,7 @@ Go to the target folder and type the following; an individual file or a file fol
 
 To run the project from the command line, go to the dist folder and type the following:
 
-java -jar TotalRepeats.jar <target_file_path/Folder_path> --help >help.txt
+java -jar TotalRepeats.jar <target_file_path/Folder_path> -help >help.txt
 
 For large chromosomes exceeding 100 Mbp in size, the software requires a minimum of 32 GB of system memory to ensure optimal performance. 
 Users must allocate the desired amount of memory by specifying the initial Java heap size using the -Xms flag. 
