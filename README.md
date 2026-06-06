@@ -672,8 +672,8 @@ Yes. That error came from concatenating all inputs into one string, which Java c
 **Q: Can I import results from other tools?**
 Yes. Use `-readmask` to import masked FASTA files from RepeatMasker or other tools, and `-readgff` to import GFF annotations for visualization.
 
-**Q: What does the `-quick` flag do exactly?**
-It enables multithreaded pairwise comparison during the clustering step, which significantly speeds up processing for large genomes with many repeat families. The parallel clustering is deterministic — repeated runs produce identical cluster assignments and `ClusterID`s regardless of the thread count, so results stay reproducible. The flag `-fast` is an alias for `-quick`. To cap the number of worker threads, add `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N` before `-jar` (see the `-quick` / `-fast` entry under [Detailed Option Reference](#detailed-option-reference)).
+**Q: What does the `-normal` flag do exactly?**
+It prevent multithreaded pairwise comparison during the clustering step, which significantly speeds down processing for large genomes with many repeat families. The parallel clustering is deterministic — repeated runs produce identical cluster assignments and `ClusterID`s regardless of the thread count, so results stay reproducible. To cap the number of worker threads, add `-Djava.util.concurrent.ForkJoinPool.common.parallelism=N` before `-jar` (see the `-normal` entry under [Detailed Option Reference](#detailed-option-reference)).
 
 ---
 
