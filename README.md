@@ -72,7 +72,7 @@ Latest additions to TotalRepeats:
 | 📚 **External annotation** | Annotate repeats against Repbase, Dfam/FamDB, or custom species-specific libraries |
 | 📊 **Publication-ready visualization** | Generate PNG and SVG images of repeat landscapes, annotated maps, and comparative views |
 | ⚡ **Multithreaded performance** | Parallel processing across all cores for masking, clustering, and annotation (multithreaded by default; `-normal` forces single-threaded); multithreaded clustering is **deterministic** — identical, reproducible results on every run |
-| 🧩 **Pangenome analysis** | Core / accessory / unique repeat-family classification with a presence/absence matrix across genomes — produced by every comparative mode (`-combine`, `-combine2`, `-combinemask`) |
+| 🧩 **Pangenome analysis** | Core / accessory / unique repeat-family classification with a presence/absence matrix across genomes — produced by every comparative mode (`-collate`, `-joint`, `-combinemask`) |
 | 🗄️ **Pangenome-scale inputs** | Combined comparative analysis is not limited by the 2 GB single-sequence cap — inputs are concatenated virtually and addressed with 64-bit coordinates |
 
 ---
@@ -224,7 +224,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 
 > **Tip:** Set `-Xms` to roughly one-quarter of `-Xmx` for a good balance between startup speed and memory efficiency.
 
-> **Comparative runs (`-combine`, `-combine2`, `-combinemask`):** size the heap to the *combined* length of all input files, not the largest single file. These modes now handle a combined size above 2 GB (they no longer build one giant string), so the only practical limit is the heap you provide — allocate accordingly for pangenome-scale inputs.
+> **Comparative runs (`-collate`, `-joint`, `-combinemask`):** size the heap to the *combined* length of all input files, not the largest single file. These modes now handle a combined size above 2 GB (they no longer build one giant string), so the only practical limit is the heap you provide — allocate accordingly for pangenome-scale inputs.
 
 ### Common Options
 
@@ -618,7 +618,7 @@ java -Xms16g -Xmx64g -jar TotalRepeats.jar genome.fasta
 
 > **Tip:** If your machine has limited RAM, try `-maskonly` to skip clustering — the masking step uses significantly less memory.
 
-> **`Requested string length exceeds VM limit` in a comparative run:** this specific error came from the old `-combine`/`-combine2`/`-combinemask` code building a single string of the whole concatenation, which Java caps at ~2.1 GB. It is resolved — these modes now concatenate virtually and use 64-bit coordinates. If you still hit a plain `OutOfMemoryError` (heap), raise `-Xmx` per the table above.
+> **`Requested string length exceeds VM limit` in a comparative run:** this specific error came from the earlier comparative code (`-collate`/`-joint`/`-combinemask`) building a single string of the whole concatenation, which Java caps at ~2.1 GB. It is resolved — these modes now concatenate virtually and use 64-bit coordinates. If you still hit a plain `OutOfMemoryError` (heap), raise `-Xmx` per the table above.
 
 ### No repeats detected
 
