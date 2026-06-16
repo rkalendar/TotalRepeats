@@ -102,19 +102,18 @@ public class TotalRepeats {
             if (s.contains("extract")) {
                 extract = true;
             }
-            if (s.contains("combine")) {
+            if (s.contains("collate")) {
                 combine = 1;
-                if (s.contains("combine2")) {
-                    combine = 2;
-                }
-                if (s.contains("combinemask")) {
-                    combine = 3;
-                }
+            }
+            if (s.contains("joint")) {
+                combine = 2;
+            }           
+            if (s.contains("combinemask")) {
+                combine = 3;
             }
             if (s.contains("homology")) {
                 combine = 4;
             }
-
             if (s.contains("seqshow")) {
                 seqshow = true;
             }
@@ -227,6 +226,7 @@ public class TotalRepeats {
                     }
 
                 } else {
+
                     if (maskfiles) {
                         ComparisionMaskFiles(infile, outdir);
                         return;
@@ -320,11 +320,11 @@ public class TotalRepeats {
             "  -normal              Use single-threaded repeat classification (default: multithreaded)",
             "",
             "COMPARATIVE / GENOME-WIDE OPTIONS:",
-            "  -combine             Genome-wide analysis: each sequence analyzed individually",
-            "  -combine2            Genome-wide analysis: all sequences analyzed together",
+            "  -collate             Genome-wide analysis: each sequence analyzed individually",
+            "  -joint               Pangenome, genome-wide analysis: all sequences analyzed together",
             "  -combinemask         Genome-wide comparative analysis using masking files as input",
             "  -homology            Comparative Homology Masking: cross-file analysis of homologous",
-            "                       regions and repeats between target sequences (e.g. chromosomes)",            
+            "                       regions and repeats between target sequences (e.g. chromosomes)",
             "",
             "INPUT / OUTPUT OPTIONS:",
             "  -readmask            Load a masking file (single FASTA entry) for clustering and",
@@ -536,9 +536,9 @@ public class TotalRepeats {
 
         switch (combine) {
             case 1 ->
-                s2.RunCombine(imgx, fst);
+                s2.RunSynchronizingClassification(imgx, fst);
             case 2 ->
-                s2.RunCombine2(imgx, fst);
+                s2.RunCombining(imgx, fst);
             case 3 ->
                 s2.RunCombineMask(imgx, fst);
             case 4 ->
