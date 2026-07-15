@@ -53,6 +53,7 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 
 Latest additions to TotalRepeats:
 
+- **Containment clustering for size-disparate homology (`-contain`).** The default clustering measure compares the whole-composition k-mer profile of two blocks, so a short element that is a copy of only *part* of a longer one is drowned out and left ungrouped. The new `-contain` mode instead groups a block with a seed when most of its k-mers *occur inside* that seed (an asymmetric containment index on canonical k-mers), so short elements are placed with the longer repeats that contain them, and reverse-complemented copies are found and labelled on the minus strand. See [`-contain`](#-contain--containment-clustering).
 - **Comparative analyses are no longer capped at ~2 GB.** The `-collate`, `-joint`, and `-combinemask` modes previously failed with `OutOfMemoryError: Requested string length exceeds VM limit` once the *combined* length of all input sequences passed ~2.1 GB — Java's hard limit on the size of a single array/`String`. They now concatenate the inputs **virtually** and address them with **64-bit (long) coordinates**, so a joint analysis scales to pangenome-sized data (tens of Gb) without ever materializing a single oversized string. Each individual sequence/chromosome is still limited to 2 GB; the *total* across files is now effectively bounded only by available RAM.
 - **Per-file reports in every comparative mode.** `-collate`, `-joint`, and `-combinemask` now each emit an individual GFF3 annotation, PNG, and SVG per input file (named after that file), *in addition to* the combined report. Each genome can be inspected on its own while the joint clustering is preserved — the same family keeps the same `ClusterID`, colour, row, and reference label in both the per-file and combined views.
 - **Pangenome analysis — core / accessory / unique — across all comparative modes.** Every combine run now writes a pangenome report classifying each repeat family by how many sequences it occurs in: **core** (present in all), **accessory** (present in some), and **unique** (present in one). It includes the family-frequency spectrum, per-sequence statistics, a pairwise shared-family matrix (Jaccard similarity), and a machine-readable presence/absence matrix. See [`-collate`](#-collate--comparative-analysis).
@@ -238,6 +239,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `-seqshow` | Include repeat sequences in GFF3 output | Off |
 | `-maskonly` | Generate only the masked FASTA (skip clustering/annotation) | Off |
 | `-normal` | Use single-threaded clustering (multithreaded is the default) | Off |
+| `-contain` | Cluster by k-mer containment — groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies; no effect in `-homology` | Off |
 | `-help` | Show the usage guide and exit (aliases: `--help`, `-h`, `-?`, `/?`, `/h`) | — |
 
 ### Advanced Options
@@ -314,6 +316,32 @@ java -Djava.util.concurrent.ForkJoinPool.common.parallelism=8 -Xms16g -Xmx32g -j
 ```
 
 Setting that value to `1` runs the parallel code path on a single thread; `-normal` instead selects a separate single-threaded code path. Both end up using one thread, so either works when you need to disable parallelism.
+
+### `-contain` — Containment Clustering
+
+By default, clustering groups repeat blocks by comparing their **whole k-mer composition** (a 4-mer ratio profile). That works well when the blocks are of comparable length, but it cannot see a short element that is a copy of only *part* of a longer block: the short block's composition is built from too few k-mers, so its homology to the long block goes unseen and it is left as an unclassified singleton.
+
+`-contain` switches the clustering step to an **asymmetric k-mer containment** measure, ported from [GeneDistance](https://github.com/rkalendar/GeneDistance). A block is absorbed into a (longer) seed when a large share of its k-mers *occur inside* that seed:
+
+```
+C(A, B) = |kmers(A) ∩ kmers(B)| / |kmers(A)|   — how much of A occurs in B
+```
+
+Because the measure asks "how much of the short block is contained in the long one?" rather than "how similar are their overall compositions?", it groups a short element with the longer repeat that contains it — the case the default measure misses. The k-mers are **canonical**, so a copy inserted in the reverse-complement orientation is still found and is labelled on the minus strand (a negative length in the GFF/SVG, exactly as for the default measure).
+
+**When to use it.** Reach for `-contain` when your repeats span a wide range of lengths — fragmented or truncated copies alongside full-length elements, or short sub-elements shared between larger repeats. It pairs naturally with the comparative modes:
+
+```bash
+# Pangenome run grouping size-disparate homologous repeats
+java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -joint -contain
+```
+
+**Notes.**
+- The exact k-mer length is chosen automatically from the median block length (an odd value in 11–24); it is independent of the `kmer=` used for repeat *detection*.
+- Deterministic and reproducible, like the default clustering, and unaffected by the worker-thread count.
+- Uses more memory than the default path — roughly 16 bytes per distinct k-mer per block — so give the JVM enough heap (`-Xmx`) for large combined runs.
+- `-homology` performs no clustering, so `-contain` has no effect in that mode.
+- The output is unchanged in shape (the same `ClusterID`s, strands, colours, per-file/combined reports, and pangenome classification), so every downstream report works exactly as before.
 
 ### `-lib=` — External Repeat Library
 
