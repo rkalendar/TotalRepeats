@@ -123,7 +123,7 @@ Latest additions to TotalRepeats:
 
 | Requirement | Details |
 |---|---|
-| **Java** | Version **25** or higher ([download](https://www.oracle.com/java/technologies/downloads/)) |
+| **Java** | Version **26** or higher ([download](https://www.oracle.com/java/technologies/downloads/)) |
 | **OS** | Windows, Linux, or macOS — platform-independent |
 | **RAM** | Depends on genome size (see [Memory Configuration](#memory-configuration)) |
 
@@ -131,7 +131,7 @@ Latest additions to TotalRepeats:
 > ```bash
 > java -version
 > ```
-> If you see a version below 25, update Java or install via [Conda](#option-2-using-conda).
+> If you see a version below 26, update Java or install via [Conda](#option-2-using-conda).
 
 **Setting `JAVA_HOME` / `PATH`:** <https://www.java.com/en/download/help/path.html>
 
@@ -146,7 +146,7 @@ Latest additions to TotalRepeats:
 git clone https://github.com/rkalendar/TotalRepeats.git
 cd TotalRepeats
 
-# 2. Confirm Java 25+ is available
+# 2. Confirm Java 26+ is available
 java -version
 
 # 3. Run — no build step required
@@ -155,14 +155,14 @@ java -jar dist/TotalRepeats.jar genome.fasta -out=/results/output
 
 ### Option 2: Using Conda
 
-If Java 25 is not installed system-wide:
+If Java 26 is not installed system-wide:
 
 ```bash
 # Create a dedicated environment
 conda config --add channels conda-forge
 conda config --set channel_priority strict
-conda create -n java25 openjdk=25
-conda activate java25
+conda create -n java26 openjdk=26
+conda activate java26
 
 # Verify
 java -version
