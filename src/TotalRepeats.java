@@ -33,6 +33,7 @@ public class TotalRepeats {
             boolean maskonly = false;      // The process of masking is performed without the use of clustering or annotation.
             boolean seqshow = false;
             boolean fastclustering = true; // Multithreaded clustering: ON by default; disabled by the -normal flag
+            boolean containment = false;   // -contain: cluster by k-mer containment (homology of size-disparate blocks)
             boolean readmask = false;       // reading masked FASTA for clustering and annotation
             boolean extupmask = false;      // extraction of the UPPER blocks of the masked chromosome contain unique sequences.
             boolean readgff = false;
@@ -83,6 +84,9 @@ public class TotalRepeats {
             }
             if (s.contains("-normal")) { // Force single-threaded clustering. Clustering is multithreaded by default, which significantly accelerates grouping sequences into individual clusters; -normal disables that and uses the single-threaded path.
                 fastclustering = false;
+            }
+            if (s.contains("-contain")) { // Cluster by asymmetric k-mer containment instead of the 4-mer ratio profile: finds homology between sequences of very different length (a short element inside a long one). No effect in -homology (which does not cluster).
+                containment = true;
             }
             if (s.contains("extunique")) { // -seqlen>100
                 extupmask = true;
@@ -159,7 +163,7 @@ public class TotalRepeats {
                     }
 
                     if (combine > 0) {
-                        TotalRepeatsCombinedResult(combine, reffile, filelist, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, ssrdetect, outdir);
+                        TotalRepeatsCombinedResult(combine, reffile, filelist, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, containment, ssrdetect, outdir);
                         return;
                     }
 
@@ -180,7 +184,7 @@ public class TotalRepeats {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    ReadingMaskFile(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, ssrdetect, outdir);
+                                    ReadingMaskFile(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, containment, ssrdetect, outdir);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -218,7 +222,7 @@ public class TotalRepeats {
                     for (String nfile : filelist) {
                         if (nfile != null) {
                             try {
-                                TotalRepeatsResult(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, ssrdetect, outdir);
+                                TotalRepeatsResult(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, containment, ssrdetect, outdir);
                             } catch (Exception e) {
                                 System.err.println("Failed to open file: " + nfile);
                             }
@@ -232,7 +236,7 @@ public class TotalRepeats {
                         return;
                     }
                     if (readmask) {
-                        ReadingMaskFile(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, ssrdetect, outdir);
+                        ReadingMaskFile(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, containment, ssrdetect, outdir);
                         return;
                     }
                     if (readgff) {
@@ -248,7 +252,7 @@ public class TotalRepeats {
                         return;
                     }
 
-                    TotalRepeatsResult(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, ssrdetect, outdir);
+                    TotalRepeatsResult(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, containment, ssrdetect, outdir);
                 }
             } else {
                 // No file or folder to analyse: report the problem and show usage.
@@ -318,6 +322,12 @@ public class TotalRepeats {
             "  -seqshow             Extract and output repeat sequences (default: off)",
             "  -nossr               Disable SSR (Simple Sequence Repeat) detection (default: on)",
             "  -normal              Use single-threaded repeat classification (default: multithreaded)",
+            "  -contain             Cluster homologous blocks by asymmetric k-mer containment instead",
+            "                       of the 4-mer ratio profile. Groups blocks of very different length",
+            "                       (a short element contained in a long one) and reverse-complement",
+            "                       copies, which the default measure misses. Uses more memory",
+            "                       (~16 bytes per distinct k-mer per block); no effect in -homology",
+            "                       mode, which does not cluster",
             "",
             "COMPARATIVE / GENOME-WIDE OPTIONS:",
             "  -collate             Genome-wide analysis: each sequence analyzed individually",
@@ -350,6 +360,9 @@ public class TotalRepeats {
             "",
             "  # Analyse all FASTA files in a directory:",
             "  java -jar -Xms16g -Xmx32g /path/to/TotalRepeats.jar /data/genomes/Aegilops_tauschii/",
+            "",
+            "  # Pangenome run grouping size-disparate homologous repeats (containment):",
+            "  " + jarMem + " /data/genomes/ -joint -contain",
             "",
             "NOTE: For sequences larger than 2 GB, increase heap memory with -Xmx (e.g. -Xmx64g).",};
 
@@ -426,7 +439,7 @@ public class TotalRepeats {
 
     private static void TotalRepeatsCombinedResult(int combine, String reffile, String[] filelist,
             int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean seqshow,
-            int width, int hight, boolean fst, boolean ssr, String outdir) throws IOException {
+            int width, int hight, boolean fst, boolean containment, boolean ssr, String outdir) throws IOException {
 
         long startTime = System.nanoTime();
 
@@ -506,6 +519,7 @@ public class TotalRepeats {
         s2.SetFileNames(fnms);
         s2.SetReportFile(combinedFile);
         s2.SetSSRdetection(ssr);
+        s2.SetContainment(containment);
 
         Path path = Paths.get(fnms[0]);
         Path parentDir = path.getParent();
@@ -551,7 +565,7 @@ public class TotalRepeats {
 
     private static void TotalRepeatsResult(String infile, String reffile, int kmer, int seqlen,
             int gap, int flanksshow, int imgx, boolean seqshow, int width, int hight,
-            boolean maskonly, boolean amask, boolean fst, boolean ssr, String outdir) {
+            boolean maskonly, boolean amask, boolean fst, boolean containment, boolean ssr, String outdir) {
         try {
             long startTime = System.nanoTime();
 
@@ -579,6 +593,7 @@ public class TotalRepeats {
             s2.SetMaskGenerate(maskonly);
             s2.SetShowSeq(seqshow);
             s2.SetSSRdetection(ssr);
+            s2.SetContainment(containment);
             s2.SetFlanks(flanksshow);
             s2.SetFileName(resolveOutputDir(infile, outdir) + File.separator + new File(infile).getName());
 
@@ -730,7 +745,7 @@ public class TotalRepeats {
 
     private static void ReadingMaskFile(String inputFile, String reffile, int kmer, int seqlen,
             int gap, int flanksshow, int imgx, boolean seqshow, int width, int hight,
-            boolean fst, boolean ssr, String outdir) {
+            boolean fst, boolean containment, boolean ssr, String outdir) {
         try {
             FastaReader rf = FastaReader.fromPathRaw(Paths.get(inputFile));
 
@@ -753,6 +768,7 @@ public class TotalRepeats {
             s2.SetRepeatLen(kmer, seqlen, gap);
             s2.SetShowSeq(seqshow);
             s2.SetSSRdetection(ssr);
+            s2.SetContainment(containment);
             s2.SetFlanks(flanksshow);
             s2.SetFileName(resolveOutputDir(inputFile, outdir) + File.separator + new File(inputFile).getName());
 
