@@ -53,7 +53,7 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 
 Latest additions to TotalRepeats:
 
-- **Containment clustering for size-disparate homology (`-contain`).** The default clustering measure compares the whole-composition k-mer profile of two blocks, so a short element that is a copy of only *part* of a longer one is drowned out and left ungrouped. The new `-contain` mode instead groups a block with a seed when most of its k-mers *occur inside* that seed (an asymmetric containment index on canonical k-mers), so short elements are placed with the longer repeats that contain them, and reverse-complemented copies are found and labelled on the minus strand. See [`-contain`](#-contain--containment-clustering).
+- **Containment clustering is now the default, and `-union` uses both measures.** The old measure compared the whole-composition k-mer profile of two blocks, so a short element that is a copy of only *part* of a longer one was drowned out and left ungrouped — and repeat blocks are mostly short. Clustering now groups a block with a seed when most of its k-mers *occur inside* that seed (an asymmetric containment index on canonical k-mers), placing short elements with the longer repeats that contain them and labelling reverse-complemented copies on the minus strand. On a 1.4 Mb genome whose blocks have a median length of 190 bp this groups 465 of 765 blocks where the old measure grouped 205. `-contain` is still accepted (it now selects the default), `-vector` opts back into the old measure, and `-union` runs both — which finds more than either alone, because the two measures group genuinely different blocks. See [Clustering measures](#clustering-measures).
 - **Comparative analyses are no longer capped at ~2 GB.** The `-collate`, `-joint`, and `-combinemask` modes previously failed with `OutOfMemoryError: Requested string length exceeds VM limit` once the *combined* length of all input sequences passed ~2.1 GB — Java's hard limit on the size of a single array/`String`. They now concatenate the inputs **virtually** and address them with **64-bit (long) coordinates**, so a joint analysis scales to pangenome-sized data (tens of Gb) without ever materializing a single oversized string. Each individual sequence/chromosome is still limited to 2 GB; the *total* across files is now effectively bounded only by available RAM.
 - **Per-file reports in every comparative mode.** `-collate`, `-joint`, and `-combinemask` now each emit an individual GFF3 annotation, PNG, and SVG per input file (named after that file), *in addition to* the combined report. Each genome can be inspected on its own while the joint clustering is preserved — the same family keeps the same `ClusterID`, colour, row, and reference label in both the per-file and combined views.
 - **Pangenome analysis — core / accessory / unique — across all comparative modes.** Every combine run now writes a pangenome report classifying each repeat family by how many sequences it occurs in: **core** (present in all), **accessory** (present in some), and **unique** (present in one). It includes the family-frequency spectrum, per-sequence statistics, a pairwise shared-family matrix (Jaccard similarity), and a machine-readable presence/absence matrix. See [`-collate`](#-collate--comparative-analysis).
@@ -97,7 +97,7 @@ Latest additions to TotalRepeats:
 │  │ • Group repeat copies into families by sequence identity │            │
 │  │ • Classify: tandem (STR), unclassified (UCRP),           │            │
 │  │   classified (CRP) via external library                  │            │
-│  │ • Multithreaded k-mer vector comparison                  │            │
+│  │ • Multithreaded k-mer containment comparison             │            │
 │  └─────────────────────────┬────────────────────────────────┘            │
 │                            │                                             │
 │  4. ANNOTATION             ▼               5. OUTPUT                     │
@@ -239,7 +239,9 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `-seqshow` | Include repeat sequences in GFF3 output | Off |
 | `-maskonly` | Generate only the masked FASTA (skip clustering/annotation) | Off |
 | `-normal` | Use single-threaded clustering (multithreaded is the default) | Off |
-| `-contain` | Cluster by k-mer containment — groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies; no effect in `-homology` | Off |
+| `-contain` | Cluster by k-mer containment — groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies. **Now the default**; the flag is still accepted so existing command lines keep working. No effect in `-homology` | **On** |
+| `-vector` | Cluster by the 4-mer ratio profile instead (the former default) — a symmetric whole-block composition measure. Needs almost no memory, but cannot see a short element inside a longer block. See [Clustering measures](#clustering-measures) | Off |
+| `-union` | Use **both** measures: containment first, then the ratio profile over whatever it left unclustered. Groups more than either alone. See [Clustering measures](#clustering-measures) | Off |
 | `-help` | Show the usage guide and exit (aliases: `--help`, `-h`, `-?`, `/?`, `/h`) | — |
 
 ### Advanced Options
@@ -292,7 +294,7 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta sln=100
 
 ### Multithreaded Clustering
 
-Clustering is **multithreaded by default** — no flag is required. The pairwise k-mer-vector comparison that dominates the clustering step is spread across all available CPU cores, giving a large speed-up on genomes with many repeat families.
+Clustering is **multithreaded by default** — no flag is required. The pairwise k-mer comparison that dominates the clustering step is spread across all available CPU cores, giving a large speed-up on genomes with many repeat families. This applies to every [clustering measure](#clustering-measures).
 
 The multithreaded clustering is **deterministic**: repeated runs on the same input produce identical cluster assignments and `ClusterID`s, and the result does not depend on the number of worker threads. Output is therefore fully reproducible — across repeated runs and across machines with different core counts — which matters for published analyses. The thread count affects only runtime, not the result.
 
@@ -317,31 +319,65 @@ java -Djava.util.concurrent.ForkJoinPool.common.parallelism=8 -Xms16g -Xmx32g -j
 
 Setting that value to `1` runs the parallel code path on a single thread; `-normal` instead selects a separate single-threaded code path. Both end up using one thread, so either works when you need to disable parallelism.
 
-### `-contain` — Containment Clustering
+### Clustering measures
 
-By default, clustering groups repeat blocks by comparing their **whole k-mer composition** (a 4-mer ratio profile). That works well when the blocks are of comparable length, but it cannot see a short element that is a copy of only *part* of a longer block: the short block's composition is built from too few k-mers, so its homology to the long block goes unseen and it is left as an unclassified singleton.
+Two different measures can group repeat blocks into families, and they answer different questions. **Containment is the default**; `-vector` selects the other; `-union` runs both.
 
-`-contain` switches the clustering step to an **asymmetric k-mer containment** measure, ported from [GeneDistance](https://github.com/rkalendar/GeneDistance). A block is absorbed into a (longer) seed when a large share of its k-mers *occur inside* that seed:
+| Flag | Measure | Groups |
+|---|---|---|
+| *(none)* or `-contain` | Asymmetric k-mer containment | Blocks of very different length, including a short element inside a long one |
+| `-vector` | Symmetric 4-mer ratio profile | Blocks of comparable length with similar overall composition |
+| `-union` | Both, in cascade | Everything either finds — more than either alone |
+
+#### Containment (the default)
+
+A block is absorbed into a (longer) seed when a large share of its k-mers *occur inside* that seed, measured on **canonical** k-mers so that a copy inserted in the reverse-complement orientation is still found and labelled on the minus strand:
 
 ```
 C(A, B) = |kmers(A) ∩ kmers(B)| / |kmers(A)|   — how much of A occurs in B
 ```
 
-Because the measure asks "how much of the short block is contained in the long one?" rather than "how similar are their overall compositions?", it groups a short element with the longer repeat that contains it — the case the default measure misses. The k-mers are **canonical**, so a copy inserted in the reverse-complement orientation is still found and is labelled on the minus strand (a negative length in the GFF/SVG, exactly as for the default measure).
+Ported from [GeneDistance](https://github.com/rkalendar/GeneDistance). Because it asks "how much of the short block is contained in the long one?" rather than "how similar are their overall compositions?", it places a short element with the longer repeat that contains it.
 
-**When to use it.** Reach for `-contain` when your repeats span a wide range of lengths — fragmented or truncated copies alongside full-length elements, or short sub-elements shared between larger repeats. It pairs naturally with the comparative modes:
+- The k-mer length is chosen automatically from the median block length (an odd value in 11–24), independent of the `kmer=` used for repeat *detection*.
+- Costs roughly 8 bytes per distinct k-mer per block, so give the JVM enough heap (`-Xmx`) for large combined runs.
+
+#### `-vector` — the 4-mer ratio profile
+
+The former default. It compares the **whole k-mer composition** of two blocks, which works when they are of comparable length but cannot see a short element that is a copy of only *part* of a longer block: that element's contribution is averaged away into the long block's overall composition before any comparison happens. No threshold change can recover it — the information is gone when the profile is built.
+
+Its virtue is cost: it needs almost no memory and is several times faster per comparison. Prefer it when memory is the binding constraint.
+
+#### `-union` — both measures
+
+Containment runs first and untouched; the ratio profile then runs over **only** the blocks containment left unclustered. The two are not nested — they group genuinely different blocks — so running both finds more than either alone.
 
 ```bash
-# Pangenome run grouping size-disparate homologous repeats
-java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -joint -contain
+# Group size-disparate homologous repeats across a pangenome (containment is already the default)
+java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -joint
+
+# Use both measures
+java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -joint -union
 ```
 
-**Notes.**
-- The exact k-mer length is chosen automatically from the median block length (an odd value in 11–24); it is independent of the `kmer=` used for repeat *detection*.
-- Deterministic and reproducible, like the default clustering, and unaffected by the worker-thread count.
-- Uses more memory than the default path — roughly 16 bytes per distinct k-mer per block — so give the JVM enough heap (`-Xmx`) for large combined runs.
-- `-homology` performs no clustering, so `-contain` has no effect in that mode.
-- The output is unchanged in shape (the same `ClusterID`s, strands, colours, per-file/combined reports, and pangenome classification), so every downstream report works exactly as before.
+Measured on `MF782455` (a 1.4 Mb viral genome; 765 non-SSR blocks, median block length 190 bp) and on 9 *E. coli* genomes run with `-collate`:
+
+| Mode | MF782455 | 9 × *E. coli* |
+|---|---|---|
+| `-vector` | 205 blocks / 79 clusters | 2415 / 386 |
+| *(default)* `-contain` | 465 / 92 | 5835 / 733 |
+| `-union` | **510 / 109** | **5844 / 736** |
+
+On MF782455 the two measures agree on only 141 blocks, and the profile finds 64 that containment does not — hence the gain. **How much `-union` adds is data-dependent**: on *E. coli* containment already takes nearly everything, leaving the profile little to add (+9 blocks). There is no measurable time cost, since the second pass scans only the leftovers.
+
+`-union` **strictly dominates** `-contain`: containment's clusters survive byte-identically (no block changes `ClusterID` or strand), and the profile pass can only add to them.
+
+#### Notes for all measures
+
+- All are deterministic and reproducible, and unaffected by the worker-thread count.
+- `-homology` performs no clustering, so none of these flags have any effect in that mode.
+- The output shape never changes — the same `ClusterID`s, strands, colours, per-file/combined reports, and pangenome classification — so every downstream report works whichever measure you pick.
+- Flags are matched by substring, so `-contain` and `-vector` are the opt-in/opt-out pair; if both are given, the last one written wins, and `-union` overrides either.
 
 ### `-lib=` — External Repeat Library
 
