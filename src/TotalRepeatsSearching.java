@@ -81,9 +81,9 @@ public final class TotalRepeatsSearching {
         MaskOnly = i;
     }
 
-    /** -contain: cluster by asymmetric k-mer containment (homology of size-disparate blocks). */
-    public void SetContainment(boolean i) {
-        containment = i;
+    /** Which measure clusters the blocks: SequencesClustering.MODE_PROFILE / MODE_CONTAIN / MODE_UNION. */
+    public void SetClusterMode(int i) {
+        clusterMode = i;
     }
 
     public void SetShowSeq(boolean i) {
@@ -1012,7 +1012,7 @@ public final class TotalRepeatsSearching {
             offsets[t] = z2[t];
         }
 
-        SequencesClustering sc = new SequencesClustering(store, refseq, offsets, fst, containment);
+        SequencesClustering sc = new SequencesClustering(store, refseq, offsets, fst, clusterMode);
         d = sc.getSequenceOffsets();
         q = sc.getClusterIds();
         refclust = sc.getReferenceIds(); // ID+1 for each cluster
@@ -1055,7 +1055,7 @@ public final class TotalRepeatsSearching {
     // bb index aligns with the cluster id and with refclust exactly as before.
     private void ClusteringMaskingCombined(SeqStore store, long[] offsets, boolean fst,
             ArrayList<long[]> bbL) {
-        SequencesClustering sc = new SequencesClustering(store, refseq, offsets, fst, containment);
+        SequencesClustering sc = new SequencesClustering(store, refseq, offsets, fst, clusterMode);
         long[][] d = sc.getSequenceOffsets();
         int[] q = sc.getClusterIds();
         refclust = sc.getReferenceIds(); // ID+1 for each cluster
@@ -1983,7 +1983,7 @@ public final class TotalRepeatsSearching {
     private boolean SeqShow;
     private boolean SSRdetection = true;
     private boolean MaskOnly;
-    private boolean containment = false;   // -contain: cluster by k-mer containment (size-disparate homology)
+    private int clusterMode = SequencesClustering.MODE_CONTAIN;   // -vector / -union select the others
     private String filePath;
     private String ReportFilePath;
     private int[] refclust;

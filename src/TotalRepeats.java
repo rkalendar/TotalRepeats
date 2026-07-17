@@ -33,7 +33,7 @@ public class TotalRepeats {
             boolean maskonly = false;      // The process of masking is performed without the use of clustering or annotation.
             boolean seqshow = false;
             boolean fastclustering = true; // Multithreaded clustering: ON by default; disabled by the -normal flag
-            boolean containment = false;   // -contain: cluster by k-mer containment (homology of size-disparate blocks)
+            int clusterMode = SequencesClustering.MODE_CONTAIN;   // k-mer containment by default; -vector / -union select the others
             boolean readmask = false;       // reading masked FASTA for clustering and annotation
             boolean extupmask = false;      // extraction of the UPPER blocks of the masked chromosome contain unique sequences.
             boolean readgff = false;
@@ -85,8 +85,14 @@ public class TotalRepeats {
             if (s.contains("-normal")) { // Force single-threaded clustering. Clustering is multithreaded by default, which significantly accelerates grouping sequences into individual clusters; -normal disables that and uses the single-threaded path.
                 fastclustering = false;
             }
-            if (s.contains("-contain")) { // Cluster by asymmetric k-mer containment instead of the 4-mer ratio profile: finds homology between sequences of very different length (a short element inside a long one). No effect in -homology (which does not cluster).
-                containment = true;
+            if (s.contains("-vector")) { // Cluster by the 4-mer ratio profile instead of k-mer containment. Symmetric whole-block composition measure: it cannot see a short element contained in a long one, and on blocks with a low median length it groups far fewer of them. No effect in -homology (which does not cluster).
+                clusterMode = SequencesClustering.MODE_PROFILE;
+            }
+            if (s.contains("-contain")) { // Now the default; still accepted so existing command lines keep working. NB the parser matches by substring, so any opt-out flag must not itself contain "-contain".
+                clusterMode = SequencesClustering.MODE_CONTAIN;
+            }
+            if (s.contains("-union")) { // Both measures: containment, then the ratio profile over whatever it left unclustered. Strictly finds more than either alone, since the two measures group different blocks. Checked last so it wins over -contain / -vector if combined.
+                clusterMode = SequencesClustering.MODE_UNION;
             }
             if (s.contains("extunique")) { // -seqlen>100
                 extupmask = true;
@@ -163,7 +169,7 @@ public class TotalRepeats {
                     }
 
                     if (combine > 0) {
-                        TotalRepeatsCombinedResult(combine, reffile, filelist, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, containment, ssrdetect, outdir);
+                        TotalRepeatsCombinedResult(combine, reffile, filelist, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, clusterMode, ssrdetect, outdir);
                         return;
                     }
 
@@ -184,7 +190,7 @@ public class TotalRepeats {
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    ReadingMaskFile(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, containment, ssrdetect, outdir);
+                                    ReadingMaskFile(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, clusterMode, ssrdetect, outdir);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile);
                                 }
@@ -222,7 +228,7 @@ public class TotalRepeats {
                     for (String nfile : filelist) {
                         if (nfile != null) {
                             try {
-                                TotalRepeatsResult(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, containment, ssrdetect, outdir);
+                                TotalRepeatsResult(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, clusterMode, ssrdetect, outdir);
                             } catch (Exception e) {
                                 System.err.println("Failed to open file: " + nfile);
                             }
@@ -236,7 +242,7 @@ public class TotalRepeats {
                         return;
                     }
                     if (readmask) {
-                        ReadingMaskFile(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, containment, ssrdetect, outdir);
+                        ReadingMaskFile(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, clusterMode, ssrdetect, outdir);
                         return;
                     }
                     if (readgff) {
@@ -252,7 +258,7 @@ public class TotalRepeats {
                         return;
                     }
 
-                    TotalRepeatsResult(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, containment, ssrdetect, outdir);
+                    TotalRepeatsResult(infile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, clusterMode, ssrdetect, outdir);
                 }
             } else {
                 // No file or folder to analyse: report the problem and show usage.
@@ -322,12 +328,26 @@ public class TotalRepeats {
             "  -seqshow             Extract and output repeat sequences (default: off)",
             "  -nossr               Disable SSR (Simple Sequence Repeat) detection (default: on)",
             "  -normal              Use single-threaded repeat classification (default: multithreaded)",
-            "  -contain             Cluster homologous blocks by asymmetric k-mer containment instead",
-            "                       of the 4-mer ratio profile. Groups blocks of very different length",
-            "                       (a short element contained in a long one) and reverse-complement",
-            "                       copies, which the default measure misses. Uses more memory",
-            "                       (~16 bytes per distinct k-mer per block); no effect in -homology",
-            "                       mode, which does not cluster",
+            "  -contain             Cluster homologous blocks by asymmetric k-mer containment.",
+            "                       This is now the DEFAULT; the flag is still accepted so that",
+            "                       existing command lines keep working. Groups blocks of very",
+            "                       different length (a short element contained in a long one) and",
+            "                       reverse-complement copies. Costs ~8 bytes per distinct k-mer per",
+            "                       block, so a large combined run wants -Xmx; no effect in",
+            "                       -homology mode, which does not cluster",
+            "  -vector              Cluster by the 4-mer ratio profile instead of containment (the",
+            "                       former default). A symmetric whole-block composition measure: it",
+            "                       cannot see a short element inside a longer block, and it needs",
+            "                       almost no memory. On a 1.4 Mb genome whose blocks have a median",
+            "                       length of 190 bp it grouped 205 of 765 blocks where containment",
+            "                       grouped 465; on 9 E. coli genomes, 1709 against 5835. Prefer it",
+            "                       only when memory is the binding constraint",
+            "  -union               Use BOTH measures: containment first, then the ratio profile over",
+            "                       whatever it left unclustered. The two are not nested — on the",
+            "                       genome above they agree on only 141 blocks, and the profile finds",
+            "                       64 that containment does not — so this groups more than either",
+            "                       alone. Containment's clusters are kept exactly as -contain forms",
+            "                       them; the profile can only add to them. Costs both passes",
             "",
             "COMPARATIVE / GENOME-WIDE OPTIONS:",
             "  -collate             Genome-wide analysis: each sequence analyzed individually",
@@ -439,7 +459,7 @@ public class TotalRepeats {
 
     private static void TotalRepeatsCombinedResult(int combine, String reffile, String[] filelist,
             int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean seqshow,
-            int width, int hight, boolean fst, boolean containment, boolean ssr, String outdir) throws IOException {
+            int width, int hight, boolean fst, int clusterMode, boolean ssr, String outdir) throws IOException {
 
         long startTime = System.nanoTime();
 
@@ -519,7 +539,7 @@ public class TotalRepeats {
         s2.SetFileNames(fnms);
         s2.SetReportFile(combinedFile);
         s2.SetSSRdetection(ssr);
-        s2.SetContainment(containment);
+        s2.SetClusterMode(clusterMode);
 
         Path path = Paths.get(fnms[0]);
         Path parentDir = path.getParent();
@@ -565,7 +585,7 @@ public class TotalRepeats {
 
     private static void TotalRepeatsResult(String infile, String reffile, int kmer, int seqlen,
             int gap, int flanksshow, int imgx, boolean seqshow, int width, int hight,
-            boolean maskonly, boolean amask, boolean fst, boolean containment, boolean ssr, String outdir) {
+            boolean maskonly, boolean amask, boolean fst, int clusterMode, boolean ssr, String outdir) {
         try {
             long startTime = System.nanoTime();
 
@@ -593,7 +613,7 @@ public class TotalRepeats {
             s2.SetMaskGenerate(maskonly);
             s2.SetShowSeq(seqshow);
             s2.SetSSRdetection(ssr);
-            s2.SetContainment(containment);
+            s2.SetClusterMode(clusterMode);
             s2.SetFlanks(flanksshow);
             s2.SetFileName(resolveOutputDir(infile, outdir) + File.separator + new File(infile).getName());
 
@@ -745,7 +765,7 @@ public class TotalRepeats {
 
     private static void ReadingMaskFile(String inputFile, String reffile, int kmer, int seqlen,
             int gap, int flanksshow, int imgx, boolean seqshow, int width, int hight,
-            boolean fst, boolean containment, boolean ssr, String outdir) {
+            boolean fst, int clusterMode, boolean ssr, String outdir) {
         try {
             FastaReader rf = FastaReader.fromPathRaw(Paths.get(inputFile));
 
@@ -768,7 +788,7 @@ public class TotalRepeats {
             s2.SetRepeatLen(kmer, seqlen, gap);
             s2.SetShowSeq(seqshow);
             s2.SetSSRdetection(ssr);
-            s2.SetContainment(containment);
+            s2.SetClusterMode(clusterMode);
             s2.SetFlanks(flanksshow);
             s2.SetFileName(resolveOutputDir(inputFile, outdir) + File.separator + new File(inputFile).getName());
 
