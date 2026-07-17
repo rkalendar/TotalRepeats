@@ -53,7 +53,9 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 
 Latest additions to TotalRepeats:
 
-- **Containment clustering is now the default, and `-union` uses both measures.** The old measure compared the whole-composition k-mer profile of two blocks, so a short element that is a copy of only *part* of a longer one was drowned out and left ungrouped — and repeat blocks are mostly short. Clustering now groups a block with a seed when most of its k-mers *occur inside* that seed (an asymmetric containment index on canonical k-mers), placing short elements with the longer repeats that contain them and labelling reverse-complemented copies on the minus strand. On a 1.4 Mb genome whose blocks have a median length of 190 bp this groups 465 of 765 blocks where the old measure grouped 205. `-contain` is still accepted (it now selects the default), `-vector` opts back into the old measure, and `-union` runs both — which finds more than either alone, because the two measures group genuinely different blocks. See [Clustering measures](#clustering-measures).
+- **Containment clustering is now the default, and `-union` uses both measures.** Clustering groups a block with a seed when most of its k-mers *occur inside* that seed (an asymmetric containment index on canonical k-mers), placing short elements with the longer repeats that contain them and labelling reverse-complemented copies on the minus strand. On a 1.4 Mb genome whose blocks have a median length of 190 bp this groups 465 of 765 blocks. `-contain` is still accepted (it now selects the default), `-vector` selects the composition measure, and `-union` runs both — which finds more than either alone. See [Clustering measures](#clustering-measures).
+
+- **`-vector` rebuilt: 5× more real homology, and its false groupings removed.** The composition measure used one similarity threshold at every block length, even though the score chance alone produces varies enormously with length — and with the genome. That was wrong in both directions at once: checked against evidence independent of it (exact 25-mer sharing, adjudicated by Smith-Waterman against a shuffled null), it missed most real homology **and only 52% of what it grouped was real**. It now compares raw 4-mer counts by cosine against a chance floor calibrated per length scale from the run's own data, and matches a long seed window-by-window at the candidate's own scale. On `MF782455` that takes it from 205 blocks at 52% real to **436 blocks at 98% real** — 67 → 354 genuinely homologous members — while keeping its near-zero memory. It can now also find copies too diverged to share any exact k-mer, which `-contain` cannot. See [Clustering measures](#clustering-measures).
 - **Comparative analyses are no longer capped at ~2 GB.** The `-collate`, `-joint`, and `-combinemask` modes previously failed with `OutOfMemoryError: Requested string length exceeds VM limit` once the *combined* length of all input sequences passed ~2.1 GB — Java's hard limit on the size of a single array/`String`. They now concatenate the inputs **virtually** and address them with **64-bit (long) coordinates**, so a joint analysis scales to pangenome-sized data (tens of Gb) without ever materializing a single oversized string. Each individual sequence/chromosome is still limited to 2 GB; the *total* across files is now effectively bounded only by available RAM.
 - **Per-file reports in every comparative mode.** `-collate`, `-joint`, and `-combinemask` now each emit an individual GFF3 annotation, PNG, and SVG per input file (named after that file), *in addition to* the combined report. Each genome can be inspected on its own while the joint clustering is preserved — the same family keeps the same `ClusterID`, colour, row, and reference label in both the per-file and combined views.
 - **Pangenome analysis — core / accessory / unique — across all comparative modes.** Every combine run now writes a pangenome report classifying each repeat family by how many sequences it occurs in: **core** (present in all), **accessory** (present in some), and **unique** (present in one). It includes the family-frequency spectrum, per-sequence statistics, a pairwise shared-family matrix (Jaccard similarity), and a machine-readable presence/absence matrix. See [`-collate`](#-collate--comparative-analysis).
@@ -240,7 +242,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `-maskonly` | Generate only the masked FASTA (skip clustering/annotation) | Off |
 | `-normal` | Use single-threaded clustering (multithreaded is the default) | Off |
 | `-contain` | Cluster by k-mer containment — groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies. **Now the default**; the flag is still accepted so existing command lines keep working. No effect in `-homology` | **On** |
-| `-vector` | Cluster by the 4-mer ratio profile instead (the former default) — a symmetric whole-block composition measure. Needs almost no memory, but cannot see a short element inside a longer block. See [Clustering measures](#clustering-measures) | Off |
+| `-vector` | Cluster by 4-mer composition instead — cosine against a chance floor calibrated per length scale, matching long seeds window-by-window. Needs almost no memory, and is the only measure that finds copies too diverged to share exact k-mers. See [Clustering measures](#clustering-measures) | Off |
 | `-union` | Use **both** measures: containment first, then the ratio profile over whatever it left unclustered. Groups more than either alone. See [Clustering measures](#clustering-measures) | Off |
 | `-help` | Show the usage guide and exit (aliases: `--help`, `-h`, `-?`, `/?`, `/h`) | — |
 
@@ -325,8 +327,8 @@ Two different measures can group repeat blocks into families, and they answer di
 
 | Flag | Measure | Groups |
 |---|---|---|
-| *(none)* or `-contain` | Asymmetric k-mer containment | Blocks of very different length, including a short element inside a long one |
-| `-vector` | Symmetric 4-mer ratio profile | Blocks of comparable length with similar overall composition |
+| *(none)* or `-contain` | Asymmetric containment on exact k-mers | Blocks of very different length, including a short element inside a long one |
+| `-vector` | 4-mer composition, compared by cosine against a per-run calibrated chance floor | The same, plus **diverged** copies that no longer share exact k-mers |
 | `-union` | Both, in cascade | Everything either finds — more than either alone |
 
 #### Containment (the default)
@@ -342,11 +344,17 @@ Ported from [GeneDistance](https://github.com/rkalendar/GeneDistance). Because i
 - The k-mer length is chosen automatically from the median block length (an odd value in 11–24), independent of the `kmer=` used for repeat *detection*.
 - Costs roughly 8 bytes per distinct k-mer per block, so give the JVM enough heap (`-Xmx`) for large combined runs.
 
-#### `-vector` — the 4-mer ratio profile
+#### `-vector` — the 4-mer composition profile
 
-The former default. It compares the **whole k-mer composition** of two blocks, which works when they are of comparable length but cannot see a short element that is a copy of only *part* of a longer block: that element's contribution is averaged away into the long block's overall composition before any comparison happens. No threshold change can recover it — the information is gone when the profile is built.
+Each block becomes a raw 4-mer count vector, and two blocks are compared by the **cosine** of those vectors. A candidate joins a seed when the cosine clears a **chance floor calibrated from the run's own data**, separately for each length scale.
 
-Its virtue is cost: it needs almost no memory and is several times faster per comparison. Prefer it when memory is the binding constraint.
+Three things make it work, and each replaced something that was measurably wrong:
+
+- **A chance floor, per length scale.** The score that chance alone produces depends strongly on block length, and on the genome: two *unrelated* 250 bp windows of `MF782455` reach a cosine that a single flat threshold cannot tell from real homology, while at 2 kb chance never comes close. It is also not a constant of the algorithm — at 600 bp the chance level is far higher on a compositionally homogeneous *E. coli* replicon than on `MF782455`. So the floor is **measured per run**, from real windows of your own sequence screened for homology, rather than hard-coded. This is the profile's counterpart to the containment measure's chance control, which it previously lacked entirely.
+- **Scale-matched windows.** When a seed is much longer than a candidate, the candidate is compared against the best **window** of the seed at its own scale, instead of against the seed's whole composition. This is what lets it see a short element that is a copy of only *part* of a longer block — real repeat homology is usually partial, and averaging it over the whole block dilutes it away.
+- **Cosine over raw counts.** The previous measure compared ratios only across 4-mers that two blocks *shared*, discarding which 4-mers were **absent** — the main signal for a short block — and it ignored any 4-mer seen 3 times or fewer, which left 40% of blocks on the benchmark genome with too little to compare at all.
+
+Its virtue is still memory: it needs almost no memory (no per-block k-mer index), so prefer it when memory is the binding constraint — and note it is the only measure that finds homology too diverged to share exact k-mers. Each individual comparison is now *cheaper* than before (cosine is a single merge pass, where the old measure was quadratic in the shared support), but the run as a whole is slower, because it now calibrates a floor and scans a long seed window-by-window instead of comparing it once.
 
 #### `-union` — both measures
 
@@ -360,17 +368,32 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -joint
 java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -joint -union
 ```
 
-Measured on `MF782455` (a 1.4 Mb viral genome; 765 non-SSR blocks, median block length 190 bp) and on 9 *E. coli* genomes run with `-collate`:
+Measured on `MF782455` (a 1.4 Mb viral genome; 765 non-SSR blocks, median block length 190 bp), and on the 16 plastid genomes in `test/6` run with `-collate`:
 
-| Mode | MF782455 | 9 × *E. coli* |
+| Mode | MF782455 | 16 genomes, `-collate` |
 |---|---|---|
-| `-vector` | 205 blocks / 79 clusters | 2415 / 386 |
-| *(default)* `-contain` | 465 / 92 | 5835 / 733 |
-| `-union` | **510 / 109** | **5844 / 736** |
+| `-vector` | 436 blocks / 74 clusters | 176 / 41 |
+| *(default)* `-contain` | 465 / 92 | 179 / 31 |
+| `-union` | **526 / 104** | **179 / 31** |
 
-On MF782455 the two measures agree on only 141 blocks, and the profile finds 64 that containment does not — hence the gain. **How much `-union` adds is data-dependent**: on *E. coli* containment already takes nearly everything, leaving the profile little to add (+9 blocks). There is no measurable time cost, since the second pass scans only the leftovers.
+**Blocks clustered is not by itself a measure of quality** — a loose threshold inflates it with noise — so each grouping was checked against evidence independent of both measures: whether a member shares exact 25-mers with its family's seed (chance ≈ 4⁻²⁵), adjudicated by Smith-Waterman local alignment against a shuffled null. On `MF782455`:
 
-`-union` **strictly dominates** `-contain`: containment's clusters survive byte-identically (no block changes `ClusterID` or strand), and the profile pass can only add to them.
+| Mode | blocks | real members | members that are real (Smith-Waterman) |
+|---|---|---|---|
+| `-vector`, previous release | 205 | 67 | **52%** |
+| `-vector`, now | 436 | **354** | **98%** |
+| *(default)* `-contain` | 465 | 365 | 100% |
+| `-union`, now | 526 | **412** | — (97.6% by 25-mer) |
+
+The previous `-vector` was wrong in both directions at once: it missed most real homology *and* nearly half of what it did group showed no homology at all — those pairs aligned no better than against shuffled sequence. Both faults had the same root cause, a single similarity threshold applied at every block length even though the chance level varies enormously with length. The measure now finds **5× more genuine homology** (67 → 354 verified members) at essentially `-contain`'s precision.
+
+The two measures remain complementary rather than nested, which is why `-union` still adds to both. `-vector` is now the *more* sensitive of the two on some data — on `NC_014649` it groups 75 blocks to `-contain`'s 48, with all 40 sampled pairs confirmed real by alignment, because composition still recognises copies that have diverged past sharing any exact k-mer (only half of those 75 share a 25-mer with their seed, yet alignment confirms every sampled pair). The gain is not confined to small genomes: on a 7.5 Mb fungal chromosome `-vector` goes from 384 blocks at 50% real to **600 at 88% real**.
+
+**Cost.** Calibrating the floor and scanning windows is not free: on `MF782455` `-vector` goes from ~2 s to ~7 s, and on the 7.5 Mb chromosome from ~7 s to ~17 s. Memory is unchanged — the calibration builds k-mer sets for a few hundred sample windows only, never a per-block index, so `-vector` keeps the small flat footprint that is its reason to exist.
+
+`-union` **strictly dominates** `-contain`: containment's clusters survive byte-identically (no block changes `ClusterID` or strand), and the profile pass can only add to them. Verified on `MF782455`: all 465 blocks `-contain` groups keep their exact `ClusterID` and strand under `-union`.
+
+> **Note.** The previous release quoted figures for a 9 × *E. coli* set that is not included in this repository (`-vector` 2415 / 386, `-contain` 5835 / 733, `-union` 5844 / 736). Those `-vector` and `-union` numbers predate this change and no longer apply; `-contain` is unaffected. Re-run that set to refresh them.
 
 #### Notes for all measures
 
