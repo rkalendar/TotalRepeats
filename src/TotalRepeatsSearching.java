@@ -1,4 +1,3 @@
-
 import java.awt.BasicStroke;
 import java.io.FileWriter;
 import java.io.BufferedWriter;
@@ -99,43 +98,6 @@ public final class TotalRepeatsSearching {
         }
     }
 
-    private int[] CombineArrays(int[] u, int[] u2) {
-        int newLength = u.length + u2.length;
-        int[] combinedArray = new int[newLength];
-        System.arraycopy(u, 0, combinedArray, 0, u.length);
-        System.arraycopy(u2, 0, combinedArray, u.length, u2.length);
-        return combinedArray;
-    }
-
-    // Extract the blocks (pairs: start, length) of a combined/global array that
-    // fall inside one sequence's range [seqStart, seqEnd) and remap them to that
-    // sequence's local coordinates. Negative lengths (reverse strand) are kept.
-    private int[] SliceBlocksLocal(int[] blocks, int seqStart, int seqEnd) {
-        int seqLen = seqEnd - seqStart;
-        ArrayList<Integer> out = new ArrayList<>();
-        for (int j = 0; j + 1 < blocks.length; j += 2) {
-            int start = blocks[j];
-            int len = blocks[j + 1];
-            int absLen = Math.abs(len);
-            if (start >= seqStart && start < seqEnd) {
-                int localStart = start - seqStart;
-                int localLen = absLen;
-                if (localStart + localLen > seqLen) {
-                    localLen = seqLen - localStart;   // clip to the sequence end
-                }
-                if (localLen > 0) {
-                    out.add(localStart);
-                    out.add(len < 0 ? -localLen : localLen);
-                }
-            }
-        }
-        int[] res = new int[out.size()];
-        for (int t = 0; t < res.length; t++) {
-            res[t] = out.get(t);
-        }
-        return res;
-    }
-
     // ── long-coordinate helpers for the combined (>2.1 Gb) run ──────────────────
     /**
      * Copies a LOCAL block array (pairs: start, length; lengths may be negative
@@ -154,8 +116,7 @@ public final class TotalRepeatsSearching {
     }
 
     /**
-     * Concatenates two long block arrays (same role as CombineArrays for
-     * int[]).
+     * Concatenates two long block arrays.
      */
     private long[] concatLong(long[] a, long[] b) {
         long[] r = new long[a.length + b.length];
@@ -165,7 +126,7 @@ public final class TotalRepeatsSearching {
     }
 
     /**
-     * Long-coordinate twin of {@link #SliceBlocksLocal}: extracts the blocks of
+     * Long-coordinate variant: extracts the blocks of
      * a GLOBAL long array that fall inside one sequence's range [seqStart,
      * seqEnd) and remaps them to that sequence's LOCAL int coordinates. A
      * single sequence is always < 2.1 Gb, so the local start/length fit in an
@@ -601,7 +562,7 @@ public final class TotalRepeatsSearching {
 //  RunCombine). No sequence is ever concatenated, so the total may exceed 2.1 Gb.
 //
 //  MaskingSequences class and no separate ByteStore overload needed — maskCombined
-//  already byte-codes each chunk internally via normalise()/tables.dx2.
+//  already byte-codes each chunk internally via normalise()/Tables.dx2.
 // ============================================================================
     public void RunCombining(int k, boolean fst) throws IOException {
         startTime = System.nanoTime();
@@ -1295,8 +1256,7 @@ public final class TotalRepeatsSearching {
         }
 
         // Gray/Brown baseline segments at y=60 for each cluster interval (emulating first pass in drawClusters)
-        // And colored cluster segments at per-cluster y.
-        // y position rule matches your code: y = (i > 10) ? 190 + i*z : 88 + i*20;
+        // And colored cluster segments at per-cluster y (see clusterRowY).
         for (int i = 0; i < b; i++) {
             int[] z7 = bb.get(i);
 
@@ -1312,8 +1272,7 @@ public final class TotalRepeatsSearching {
                 sb.append("  <line class=\"brown\" x1=\"").append(x1).append("\" y1=\"60\" x2=\"").append(x2).append("\" y2=\"60\" stroke-width=\"").append(dotSize).append("\"/>\n");
             }
 
-            //  int y = (i > 10) ? 190 + (i * z) : 88 + (i * 20);
-            int y = (i == 0) ? 90 : (i == 1) ? 130 : 180 + i * z;
+            int y = clusterRowY(i, z);
             // colored spans
             for (int j = 0; j < z7.length - 1; j += 2) {
                 int x1 = 50 + (int) Math.round(z7[j] * nucleotidesPerPixel);
@@ -1336,36 +1295,6 @@ public final class TotalRepeatsSearching {
         try (BufferedWriter w1 = new BufferedWriter(new FileWriter(svgfile))) {
             w1.write(sb.toString());
         }
-    }
-
-    /**
-     * Pangenomic analysis of the combined clustering: classifies repeat
-     * families as core / accessory / unique across the analyzed sequences and
-     * writes a summary report and a presence/absence matrix. Uses the current
-     * {@code bb} (combined clusters) and {@code refclust}, so it must be called
-     * after the combined ClusteringMasking and saving.
-     */
-    private void SavingPangenome(String reportBase, int[] seqslen) throws IOException {
-        if (!pangenome || bb == null || nseq < 2 || seqslen == null || seqslen.length < nseq) {
-            return;
-        }
-        // PangenomeAnalysis is now long-based; promote the int bb/seqslen to long so this
-        // entry point (single-segment / <2.1 Gb callers) keeps working unchanged.
-        long[] seqslenL = new long[seqslen.length];
-        for (int i = 0; i < seqslen.length; i++) {
-            seqslenL[i] = seqslen[i];
-        }
-        ArrayList<long[]> bbL = new ArrayList<>(bb.size());
-        for (int[] row : bb) {
-            long[] r = new long[row.length];
-            for (int j = 0; j < row.length; j++) {
-                r[j] = row[j];
-            }
-            bbL.add(r);
-        }
-        String base = (reportBase == null || reportBase.isEmpty()) ? filePath : reportBase;
-        PangenomeAnalysis pa = new PangenomeAnalysis(bbL, seqslenL, sname, refclust, refsname);
-        pa.write(base);
     }
 
     // ===================================================================
@@ -1470,7 +1399,7 @@ public final class TotalRepeatsSearching {
                             s0 = s1 + s0 + s2;
                         }
                         if (z7[j + 1] < 0) {
-                            s0 = dna.ComplementDNA2(s0);
+                            s0 = Dna.ComplementDNA2(s0);
                         }
                     }
                     sr = new StringBuilder();
@@ -1610,7 +1539,7 @@ public final class TotalRepeatsSearching {
                 sb.append("  <line class=\"brown\" x1=\"").append(x1).append("\" y1=\"60\" x2=\"").append(x2).append("\" y2=\"60\" stroke-width=\"").append(dotSize).append("\"/>\n");
             }
 
-            int y = (i == 0) ? 90 : (i == 1) ? 130 : 180 + i * z;
+            int y = clusterRowY(i, z);
             // colored spans
             for (int j = 0; j < z7.length - 1; j += 2) {
                 int x1 = 50 + (int) Math.round(z7[j] * nucleotidesPerPixel);
@@ -1743,7 +1672,7 @@ public final class TotalRepeatsSearching {
                             s0 = s1 + s0 + s2;
                         }
                         if (z7[j + 1] < 0) {
-                            s0 = dna.ComplementDNA2(s0);
+                            s0 = Dna.ComplementDNA2(s0);
                         }
                     }
                     sr = new StringBuilder();
@@ -1787,25 +1716,27 @@ public final class TotalRepeatsSearching {
         try {
             SaveImage(reportfile, k, n, len, b, z, width, height, dotSize, seqslen);
         } catch (IOException e) {
-            System.out.println("Error saving the picture: " + e.getMessage());
+            // Non-fatal: the GFF/mask outputs are already written; report the
+            // image failure clearly on stderr rather than as a stdout success line.
+            System.err.println("ERROR: failed to save image " + reportfile + " — " + e.getMessage());
         }
     }
 
     private int calculateClusterStep(int b) {
         if (b > 500) {
-            return 4;
-        }
-        if (b > 400) {
-            return 5;
-        }
-        if (b > 300) {
-            return 6;
-        }
-        if (b > 200) {
             return 10;
         }
-        if (b > 100) {
+        if (b > 400) {
+            return 11;
+        }
+        if (b > 300) {
             return 12;
+        }
+        if (b > 200) {
+            return 13;
+        }
+        if (b > 100) {
+            return 14;
         }
         return 16;
     }
@@ -1925,6 +1856,18 @@ public final class TotalRepeatsSearching {
         }
     }
 
+    /**
+     * Vertical position of cluster row {@code i} (row spacing {@code z}), shared
+     * by the SVG and PNG renderers so the two output formats lay their rows out
+     * identically. Rows 0 and 1 sit at fixed heights near the top; rows ≥2 step
+     * down by {@code z}. Previously the PNG path used a different formula
+     * (110 / 120 + i*z) than the SVG path (130 / 180 + i*z), so the same run
+     * produced visually different figures in the two formats.
+     */
+    private static int clusterRowY(int i, int z) {
+        return (i == 0) ? 90 : (i == 1) ? 130 : 180 + i * z;
+    }
+
     private void drawClusters(Graphics2D g2d, int b, int z, double w1) {
         // Color DarkRed = new Color(153, 0, 0); //https://teaching.csse.uwa.edu.au/units/CITS1001/colorinfo.html
         Color DarkGreen = new Color(0, 102, 0);
@@ -1941,19 +1884,14 @@ public final class TotalRepeatsSearching {
                 g2d.drawLine(x1, 60, x2, 60); // draw dark gray line (x1, y, x2, y)
             }
 
-            int y = (i == 0) ? 90 : (i == 1) ? 110 : 120 + i * z;
-            //int y = 90 + i * z;
+            int y = clusterRowY(i, z);
 
             for (int j = 0; j < z7.length - 1; j += 2) {
                 int x1 = 50 + (int) (z7[j] * w1);
                 int x2 = 50;
                 if (z7[j + 1] > 0) {
                     x2 = x2 + (int) ((z7[j] + z7[j + 1]) * w1);
-                    g2d.setColor(
-                            i == 0 ? DarkGreen
-                                    : i > 1 ? Color.BLUE
-                                            : Color.DARK_GRAY
-                    );
+                    g2d.setColor(i == 0 ? DarkGreen : Color.BLUE);
                 } else {
                     x2 = x2 + (int) ((z7[j] - z7[j + 1]) * w1);
                     g2d.setColor(Color.RED);

@@ -140,12 +140,12 @@ public class MaskingPairwiseAlignmentSequence {
         // Build the combined forward + sentinel + reverse-complement code array.
         byte[] b = seq.getBytes();          // ASCII A/C/G/T/N
         for (int i = 0; i < l; i++) {
-            b[i] = tables.dx2[b[i]];       // 0..4
+            b[i] = Tables.dx2[b[i]];       // 0..4
         }
         b = Arrays.copyOf(b, g);
         b[l] = 4;                           // sentinel (N/gap)
         for (int i = 1; i <= l; i++) {
-            b[l + i] = tables.cdnat2[b[l - i]];
+            b[l + i] = Tables.cdnat2[b[l - i]];
         }
 
         final long keyMask = (kmer == 32) ? -1L : ((1L << (2 * kmer)) - 1L);

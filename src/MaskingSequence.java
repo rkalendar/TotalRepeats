@@ -8,6 +8,10 @@ import java.util.List;
  * k-mers observed ≥ MIN_COUNT times (= repeated). 3. Mark per-base coverage by
  * repeated k-mers. 4. Extract contiguous blocks with sufficient coverage and
  * length.
+ *
+ * Uses LongCountSet: a value-less set that packs a "seen >= 2" flag into the
+ * count is only ever capped at MIN_COUNT, so one byte per slot suffices and the
+ * table is ~25% smaller and more cache-friendly than the int-valued map.
  */
 public class MaskingSequence {
 
@@ -39,6 +43,12 @@ public class MaskingSequence {
      * @return flat array of [start₀, len₀, start₁, len₁, …]
      */
     public int[] mask(String seq, byte[] ssrmsk, int kmer, int minLenSeq) {
+        if (kmer > LongCountSet.MAX_KMER) {
+            throw new IllegalArgumentException(
+                "LongCountSet requires kmer <= " + LongCountSet.MAX_KMER
+              + " (it packs the count into the high bit of the base-5 key). "
+              + "For longer k-mers use the byte/int map.");
+        }
         /*
          * sens=true selects half-kmer sensitivity: blocks whose internal
          * high-coverage span exceeds kmer/2-1 are kept.  This prevents
@@ -49,7 +59,7 @@ public class MaskingSequence {
 
         // Normalise once; both strands reuse the same byte-coded arrays.
         final byte[] fwd = normalise(seq);
-        final byte[] rev = normalise(dna.ComplementDNA(seq));
+        final byte[] rev = normalise(Dna.ComplementDNA(seq));
 
         // Count gap (N) bases on the forward strand.
         gapsLen = 0;
@@ -60,13 +70,119 @@ public class MaskingSequence {
         }
 
         // Phase 1 – count k-mers on both strands.
-        LongIntHashMap kmerMap = countKmers(fwd, rev, kmer);
+        LongCountSet kmerMap = countKmers(fwd, rev, kmer);
+
+        // Drop unique k-mers before the read phase (smaller, cache-resident table).
+        kmerMap.retainAtLeast(MIN_COUNT);
 
         // Phase 2 – per-base coverage by repeated k-mers.
         int[] coverage = computeCoverage(kmerMap, fwd, rev, ssrmsk, kmer);
 
         // Phase 3 – build repeat blocks and apply length filter.
         return buildBlocks(coverage, kmer, minLenSeq, top);
+    }
+
+    /**
+     * Combined / multi-chunk masker.
+     *
+     * Counts k-mers across ALL chunks into ONE shared map, so a k-mer shared
+     * between different chunks (i.e. different input sequences) reaches
+     * MIN_COUNT and is masked in every chunk it occurs in — cross-sequence
+     * repeats are detected, which {@link #mask} called per sequence cannot do.
+     *
+     * No k-mer window ever crosses a chunk boundary, so no repeat can span a
+     * sequence junction. Blocks are returned in GLOBAL long coordinates. No chunk
+     * is ever concatenated, so the total length may exceed the ~2.1 Gb
+     * single-String / single-array limit.
+     *
+     * Provably equivalent to: concatenate every sequence into one, block the
+     * junctions, and call {@link #mask} once — without building the merged
+     * sequence.
+     *
+     * @param seqs      individual sequences (chunks); each &lt; 2.1 Gb
+     * @param ssrmsk    per-chunk SSR mask (ssrmsk[c].length == seqs[c].length())
+     * @param kmer      k-mer length
+     * @param minLenSeq minimum repeat-block length to report
+     * @return flat GLOBAL array [start0, len0, start1, len1, …] (long)
+     */
+    public long[] maskCombined(String[] seqs, byte[][] ssrmsk, int kmer, int minLenSeq) {
+        if (kmer > LongCountSet.MAX_KMER) {
+            throw new IllegalArgumentException(
+                "LongCountSet requires kmer <= " + LongCountSet.MAX_KMER
+              + " (it packs the count into the high bit of the base-5 key). "
+              + "For longer k-mers use the byte/int map.");
+        }
+        final boolean sens = true;
+        final int top = sens ? (kmer / 2 - 1) : (kmer - 1);
+
+        // ── Phase 1: ONE shared k-mer map over every chunk, both strands. ──
+        final long alphabetBound = (kmer < 32) ? (1L << (2 * kmer)) : Long.MAX_VALUE;
+        long expected = 0L;
+        for (String s : seqs) {
+            long w = Math.max(0L, (long) s.length() - kmer + 1);
+            expected += Math.min(2L * w, alphabetBound);
+        }
+        expected = Math.min(expected, alphabetBound);
+
+        LongCountSet map = LongCountSet.withExpectedKeys(expected);
+        for (String s : seqs) {
+            countStrand(map, normalise(s), kmer);
+            countStrand(map, normalise(Dna.ComplementDNA(s)), kmer);
+        }
+
+        // Counting is finished — drop unique k-mers once. The table shrinks
+        // many-fold, so the per-base marking below hits a small, cache-resident
+        // table and most of the memory is freed. Lossless: a count-1 entry here
+        // is genuinely unique. (Must come AFTER all chunks are counted, because a
+        // k-mer in the last chunk can confirm a repeat in the first one.)
+        map.retainAtLeast(MIN_COUNT);
+
+        // ── Phase 2: coverage + blocks per chunk against the SHARED map. ──
+        ArrayList<long[]> parts = new ArrayList<>(seqs.length);
+        long totalRep = 0L, totalGap = 0L, off = 0L;
+
+        for (int c = 0; c < seqs.length; c++) {
+            final byte[] fwd = normalise(seqs[c]);
+            final byte[] rev = normalise(Dna.ComplementDNA(seqs[c]));
+            final int len = fwd.length;
+
+            for (byte b : fwd) {
+                if (b == 4) {
+                    totalGap++;
+                }
+            }
+
+            int[] coverage = new int[len];
+            markStrandForward(map, fwd, ssrmsk[c], coverage, kmer);
+            markStrandReverse(map, rev, ssrmsk[c], coverage, len, kmer);
+
+            int[] local = buildBlocks(coverage, kmer, minLenSeq, top); // sets repeatsLen for THIS chunk
+            totalRep += repeatsLen;
+
+            long[] g = new long[local.length];
+            for (int j = 0; j + 1 < local.length; j += 2) {
+                g[j] = off + local[j];   // local start → global start
+                g[j + 1] = local[j + 1]; // length (kept as-is)
+            }
+            parts.add(g);
+            off += len;
+        }
+
+        repeatsLen = totalRep;
+        gapsLen = totalGap;
+
+        // Flatten the per-chunk global arrays into one result (single allocation).
+        int total = 0;
+        for (long[] g : parts) {
+            total += g.length;
+        }
+        long[] result = new long[total];
+        int p = 0;
+        for (long[] g : parts) {
+            System.arraycopy(g, 0, result, p, g.length);
+            p += g.length;
+        }
+        return result;
     }
 
     public long gapsLength() {
@@ -78,12 +194,12 @@ public class MaskingSequence {
     }
 
     // ── Phase 1: k-mer counting ─────────────────────────────────────────────
-    private LongIntHashMap countKmers(byte[] fwd, byte[] rev, int kmer) {
+    private LongCountSet countKmers(byte[] fwd, byte[] rev, int kmer) {
         // Pre-size so the map does not resize while filling.  The distinct
         // k-mer count is bounded by the number of windows on both strands and
         // by 4^kmer; withExpectedKeys() caps the capacity at MAX_CAPACITY.
         long expected = estimateDistinctKmers(fwd.length, kmer);
-        LongIntHashMap map = LongIntHashMap.withExpectedKeys(expected);
+        LongCountSet map = LongCountSet.withExpectedKeys(expected);
         countStrand(map, fwd, kmer);
         countStrand(map, rev, kmer);
         return map;
@@ -93,12 +209,6 @@ public class MaskingSequence {
      * Upper bound on the number of distinct k-mers that {@link #countKmers}
      * will store: the number of k-mer windows across both strands, but never
      * more than the 4^kmer possible gap-free k-mers (alphabet A/C/G/T only).
-     *
-     * This is an upper bound — for highly repetitive input the true distinct
-     * count is lower, so the map may be over-sized. If memory is tight, drop
-     * the factor of 2 (use a single strand's window count) as a tighter, still
-     * usually-sufficient estimate. The choice affects only speed/memory, never
-     * correctness.
      */
     private static long estimateDistinctKmers(int seqLen, int kmer) {
         long windowsPerStrand = Math.max(0L, (long) seqLen - kmer + 1);
@@ -112,12 +222,8 @@ public class MaskingSequence {
      * Counts all gap-free k-mers in {@code bases}, incrementing the map entry
      * up to MIN_COUNT. Capping at MIN_COUNT keeps the map small — we only need
      * to know whether the count reaches the threshold, not the exact value.
-     *
-     * Uses {@link LongIntHashMap#incrementCapped} so each k-mer resolves its
-     * slot in a single probe sequence (insert-1-or-bump), instead of a separate
-     * get followed by put.
      */
-    private void countStrand(LongIntHashMap map, byte[] bases, int kmer) {
+    private void countStrand(LongCountSet map, byte[] bases, int kmer) {
         final int len = bases.length;
 
         // Initialise the gap counter for the first (kmer-1) bases.
@@ -135,9 +241,6 @@ public class MaskingSequence {
 
             if (gapCount == 0) {
                 long code = encodeKmer(bases, i - kmer + 1, kmer);
-                // Insert with count 1 if absent, else bump up to MIN_COUNT.
-                // Once at MIN_COUNT the entry is a "confirmed repeat" and the
-                // cap stops further increments — single hash probe per k-mer.
                 map.incrementCapped(code, MIN_COUNT);
             }
 
@@ -149,7 +252,7 @@ public class MaskingSequence {
     }
 
     // ── Phase 2: coverage ───────────────────────────────────────────────────
-    private int[] computeCoverage(LongIntHashMap kmerMap,
+    private int[] computeCoverage(LongCountSet kmerMap,
             byte[] fwd, byte[] rev,
             byte[] ssrmsk, int kmer) {
         final int len = fwd.length;
@@ -166,7 +269,7 @@ public class MaskingSequence {
      * increment coverage for every base it spans (unless the base is
      * SSR-masked).
      */
-    private void markStrandForward(LongIntHashMap kmerMap, byte[] bases, byte[] ssrmsk, int[] coverage, int kmer) {
+    private void markStrandForward(LongCountSet kmerMap, byte[] bases, byte[] ssrmsk, int[] coverage, int kmer) {
         final int len = bases.length;
         int gapCount = 0;
         for (int i = 0; i < kmer - 1; i++) {
@@ -203,7 +306,7 @@ public class MaskingSequence {
      * A k-mer at position {@code [start, start+kmer-1]} on {@code rev} maps to
      * forward positions {@code [len-start-kmer, len-start-1]}.
      */
-    private void markStrandReverse(LongIntHashMap kmerMap, byte[] bases, byte[] ssrmsk, int[] coverage, int len, int kmer) {
+    private void markStrandReverse(LongCountSet kmerMap, byte[] bases, byte[] ssrmsk, int[] coverage, int len, int kmer) {
         int gapCount = 0;
         for (int i = 0; i < kmer - 1; i++) {
             if (bases[i] == 4) {
@@ -309,22 +412,8 @@ public class MaskingSequence {
     /**
      * Encodes a k-mer as a base-5 long integer.
      *
-     * Alphabet mapping (from {@code tables.dx2}): A=0, C=1, G=2, T=3, N(gap)=4
-     *
-     * Using base 5 (one digit per base): - Clean: no ambiguity, no hash
-     * collision from different k-mers. - Safe range: 5^27 = 7.45×10^18 <
-     * Long.MAX_VALUE (9.22×10^18), so k-mers up to length 27 always produce
-     * non-negative codes. - Codes of gap-containing k-mers are never inserted
-     * (gapCount guard), so digit value 4 appears only in invalid/unreachable
-     * codes.
-     *
-     * NOTE: Base-5 codes cannot equal EMPTY_KEY (Long.MIN_VALUE) or DELETED_KEY
-     * (Long.MIN_VALUE+1) for k ≤ 27 because those sentinels are negative and
-     * base-5 codes are non-negative in that range.
-     *
-     * Replacing the old base-10 encoding: - Base 10 wasted ~1.3 bits per base.
-     * - Base 10 limited safe (non-negative) k-mer length to 19. - Base 5 raises
-     * that limit to 27, sufficient for typical repeat masking.
+     * Alphabet mapping (from {@code Tables.dx2}): A=0, C=1, G=2, T=3, N(gap)=4
+     * Base 5 keeps codes non-negative and collision-free for k ≤ 27.
      */
     private static long encodeKmer(byte[] b, int start, int kmerSize) {
         long r = 0L;
@@ -340,7 +429,7 @@ public class MaskingSequence {
     private static byte[] normalise(String seq) {
         byte[] raw = seq.getBytes();
         for (int i = 0; i < raw.length; i++) {
-            raw[i] = tables.dx2[raw[i]];
+            raw[i] = Tables.dx2[raw[i]];
         }
         return raw;
     }

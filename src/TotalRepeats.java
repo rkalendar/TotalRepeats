@@ -174,11 +174,12 @@ public class TotalRepeats {
             if (flagSet.contains("seqshow")) {
                 seqshow = true;
             }
-            imaged = clamp(intOpt(opts, imaged, "imgx"), 5, 30);
+            imaged = clamp(intOpt(opts, imaged, "imgx"), 1, 30);            // matches documented -imgx=<1-30>
             flanksshow = clamp(intOpt(opts, flanksshow, "flanks", "flangs"), 0, 1000);
-            kmer = intOpt(opts, kmer, "kmer");
-            seqlen = intOpt(opts, seqlen, "sln");
-            gap = intOpt(opts, gap, "gap");
+            kmer = clamp(intOpt(opts, kmer, "kmer"), 9, 21);                // documented range; upper bound also caps LongCountSet base-5 packing
+            seqlen = Math.max(intOpt(opts, seqlen, "sln"), 1);              // block length must be >= 1
+            // gap defaults to 2*kmer, recomputed AFTER kmer is parsed so -kmer without -gap scales correctly.
+            gap = opts.containsKey("gap") ? StrToInt(opts.get("gap")) : kmer + kmer;
             if (opts.containsKey("image")) { // image=40000x5000
                 String[] d = opts.get("image").toLowerCase().split("x");
                 if (d.length > 1) {
@@ -222,7 +223,7 @@ public class TotalRepeats {
                                 try {
                                     ExtractFiles(nfile, outdir);
                                 } catch (Exception e) {
-                                    System.err.println("Failed to open file: " + nfile);
+                                    System.err.println("Failed to open file: " + nfile + " — " + e.getMessage());
                                 }
                             }
                         }
@@ -235,7 +236,7 @@ public class TotalRepeats {
                                 try {
                                     ReadingMaskFile(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, clusterMode, ssrdetect, outdir);
                                 } catch (Exception e) {
-                                    System.err.println("Failed to open file: " + nfile);
+                                    System.err.println("Failed to open file: " + nfile + " — " + e.getMessage());
                                 }
                             }
                         }
@@ -248,7 +249,7 @@ public class TotalRepeats {
                                 try {
                                     ReadingUpperMaskFile(nfile, seqlen, gap, outdir);
                                 } catch (IOException e) {
-                                    System.err.println("Failed to open file: " + nfile);
+                                    System.err.println("Failed to open file: " + nfile + " — " + e.getMessage());
                                 }
                             }
                         }
@@ -261,7 +262,7 @@ public class TotalRepeats {
                                 try {
                                     ReadingGffFile(nfile, imaged, width, hight, outdir);
                                 } catch (Exception e) {
-                                    System.err.println("Failed to open file: " + nfile);
+                                    System.err.println("Failed to open file: " + nfile + " — " + e.getMessage());
                                 }
                             }
                         }
@@ -273,7 +274,7 @@ public class TotalRepeats {
                             try {
                                 TotalRepeatsResult(nfile, reffile, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, maskonly, amask, fastclustering, clusterMode, ssrdetect, outdir);
                             } catch (Exception e) {
-                                System.err.println("Failed to open file: " + nfile);
+                                System.err.println("Failed to open file: " + nfile + " — " + e.getMessage());
                             }
                         }
                     }
@@ -441,7 +442,11 @@ public class TotalRepeats {
                 break;
             }
         }
-        return (Integer.parseInt(r.toString()));
+        // r is "0" followed by up to 11 digits, so it always fits in a long and
+        // Long.parseLong never throws; clamp to int. (Integer.parseInt would throw
+        // an uncaught NumberFormatException on 11-digit input, e.g. -kmer=999999999999.)
+        long v = Long.parseLong(r.toString());
+        return (v > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) v;
     }
 
     /**
@@ -525,7 +530,7 @@ public class TotalRepeats {
                     printFastaFormatHelp();
                 }
             } catch (IOException e) {
-                System.err.println("Failed to open file: " + nfile);
+                System.err.println("Failed to open file: " + nfile + " — " + e.getMessage());
             }
         }
 
@@ -661,7 +666,7 @@ public class TotalRepeats {
             System.out.println("Total duration: " + duration + " seconds\n");
 
         } catch (IOException e) {
-            System.out.println("Incorrect file name.\n");
+            System.err.println("Error reading file: " + e.getMessage());
         }
     }
 
@@ -699,7 +704,7 @@ public class TotalRepeats {
             s2.RunUniquesMaskSaving(gap, seqlen);
 
         } catch (IOException e) {
-            System.out.println("Incorrect file name.\n");
+            System.err.println("Error reading file: " + e.getMessage());
         }
     }
 
@@ -829,7 +834,7 @@ public class TotalRepeats {
             s2.RunThroughMask(imgx, fst);
 
         } catch (IOException e) {
-            System.out.println("Incorrect file name.\n");
+            System.err.println("Error reading file: " + e.getMessage());
         }
     }
 
@@ -844,7 +849,7 @@ public class TotalRepeats {
             }
             s2.RunThroughGFF(inputGFFfile, imgx);
         } catch (IOException e) {
-            System.out.println("Incorrect file name.\n");
+            System.err.println("Error reading file: " + e.getMessage());
         }
     }
 

@@ -37,7 +37,7 @@ public class MaskingSequences {
         LongIntHashMap map = new LongIntHashMap();
         for (int k = 0; k < ns; k++) {
             fwd[k] = normalise(seq[k]);
-            rev[k] = normalise(dna.ComplementDNA(seq[k]));
+            rev[k] = normalise(Dna.ComplementDNA(seq[k]));
             countKmers(map, k, fwd[k], rev[k], kmer);
         }
 
@@ -249,7 +249,7 @@ public class MaskingSequences {
     private static byte[] normalise(String seq) {
         byte[] raw = seq.getBytes();
         for (int i = 0; i < raw.length; i++) {
-            raw[i] = tables.dx2[raw[i]];
+            raw[i] = Tables.dx2[raw[i]];
         }
         return raw;
     }
