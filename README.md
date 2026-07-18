@@ -54,7 +54,7 @@ The tool is particularly well-suited for comparative genomics, evolutionary biol
 Latest additions to TotalRepeats:
 
 - **More robust command-line parsing.** Options are now parsed token by token and matched exactly, so an input path — or a `-lib=`/`-ref=`/`-out=` value — that happens to contain a mode name (e.g. a folder named `joint_genomes`) no longer accidentally switches on that mode. Flag and option names are case-insensitive and accept an optional leading dash (`joint`, `-joint`, and `--joint` are equivalent), and an unrecognized option now prints a warning instead of being silently ignored.
-- **Containment clustering is now the default, and `-union` uses both measures.** Clustering groups a block with a seed when most of its k-mers *occur inside* that seed (an asymmetric containment index on canonical k-mers), placing short elements with the longer repeats that contain them and labelling reverse-complemented copies on the minus strand. On a 1.4 Mb genome whose blocks have a median length of 190 bp this groups 465 of 765 blocks. `-contain` is still accepted (it now selects the default), `-vector` selects the composition measure, and `-union` runs both — which finds more than either alone. See [Clustering measures](#clustering-measures).
+- **The 4-mer composition profile (`-vector`) is now the default clustering measure.** It is fast and needs almost no memory, and — uniquely — it groups copies that have diverged past sharing any exact k-mer. `-vector` is still accepted (it now selects the default); pass `-contain` to cluster by asymmetric k-mer containment instead, which places a short element with the longer repeat that contains it, at a higher memory cost. See [Clustering measures](#clustering-measures).
 
 - **`-vector` rebuilt: 5× more real homology, and its false groupings removed.** The composition measure used one similarity threshold at every block length, even though the score chance alone produces varies enormously with length — and with the genome. That was wrong in both directions at once: checked against evidence independent of it (exact 25-mer sharing, adjudicated by Smith-Waterman against a shuffled null), it missed most real homology **and only 52% of what it grouped was real**. It now compares raw 4-mer counts by cosine against a chance floor calibrated per length scale from the run's own data, and matches a long seed window-by-window at the candidate's own scale. On `MF782455` that takes it from 205 blocks at 52% real to **436 blocks at 98% real** — 67 → 354 genuinely homologous members — while keeping its near-zero memory. It can now also find copies too diverged to share any exact k-mer, which `-contain` cannot. See [Clustering measures](#clustering-measures).
 - **Comparative analyses are no longer capped at ~2 GB.** The `-collate`, `-joint`, and `-combinemask` modes previously failed with `OutOfMemoryError: Requested string length exceeds VM limit` once the *combined* length of all input sequences passed ~2.1 GB — Java's hard limit on the size of a single array/`String`. They now concatenate the inputs **virtually** and address them with **64-bit (long) coordinates**, so a joint analysis scales to pangenome-sized data (tens of Gb) without ever materializing a single oversized string. Each individual sequence/chromosome is still limited to 2 GB; the *total* across files is now effectively bounded only by available RAM.
@@ -243,9 +243,8 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `-seqshow` | Include repeat sequences in GFF3 output | Off |
 | `-maskonly` | Generate only the masked FASTA (skip clustering/annotation) | Off |
 | `-normal` | Use single-threaded clustering (multithreaded is the default) | Off |
-| `-contain` | Cluster by k-mer containment — groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies. **Now the default**; the flag is still accepted so existing command lines keep working. No effect in `-homology` | **On** |
-| `-vector` | Cluster by 4-mer composition instead — cosine against a chance floor calibrated per length scale, matching long seeds window-by-window. Needs almost no memory, and is the only measure that finds copies too diverged to share exact k-mers. See [Clustering measures](#clustering-measures) | Off |
-| `-union` | Use **both** measures: containment first, then the ratio profile over whatever it left unclustered. Groups more than either alone. See [Clustering measures](#clustering-measures) | Off |
+| `-vector` | Cluster by 4-mer composition — cosine against a chance floor calibrated per length scale, matching long seeds window-by-window. **Now the default**; fast, needs almost no memory, and is the only measure that finds copies too diverged to share exact k-mers. The flag is still accepted so existing command lines keep working. See [Clustering measures](#clustering-measures) | **On** |
+| `-contain` | Cluster by asymmetric k-mer containment instead — groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies, at a higher memory cost. No effect in `-homology`. See [Clustering measures](#clustering-measures) | Off |
 | `-help` | Show the usage guide and exit (aliases: `--help`, `-h`, `-?`, `/?`, `/h`) | — |
 
 ### Advanced Options
@@ -325,15 +324,14 @@ Setting that value to `1` runs the parallel code path on a single thread; `-norm
 
 ### Clustering measures
 
-Two different measures can group repeat blocks into families, and they answer different questions. **Containment is the default**; `-vector` selects the other; `-union` runs both.
+Two different measures can group repeat blocks into families, and they answer different questions. **The 4-mer composition profile (`-vector`) is the default**; `-contain` selects asymmetric k-mer containment.
 
 | Flag | Measure | Groups |
 |---|---|---|
-| *(none)* or `-contain` | Asymmetric containment on exact k-mers | Blocks of very different length, including a short element inside a long one |
-| `-vector` | 4-mer composition, compared by cosine against a per-run calibrated chance floor | The same, plus **diverged** copies that no longer share exact k-mers |
-| `-union` | Both, in cascade | Everything either finds — more than either alone |
+| *(none)* or `-vector` | 4-mer composition, compared by cosine against a per-run calibrated chance floor | Blocks of very different length, plus **diverged** copies that no longer share exact k-mers |
+| `-contain` | Asymmetric containment on exact k-mers | Blocks of very different length, including a short element inside a long one |
 
-#### Containment (the default)
+#### `-contain` — asymmetric k-mer containment
 
 A block is absorbed into a (longer) seed when a large share of its k-mers *occur inside* that seed, measured on **canonical** k-mers so that a copy inserted in the reverse-complement orientation is still found and labelled on the minus strand:
 
@@ -346,7 +344,7 @@ Ported from [GeneDistance](https://github.com/rkalendar/GeneDistance). Because i
 - The k-mer length is chosen automatically from the median block length (an odd value in 11–24), independent of the `kmer=` used for repeat *detection*.
 - Costs roughly 8 bytes per distinct k-mer per block, so give the JVM enough heap (`-Xmx`) for large combined runs.
 
-#### `-vector` — the 4-mer composition profile
+#### `-vector` — the 4-mer composition profile (the default)
 
 Each block becomes a raw 4-mer count vector, and two blocks are compared by the **cosine** of those vectors. A candidate joins a seed when the cosine clears a **chance floor calibrated from the run's own data**, separately for each length scale.
 
@@ -358,51 +356,47 @@ Three things make it work, and each replaced something that was measurably wrong
 
 Its virtue is still memory: it needs almost no memory (no per-block k-mer index), so prefer it when memory is the binding constraint — and note it is the only measure that finds homology too diverged to share exact k-mers. Each individual comparison is now *cheaper* than before (cosine is a single merge pass, where the old measure was quadratic in the shared support), but the run as a whole is slower, because it now calibrates a floor and scans a long seed window-by-window instead of comparing it once.
 
-#### `-union` — both measures
+#### Comparing the two measures
 
-Containment runs first and untouched; the ratio profile then runs over **only** the blocks containment left unclustered. The two are not nested — they group genuinely different blocks — so running both finds more than either alone.
+The two measures group genuinely different blocks. `-vector` (the default) is fast and needs almost no memory; `-contain` costs ~8 bytes per distinct k-mer per block but catches size-disparate containment (a short element inside a long one) that composition can miss.
 
 ```bash
-# Group size-disparate homologous repeats across a pangenome (containment is already the default)
+# Default clustering (4-mer composition profile) across a pangenome
 java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -joint
 
-# Use both measures
-java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -joint -union
+# Group size-disparate homologous repeats by k-mer containment instead
+java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -joint -contain
 ```
 
 Measured on `MF782455` (a 1.4 Mb viral genome; 765 non-SSR blocks, median block length 190 bp), and on the 16 plastid genomes in `test/6` run with `-collate`:
 
 | Mode | MF782455 | 16 genomes, `-collate` |
 |---|---|---|
-| `-vector` | 436 blocks / 74 clusters | 176 / 41 |
-| *(default)* `-contain` | 465 / 92 | 179 / 31 |
-| `-union` | **526 / 104** | **179 / 31** |
+| *(default)* `-vector` | 436 blocks / 74 clusters | 176 / 41 |
+| `-contain` | 465 / 92 | 179 / 31 |
 
 **Blocks clustered is not by itself a measure of quality** — a loose threshold inflates it with noise — so each grouping was checked against evidence independent of both measures: whether a member shares exact 25-mers with its family's seed (chance ≈ 4⁻²⁵), adjudicated by Smith-Waterman local alignment against a shuffled null. On `MF782455`:
 
 | Mode | blocks | real members | members that are real (Smith-Waterman) |
 |---|---|---|---|
 | `-vector`, previous release | 205 | 67 | **52%** |
-| `-vector`, now | 436 | **354** | **98%** |
-| *(default)* `-contain` | 465 | 365 | 100% |
-| `-union`, now | 526 | **412** | — (97.6% by 25-mer) |
+| *(default)* `-vector`, now | 436 | **354** | **98%** |
+| `-contain` | 465 | 365 | 100% |
 
 The previous `-vector` was wrong in both directions at once: it missed most real homology *and* nearly half of what it did group showed no homology at all — those pairs aligned no better than against shuffled sequence. Both faults had the same root cause, a single similarity threshold applied at every block length even though the chance level varies enormously with length. The measure now finds **5× more genuine homology** (67 → 354 verified members) at essentially `-contain`'s precision.
 
-The two measures remain complementary rather than nested, which is why `-union` still adds to both. `-vector` is now the *more* sensitive of the two on some data — on `NC_014649` it groups 75 blocks to `-contain`'s 48, with all 40 sampled pairs confirmed real by alignment, because composition still recognises copies that have diverged past sharing any exact k-mer (only half of those 75 share a 25-mer with their seed, yet alignment confirms every sampled pair). The gain is not confined to small genomes: on a 7.5 Mb fungal chromosome `-vector` goes from 384 blocks at 50% real to **600 at 88% real**.
+The two measures remain complementary rather than nested. `-vector` is now the *more* sensitive of the two on some data — on `NC_014649` it groups 75 blocks to `-contain`'s 48, with all 40 sampled pairs confirmed real by alignment, because composition still recognises copies that have diverged past sharing any exact k-mer (only half of those 75 share a 25-mer with their seed, yet alignment confirms every sampled pair). The gain is not confined to small genomes: on a 7.5 Mb fungal chromosome `-vector` goes from 384 blocks at 50% real to **600 at 88% real**.
 
-**Cost.** Calibrating the floor and scanning windows is not free: on `MF782455` `-vector` goes from ~2 s to ~7 s, and on the 7.5 Mb chromosome from ~7 s to ~17 s. Memory is unchanged — the calibration builds k-mer sets for a few hundred sample windows only, never a per-block index, so `-vector` keeps the small flat footprint that is its reason to exist.
+**Cost.** Calibrating the floor and scanning windows is not free: on `MF782455` `-vector` goes from ~2 s to ~7 s, and on the 7.5 Mb chromosome from ~7 s to ~17 s. Memory is unchanged — the calibration builds k-mer sets for a few hundred sample windows only, never a per-block index, so `-vector` keeps the small flat footprint that is its reason to exist. `-contain` remains available when you specifically need containment of size-disparate blocks.
 
-`-union` **strictly dominates** `-contain`: containment's clusters survive byte-identically (no block changes `ClusterID` or strand), and the profile pass can only add to them. Verified on `MF782455`: all 465 blocks `-contain` groups keep their exact `ClusterID` and strand under `-union`.
-
-> **Note.** The previous release quoted figures for a 9 × *E. coli* set that is not included in this repository (`-vector` 2415 / 386, `-contain` 5835 / 733, `-union` 5844 / 736). Those `-vector` and `-union` numbers predate this change and no longer apply; `-contain` is unaffected. Re-run that set to refresh them.
+> **Note.** The previous release quoted figures for a 9 × *E. coli* set that is not included in this repository (`-vector` 2415 / 386, `-contain` 5835 / 733). Those `-vector` numbers predate the rebuild and no longer apply; `-contain` is unaffected. Re-run that set to refresh them.
 
 #### Notes for all measures
 
 - All are deterministic and reproducible, and unaffected by the worker-thread count.
 - `-homology` performs no clustering, so none of these flags have any effect in that mode.
 - The output shape never changes — the same `ClusterID`s, strands, colours, per-file/combined reports, and pangenome classification — so every downstream report works whichever measure you pick.
-- Flags are matched by substring, so `-contain` and `-vector` are the opt-in/opt-out pair; if both are given, the last one written wins, and `-union` overrides either.
+- Each option is matched as a whole token. `-vector` (the default) and `-contain` are the opt-in/opt-out pair; if both are given, `-contain` wins.
 
 ### `-lib=` — External Repeat Library
 
