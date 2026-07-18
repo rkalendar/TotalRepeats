@@ -354,7 +354,7 @@ Three things make it work, and each replaced something that was measurably wrong
 - **Scale-matched windows.** When a seed is much longer than a candidate, the candidate is compared against the best **window** of the seed at its own scale, instead of against the seed's whole composition. This is what lets it see a short element that is a copy of only *part* of a longer block — real repeat homology is usually partial, and averaging it over the whole block dilutes it away.
 - **Cosine over raw counts.** The previous measure compared ratios only across 4-mers that two blocks *shared*, discarding which 4-mers were **absent** — the main signal for a short block — and it ignored any 4-mer seen 3 times or fewer, which left 40% of blocks on the benchmark genome with too little to compare at all.
 
-Its virtue is still memory: it needs almost no memory (no per-block k-mer index), so prefer it when memory is the binding constraint — and note it is the only measure that finds homology too diverged to share exact k-mers. Each individual comparison is now *cheaper* than before (cosine is a single merge pass, where the old measure was quadratic in the shared support), but the run as a whole is slower, because it now calibrates a floor and scans a long seed window-by-window instead of comparing it once.
+Its virtue is still memory: it needs almost no memory (no per-block k-mer index), so it is the measure of choice when memory is the binding constraint — and it is the only measure that resolves homology too diverged to share exact k-mers. Each individual comparison is also *cheaper* than before (cosine is a single merge pass, where the old measure was quadratic in the shared support). The remaining overhead is the per-run chance-floor calibration and the window-by-window scan of a long seed; since that scan was optimised to score candidates against dense window vectors, `-vector` is the faster of the two measures on large block sets (see [Benchmark: sensitivity and speed on simulated genomes](#benchmark-sensitivity-and-speed-on-simulated-genomes)).
 
 #### Comparing the two measures
 
@@ -387,9 +387,67 @@ The previous `-vector` was wrong in both directions at once: it missed most real
 
 The two measures remain complementary rather than nested. `-vector` is now the *more* sensitive of the two on some data — on `NC_014649` it groups 75 blocks to `-contain`'s 48, with all 40 sampled pairs confirmed real by alignment, because composition still recognises copies that have diverged past sharing any exact k-mer (only half of those 75 share a 25-mer with their seed, yet alignment confirms every sampled pair). The gain is not confined to small genomes: on a 7.5 Mb fungal chromosome `-vector` goes from 384 blocks at 50% real to **600 at 88% real**.
 
-**Cost.** Calibrating the floor and scanning windows is not free: on `MF782455` `-vector` goes from ~2 s to ~7 s, and on the 7.5 Mb chromosome from ~7 s to ~17 s. Memory is unchanged — the calibration builds k-mer sets for a few hundred sample windows only, never a per-block index, so `-vector` keeps the small flat footprint that is its reason to exist. `-contain` remains available when you specifically need containment of size-disparate blocks.
+**Cost.** Calibrating the floor and scanning windows is not free, but the scan has since been optimised: scoring a candidate against **dense** seed-window vectors by direct indexing, rather than by a sorted sparse merge, made the scan 4–6× faster at byte-identical output. The timings previously quoted here — `MF782455` ~2 s to ~7 s, and ~7 s to ~17 s on the 7.5 Mb chromosome — predate that optimisation and therefore overstate the current cost; both sets should be re-run to refresh them. Memory is unchanged: the calibration builds k-mer sets for a few hundred sample windows only, never a per-block index, so `-vector` retains the small, flat footprint that is its reason to exist. `-contain` remains available where containment of size-disparate blocks is specifically required.
 
 > **Note.** The previous release quoted figures for a 9 × *E. coli* set that is not included in this repository (`-vector` 2415 / 386, `-contain` 5835 / 733). Those `-vector` numbers predate the rebuild and no longer apply; `-contain` is unaffected. Re-run that set to refresh them.
+
+#### Benchmark: sensitivity and speed on simulated genomes
+
+The figures above come from real genomes, where the true repeat content is not known exactly. To measure sensitivity directly, the two measures were also run on simulated genomes carrying a planted ground truth: *N* families, each inserted *M* times under a defined substitution rate, separated by unique random spacers.
+
+Two properties make this comparison exact. First, repeat **detection is identical** for both measures — only the clustering step differs — so both are scored on precisely the same set of blocks. Second, homology is scored **by position within the element**, corrected for strand: masking fragments an element into pieces, and two non-overlapping pieces of the same element are different sequences that should not be grouped. Scoring on family membership alone would penalise both measures for a decision that is in fact correct.
+
+Scores are pairwise: *recall* is the fraction of truly homologous block pairs placed in one cluster, and *precision* the fraction of pairs placed in one cluster that are truly homologous.
+
+**Runtime** (ms, wall clock, 4 cores; `-maskonly` isolates the shared detection stage, so clustering ≈ total − `-maskonly`):
+
+| Condition | Blocks | `-maskonly` | `-vector`, total | `-contain`, total | Clustering, `-vector` | Clustering, `-contain` |
+|---|---|---|---|---|---|---|
+| 2% divergence, 800 bp elements | 1556 | 982 | 2321 | 1842 | 1339 | **860** |
+| 15% divergence, 800 bp | 1379 | 1017 | 3075 | 2433 | 2058 | **1416** |
+| 8% divergence, 500 bp | 3762 | 1310 | 4920 | 7489 | **3610** | 6179 |
+| 10% divergence, 50% reverse-complement | 3126 | 1002 | 3583 | 6782 | **2581** | 5780 |
+| 10% divergence, 2000 bp | 7680 | 1693 | 7843 | 22345 | **6150** | 20652 |
+
+**Sensitivity** (position-aware pairwise scores over the same block set):
+
+| Condition | Families | `-vector`: clustered / precision / recall | `-contain`: clustered / precision / recall |
+|---|---|---|---|
+| 2% divergence, 800 bp | 20 | 99.4% / 0.81 / 0.95 | 99.3% / 0.81 / **0.99** |
+| 8% divergence, 500 bp | 30 | 59.2% / 0.79 / **0.093** | 50.6% / 0.71 / 0.044 |
+| 10% divergence, 2000 bp | 20 | 61.9% / 0.68 / **0.089** | 34.3% / 0.82 / 0.022 |
+| 10% divergence, 50% reverse-complement | 20 | 76.7% / 0.64 / **0.249** | 34.6% / 0.86 / 0.023 |
+| 15% divergence, 800 bp | 20 | 44.9% / 0.95 / **0.072** | 6.0% / 1.00 / 0.007 |
+| 25% divergence, 800 bp | 20 | detection recovered only 18 blocks from 1000 insertions | as `-vector` |
+
+#### Conclusions
+
+1. **At low divergence `-contain` is the more accurate measure.** At 2% substitution it reaches 0.99 pairwise recall against `-vector`'s 0.95, and resolves exactly 20 clusters for the 20 planted families where `-vector` over-splits into 33. It is also the faster of the two on small block sets. This agrees with the real-genome figures above, where `-contain` groups 465 blocks on `MF782455` to `-vector`'s 436.
+
+2. **`-contain` degrades sharply as divergence rises.** At 15% substitution it clusters 6.0% of blocks (recall 0.007) against `-vector`'s 44.9% (recall 0.072), an order-of-magnitude difference. The mechanism is the one the two measures are built on: containment requires *exact* shared k-mers, which substitutions destroy, whereas the composition cosine still resolves similarity.
+
+3. **`-vector` is substantially more sensitive on reverse-complement copies.** With half the insertions reverse-complemented, `-vector` clusters 76.7% of blocks against `-contain`'s 34.6%, a ten-fold difference in pairwise recall. Canonical k-mers give `-contain` formal strand-independence, but combined with the exact-match requirement this does not survive 10% divergence.
+
+4. **Precision is high for both, and `-contain` is the more conservative.** Where `-contain` groups at all it rarely errs (precision up to 1.00), but it groups little; `-vector` trades a small amount of precision for a several-fold gain in recall.
+
+5. **Both over-split once blocks are fragmented**, resolving hundreds of clusters for 20–30 planted families (absolute recall 0.02–0.25). This is a shared ceiling of the greedy seed-and-absorb scheme rather than a property of either measure, and is the clearest target for further work.
+
+6. **Above roughly 25% divergence the choice of measure is immaterial**, because detection fails first: k-mer masking at `kmer=19` recovered 18 blocks from 1000 planted insertions. The binding constraint is then upstream, in detection, and the remedy is a smaller `kmer=` rather than a different clustering measure.
+
+7. **`-vector` scales better with block count.** Between the 3762-block and 7680-block runs, clustering time rose 3.3-fold for `-contain` against 1.7-fold for `-vector`. On small block sets (~1500) `-contain` is faster, because `-vector` carries a fixed chance-floor calibration cost of roughly 0.5–0.8 s that amortises only over larger runs.
+
+#### Choosing a measure
+
+| Situation | Recommended |
+|---|---|
+| Closely related copies (low divergence), small block sets | `-contain` — higher recall at equal precision, and faster |
+| Diverged copies (≳8% substitution), reverse-complement copies | `-vector` — several-fold higher recall |
+| Large runs with many repeat blocks | `-vector` — markedly better scaling |
+| Divergence ≳25% | Neither; reduce `kmer=` so that detection recovers the copies first |
+
+The default (`-vector`) suits typical genome-scale runs, which combine many blocks, mixed divergence and reverse-complement copies.
+
+**Limitations.** These are simulated sequences with uniform substitution and random spacers; real repeats also carry indels, nesting and variable copy length. Each condition was run once, on a single 4-core machine, and timings include JVM start-up. The precision estimate is conservative, since blocks covering slightly offset regions are scored as non-homologous, so the reported values are lower bounds. Absolute recall depends on how heavily masking fragments an element.
 
 #### Notes for all measures
 
