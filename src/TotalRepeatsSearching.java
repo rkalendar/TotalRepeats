@@ -81,7 +81,7 @@ public final class TotalRepeatsSearching {
         MaskOnly = i;
     }
 
-    /** Which measure clusters the blocks: SequencesClustering.MODE_PROFILE / MODE_CONTAIN / MODE_UNION. */
+    /** Which measure clusters the blocks: SequencesClustering.MODE_PROFILE / MODE_CONTAIN. */
     public void SetClusterMode(int i) {
         clusterMode = i;
     }
@@ -1983,7 +1983,7 @@ public final class TotalRepeatsSearching {
     private boolean SeqShow;
     private boolean SSRdetection = true;
     private boolean MaskOnly;
-    private int clusterMode = SequencesClustering.MODE_CONTAIN;   // -vector / -union select the others
+    private int clusterMode = SequencesClustering.MODE_PROFILE;   // 4-mer profile (-vector) by default; -contain selects containment
     private String filePath;
     private String ReportFilePath;
     private int[] refclust;

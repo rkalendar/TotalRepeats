@@ -257,7 +257,7 @@ public class MaskingSequences {
     private static long encodeKmer(byte[] bases, int start, int kmerSize) {
         long code = 0L;
         for (int i = start; i < start + kmerSize; i++) {
-            code = code * 10 + bases[i];
+            code = code * 5 + bases[i];
         }
         return code;
     }

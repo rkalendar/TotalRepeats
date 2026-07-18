@@ -7,9 +7,23 @@ import java.io.FileWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class TotalRepeats {
+
+    /** Boolean mode flags, canonical form: leading dashes stripped, lowercased. */
+    private static final Set<String> KNOWN_FLAGS = Set.of(
+            "amask", "nossr", "normal", "vector", "contain", "extunique",
+            "maskonly", "readgff", "readmask", "maskscomp", "extract", "collate",
+            "joint", "combinemask", "homology", "seqshow");
+
+    /** key=value option keys, canonical form: leading dashes stripped, lowercased. */
+    private static final Set<String> KNOWN_KEYS = Set.of(
+            "out", "lib", "ref", "kmer", "sln", "gap", "imgx", "flanks", "flangs", "image");
 
     public static void main(String[] args) throws IOException {
         if (args.length > 0) {
@@ -19,8 +33,46 @@ public class TotalRepeats {
             }
             String infile = args[0]; // file path or Folder
             String reffile = "";
-            String argsRaw = String.join(" ", args) + " ";   // case-preserving (for paths)
-            String s = argsRaw.toLowerCase();                // case-insensitive (for flags/keys)
+
+            // ── Fully token-based option parsing ─────────────────────────────
+            // args[0] is the positional input path; every option is a SEPARATE
+            // token in args[1..]. Each token is classified on its own and matched
+            // EXACTLY after stripping any leading dashes — there is no substring
+            // scan over a joined command line, so nothing inside the input path,
+            // nor inside a -lib=/-ref=/-out= path value, can be mistaken for a mode.
+            //   • a token WITHOUT '=' is a boolean flag  (-joint, joint, --joint → "joint")
+            //   • a token WITH    '=' is a key=value pair: the part before the first
+            //     '=' is the key (dash-stripped, lowercased); the whole remainder is
+            //     the value (original case kept for paths). First occurrence wins.
+            //   • an unrecognized option is reported on stderr and ignored (non-fatal).
+            Set<String> flagSet = new HashSet<>();
+            Map<String, String> opts = new HashMap<>();
+            for (int ai = 1; ai < args.length; ai++) {
+                String tok = args[ai];
+                if (tok == null || tok.isEmpty()) {
+                    continue;
+                }
+                String t = stripLeadingDashes(tok);
+                if (t.isEmpty()) {   // token was only dashes ("-", "--") → ignore
+                    continue;
+                }
+                int eq = t.indexOf('=');
+                if (eq >= 0) {                                       // key=value option
+                    String key = t.substring(0, eq).toLowerCase();
+                    if (KNOWN_KEYS.contains(key)) {
+                        opts.putIfAbsent(key, t.substring(eq + 1));  // first occurrence wins; value case kept
+                    } else {
+                        System.err.println("Warning: unrecognized option ignored: " + tok);
+                    }
+                } else {                                            // boolean flag
+                    String flag = t.toLowerCase();
+                    if (KNOWN_FLAGS.contains(flag)) {
+                        flagSet.add(flag);
+                    } else {
+                        System.err.println("Warning: unrecognized option ignored: " + tok);
+                    }
+                }
+            }
             int kmer = 19;   // optimal rules: kmer=18-19 seqlen=30...90, kmer=12-18 for short sequences
             int seqlen = 80;
             int gap = kmer + kmer;
@@ -33,7 +85,7 @@ public class TotalRepeats {
             boolean maskonly = false;      // The process of masking is performed without the use of clustering or annotation.
             boolean seqshow = false;
             boolean fastclustering = true; // Multithreaded clustering: ON by default; disabled by the -normal flag
-            int clusterMode = SequencesClustering.MODE_CONTAIN;   // k-mer containment by default; -vector / -union select the others
+            int clusterMode = SequencesClustering.MODE_PROFILE;   // 4-mer ratio profile (-vector) by default; -contain selects k-mer containment
             boolean readmask = false;       // reading masked FASTA for clustering and annotation
             boolean extupmask = false;      // extraction of the UPPER blocks of the masked chromosome contain unique sequences.
             boolean readgff = false;
@@ -46,8 +98,8 @@ public class TotalRepeats {
             System.out.println("Command-line arguments:");
             System.out.println("Target file or Folder: " + infile);
 
-            if (s.contains("-out=")) {
-                outdir = strArg(argsRaw, s, "-out=");
+            if (opts.containsKey("out")) {
+                outdir = opts.get("out").trim();
                 File outFolder = new File(outdir);
                 if (!outFolder.exists()) {
                     if (outFolder.mkdirs()) {
@@ -64,10 +116,8 @@ public class TotalRepeats {
                 }
             }
 
-            if (s.contains("-lib=") || s.contains("-ref=")) {
-                reffile = s.contains("-lib=")
-                        ? strArg(argsRaw, s, "-lib=")
-                        : strArg(argsRaw, s, "-ref=");
+            if (opts.containsKey("lib") || opts.containsKey("ref")) {
+                reffile = (opts.containsKey("lib") ? opts.get("lib") : opts.get("ref")).trim();
                 File ref = new File(reffile);
                 if (!ref.exists() || !ref.isFile()) {
                     System.err.println("Reference file does not exist: " + reffile);
@@ -76,74 +126,67 @@ public class TotalRepeats {
                     System.out.println("Reference file found: " + ref.getAbsolutePath());
                 }
             }
-            if (s.contains("-amask")) { // Pairwise Sequence Alignment: Repeater2 based 
+            if (flagSet.contains("amask")) { // Pairwise Sequence Alignment: Repeater2 based 
                 amask = true;
             }
-            if (s.contains("-nossr")) {
+            if (flagSet.contains("nossr")) {
                 ssrdetect = false;
             }
-            if (s.contains("-normal")) { // Force single-threaded clustering. Clustering is multithreaded by default, which significantly accelerates grouping sequences into individual clusters; -normal disables that and uses the single-threaded path.
+            if (flagSet.contains("normal")) { // Force single-threaded clustering. Clustering is multithreaded by default, which significantly accelerates grouping sequences into individual clusters; -normal disables that and uses the single-threaded path.
                 fastclustering = false;
             }
-            if (s.contains("-vector")) { // Cluster by the 4-mer ratio profile instead of k-mer containment. Symmetric whole-block composition measure: it cannot see a short element contained in a long one, and on blocks with a low median length it groups far fewer of them. No effect in -homology (which does not cluster).
+            if (flagSet.contains("vector")) { // The 4-mer ratio profile (whole-block composition). This is now the DEFAULT; the flag is still accepted so existing command lines keep working. Fast, near-zero memory, and finds copies too diverged to share an exact k-mer — which containment cannot. No effect in -homology (which does not cluster).
                 clusterMode = SequencesClustering.MODE_PROFILE;
             }
-            if (s.contains("-contain")) { // Now the default; still accepted so existing command lines keep working. NB the parser matches by substring, so any opt-out flag must not itself contain "-contain".
+            if (flagSet.contains("contain")) { // Cluster by asymmetric k-mer containment instead: groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies. Checked after -vector, so -contain wins when both are given.
                 clusterMode = SequencesClustering.MODE_CONTAIN;
             }
-            if (s.contains("-union")) { // Both measures: containment, then the ratio profile over whatever it left unclustered. Strictly finds more than either alone, since the two measures group different blocks. Checked last so it wins over -contain / -vector if combined.
-                clusterMode = SequencesClustering.MODE_UNION;
-            }
-            if (s.contains("extunique")) { // -seqlen>100
+            if (flagSet.contains("extunique")) { // -seqlen>100
                 extupmask = true;
             }
-            if (s.contains("maskonly")) { // -nsize=0
+            if (flagSet.contains("maskonly")) { // -nsize=0
                 maskonly = true;
             }
-            if (s.contains("readgff")) {
+            if (flagSet.contains("readgff")) {
                 readgff = true;
             }
-            if (s.contains("readmask")) {
+            if (flagSet.contains("readmask")) {
                 readmask = true;
             }
-            if (s.contains("maskscomp")) {
+            if (flagSet.contains("maskscomp")) {
                 maskfiles = true;
             }
-            if (s.contains("extract")) {
+            if (flagSet.contains("extract")) {
                 extract = true;
             }
-            if (s.contains("collate")) {
+            if (flagSet.contains("collate")) {
                 combine = 1;
             }
-            if (s.contains("joint")) {
+            if (flagSet.contains("joint")) {
                 combine = 2;
             }           
-            if (s.contains("combinemask")) {
+            if (flagSet.contains("combinemask")) {
                 combine = 3;
             }
-            if (s.contains("homology")) {
+            if (flagSet.contains("homology")) {
                 combine = 4;
             }
-            if (s.contains("seqshow")) {
+            if (flagSet.contains("seqshow")) {
                 seqshow = true;
             }
-            imaged = clamp(intArg(s, imaged, "imgx="), 5, 30);
-            flanksshow = clamp(intArg(s, flanksshow, "flanks=", "flangs="), 0, 1000);
-            kmer = intArg(s, kmer, "kmer=");
-            seqlen = intArg(s, seqlen, "sln=");
-            gap = intArg(s, gap, "gap=");
-            if (s.contains("image=")) { // image=40000x5000
-                int j = s.indexOf("image=");
-                int x = s.indexOf(" ", j);
-                if (x > j) {
-                    String[] d = s.substring(j + 6, x).split("x");
-                    if (d.length > 1) {
-                        width = StrToInt(d[0]);
-                        hight = StrToInt(d[1]);
-                        if (hight == 0 || width == 0) {
-                            width = 0;
-                            hight = 0;
-                        }
+            imaged = clamp(intOpt(opts, imaged, "imgx"), 5, 30);
+            flanksshow = clamp(intOpt(opts, flanksshow, "flanks", "flangs"), 0, 1000);
+            kmer = intOpt(opts, kmer, "kmer");
+            seqlen = intOpt(opts, seqlen, "sln");
+            gap = intOpt(opts, gap, "gap");
+            if (opts.containsKey("image")) { // image=40000x5000
+                String[] d = opts.get("image").toLowerCase().split("x");
+                if (d.length > 1) {
+                    width = StrToInt(d[0]);
+                    hight = StrToInt(d[1]);
+                    if (hight == 0 || width == 0) {
+                        width = 0;
+                        hight = 0;
                     }
                 }
             }
@@ -328,26 +371,16 @@ public class TotalRepeats {
             "  -seqshow             Extract and output repeat sequences (default: off)",
             "  -nossr               Disable SSR (Simple Sequence Repeat) detection (default: on)",
             "  -normal              Use single-threaded repeat classification (default: multithreaded)",
-            "  -contain             Cluster homologous blocks by asymmetric k-mer containment.",
+            "  -vector              Cluster by the 4-mer ratio profile (whole-block composition).",
             "                       This is now the DEFAULT; the flag is still accepted so that",
-            "                       existing command lines keep working. Groups blocks of very",
-            "                       different length (a short element contained in a long one) and",
-            "                       reverse-complement copies. Costs ~8 bytes per distinct k-mer per",
-            "                       block, so a large combined run wants -Xmx; no effect in",
+            "                       existing command lines keep working. A symmetric composition",
+            "                       measure: fast, needs almost no memory, and finds copies too",
+            "                       diverged to share an exact k-mer — which containment cannot",
+            "  -contain             Cluster by asymmetric k-mer containment instead. Groups blocks of",
+            "                       very different length (a short element contained in a long one)",
+            "                       and reverse-complement copies. Costs ~8 bytes per distinct k-mer",
+            "                       per block, so a large combined run wants -Xmx; no effect in",
             "                       -homology mode, which does not cluster",
-            "  -vector              Cluster by the 4-mer ratio profile instead of containment (the",
-            "                       former default). A symmetric whole-block composition measure: it",
-            "                       cannot see a short element inside a longer block, and it needs",
-            "                       almost no memory. On a 1.4 Mb genome whose blocks have a median",
-            "                       length of 190 bp it grouped 205 of 765 blocks where containment",
-            "                       grouped 465; on 9 E. coli genomes, 1709 against 5835. Prefer it",
-            "                       only when memory is the binding constraint",
-            "  -union               Use BOTH measures: containment first, then the ratio profile over",
-            "                       whatever it left unclustered. The two are not nested — on the",
-            "                       genome above they agree on only 141 blocks, and the profile finds",
-            "                       64 that containment does not — so this groups more than either",
-            "                       alone. Containment's clusters are kept exactly as -contain forms",
-            "                       them; the profile can only add to them. Costs both passes",
             "",
             "COMPARATIVE / GENOME-WIDE OPTIONS:",
             "  -collate             Genome-wide analysis: each sequence analyzed individually",
@@ -412,39 +445,27 @@ public class TotalRepeats {
     }
 
     /**
-     * Returns the integer value following the first matching {@code key} (e.g.
-     * "kmer=") in the lowercased argument string {@code s}, or {@code def} if
-     * none of the keys is present.
+     * Returns {@code StrToInt} of the first present {@code key} in {@code opts}
+     * (lenient digit parsing), or {@code def} if none of the keys is present. A
+     * present key with an empty value yields 0, matching the old parser.
      */
-    private static int intArg(String s, int def, String... keys) {
+    private static int intOpt(Map<String, String> opts, int def, String... keys) {
         for (String key : keys) {
-            int j = s.indexOf(key);
-            if (j >= 0) {
-                int x = s.indexOf(' ', j);
-                if (x > j) {
-                    return StrToInt(s.substring(j + key.length(), x));
-                }
+            String v = opts.get(key);
+            if (v != null) {
+                return StrToInt(v);
             }
         }
         return def;
     }
 
-    /**
-     * Extracts the case-preserving value following {@code key} from the raw
-     * argument string, or {@code null} if the key is absent. The key is matched
-     * case-insensitively via {@code rawLower}; the value is taken from
-     * {@code raw}.
-     */
-    private static String strArg(String raw, String rawLower, String key) {
-        int j = rawLower.indexOf(key);
-        if (j < 0) {
-            return null;
+    /** Removes every leading '-' from {@code t} (canonicalises -flag/--flag/flag). */
+    private static String stripLeadingDashes(String t) {
+        int i = 0;
+        while (i < t.length() && t.charAt(i) == '-') {
+            i++;
         }
-        int x = raw.indexOf(' ', j);
-        if (x < 0) {
-            x = raw.length();
-        }
-        return raw.substring(j + key.length(), x).trim();
+        return t.substring(i);
     }
 
     private static int clamp(int v, int lo, int hi) {
