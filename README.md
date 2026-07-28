@@ -844,7 +844,7 @@ By default, clustering is multithreaded — the pairwise comparison step runs ac
 **Ruslan Kalendar**
 📧 ruslan.kalendar@helsinki.fi
 
-🌐 **Online version:** <[https://primerdigital.com/tools/repeats.html](https://digitalgens.org/repeats.html)>
+🌐 **Online version:** (https://digitalgens.org/repeats.html)
 💻 **Source code:** <https://github.com/rkalendar/TotalRepeats>
 
 ---
@@ -860,7 +860,7 @@ If you use TotalRepeats in your research, please cite the software and the onlin
   author = {Kalendar, Ruslan},
   title  = {{TotalRepeats: an integrated genome-wide platform for rapid de novo identification, classification, annotation, comparative analysis, and visualization of repetitive elements}},
   url    = {https://github.com/rkalendar/TotalRepeats},
-  note   = {Online version: [https://primerdigital.com/tools/repeats.html](https://digitalgens.org/repeats.html)}
+  note   = {Online version: (https://digitalgens.org/repeats.html)}
 }
 ```
 
