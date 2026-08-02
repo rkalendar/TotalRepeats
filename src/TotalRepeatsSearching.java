@@ -1,22 +1,13 @@
-import java.awt.BasicStroke;
-import java.io.FileWriter;
 import java.io.BufferedWriter;
-import java.util.ArrayList;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import javax.imageio.*;
-import javax.imageio.metadata.*;
-import javax.imageio.stream.ImageOutputStream;
-import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 
 public final class TotalRepeatsSearching {
 
@@ -158,7 +149,35 @@ public final class TotalRepeatsSearching {
         return res;
     }
 
+    /**
+     * Where a combined run gets its repeat blocks. The rest of the pipeline —
+     * global long coordinates, joint clustering, the combined report and the
+     * per-file slices — is identical either way, which is why the two modes
+     * share {@link #runCombined}.
+     */
+    private enum CombineSource {
+        /** Detect repeats in the sequences themselves ({@code -collate}). */
+        SEQUENCES,
+        /** Read repeats from soft-masked sequences supplied as input ({@code -combinemask}). */
+        MASKS
+    }
+
+    /** Genome-wide analysis with each sequence masked individually, then clustered jointly. */
     public void RunSynchronizingClassification(int k, boolean fst) throws IOException {
+        runCombined(k, fst, CombineSource.SEQUENCES);
+    }
+
+    /** Genome-wide analysis taking previously masked sequences as the input. */
+    public void RunCombineMask(int k, boolean fst) throws IOException {
+        runCombined(k, fst, CombineSource.MASKS);
+    }
+
+    /**
+     * The shared body of the two combined modes. They differ only in how each
+     * sequence is masked — see {@link CombineSource} — and in whether a per-file
+     * mask is written, which only makes sense when this run produced it.
+     */
+    private void runCombined(int k, boolean fst, CombineSource source) throws IOException {
         startTime = System.nanoTime();
 
         // Global coordinates are long: the concatenation of all sequences may exceed
@@ -188,9 +207,13 @@ public final class TotalRepeatsSearching {
             System.out.println("Target sequence length = " + l + " nt");
 
             LowComplexitySequence2 m1 = new LowComplexitySequence2();
-            m1.FindAllSSRs(seq[i], telomers, SSRdetection);
+            // A mask-derived input carries its repeats as lower case, which the STR
+            // detector must not read as a case distinction.
+            m1.FindAllSSRs(source == CombineSource.MASKS ? seq[i].toLowerCase() : seq[i],
+                    telomers, SSRdetection);
             byte[] ssrmsk = m1.MapBytes();
             int[] ssr = m1.IntBlocks();
+            long seqStart = System.nanoTime();   // this sequence's own masking clock
             int[] copy = Arrays.copyOf(ssr, ssr.length);   // LOCAL blocks for this file's .msk
 
             // Append this sequence's STR blocks to the combined run in GLOBAL long
@@ -198,18 +221,27 @@ public final class TotalRepeatsSearching {
             ssr2 = concatLong(ssr2, shiftToGlobal(ssr, sz));
 
             ssrglobal = m1.GetTotalRepeats();
-            MaskingSequence ms = new MaskingSequence();
 
-            int[] u = ms.mask(seq[i], ssrmsk, kmerln, minlenseq);
-            repeatslen = ms.repeatLength();
-            gapslen = ms.gapsLength();
+            int[] u;
+            if (source == CombineSource.MASKS) {
+                // The input is already masked: read the lower-case runs back out.
+                MaskResult fc = new MaskResult();
+                u = fc.ReadMask(seq[i], gap, minlenseq, ssrmsk);
+                repeatslen = fc.getRepeatsLen();
+                gapslen = fc.getGaps();
+            } else {
+                MaskingSequence ms = new MaskingSequence();
+                u = ms.mask(seq[i], ssrmsk, kmerln, minlenseq);
+                repeatslen = ms.repeatLength();
+                gapslen = ms.gapsLength();
+            }
             repeatslen = (repeatslen * 100) / (l - gapslen);
             ssrglobal = (ssrglobal * 100) / (l - gapslen);
             gaps = (gapslen * 100) / l;
             System.out.println("Sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
             System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
             System.out.println("Sequence gap (bp)=" + (int) gapslen + " (" + String.format("%.4f", gaps) + "%)");
-            maskduration = (System.nanoTime() - startTime) / 1000000000;
+            maskduration = (System.nanoTime() - seqStart) / 1000000000;
             System.out.println("Masking time taken: " + maskduration + " seconds\n");
 
             // remember this sequence's own statistics for the individual report
@@ -218,9 +250,13 @@ public final class TotalRepeatsSearching {
             gapLenStat[i] = gapslen;
             gapPctStat[i] = gaps;
 
-            // Per-file mask is written from LOCAL coordinates over seq[i].
-            filePath = filesPath[i];
-            SavingMask3("", i, u, copy);
+            // Per-file mask is written from LOCAL coordinates over seq[i] — but only
+            // when this run did the masking. In -combinemask the masks are the input,
+            // so writing them back out would merely copy them.
+            if (source == CombineSource.SEQUENCES) {
+                filePath = filesPath[i];
+                SavingMask3("", i, u, copy);
+            }
 
             // Append this sequence's masked-repeat blocks to the combined run (global).
             u2 = concatLong(u2, shiftToGlobal(u, sz));
@@ -286,132 +322,6 @@ public final class TotalRepeatsSearching {
         }
     }
 
-    public void RunCombineMask(int k, boolean fst) throws IOException {
-        startTime = System.nanoTime();
-
-        // Long migration of RunCombineMask, now structured exactly like RunCombine so
-        // that it also emits the individual (per-file) reports/pictures. Global
-        // coordinates are long and the sequences are concatenated virtually through a
-        // SeqStore (no String.join, no >2.1 Gb String, no overflowing int counter).
-        // The combined cluster table uses the canonical layout — index 0 = STR row, then
-        // UCRP + the families (appended by ClusteringMaskingCombined), the same layout
-        // RunCombine uses. That canonical order is what makes the per-file slices, their
-        // colours/ClusterIDs and the pangenome report line up correctly. (The previous
-        // version kept one STR row per input sequence ahead of UCRP, which is why it
-        // could not produce correct per-file reports nor a pangenome.)
-        long[] seqslen = new long[nseq];
-        long[] u2 = new long[0];
-        long[] ssr2 = new long[0];
-
-        // Per-sequence statistics, remembered for the individual report headers.
-        double[] repStat = new double[nseq];
-        double[] ssrStat = new double[nseq];
-        double[] gapLenStat = new double[nseq];
-        double[] gapPctStat = new double[nseq];
-
-        String[] seqs = seq;     // keep the individual sequences (SeqShow + the combined store)
-
-        long sz = 0;
-        for (int i = 0; i < nseq; i++) {
-            repeatslen = 0;
-            gapslen = 0;
-            int l = seq[i].length();   // a single sequence always fits in an int
-
-            startTime = System.nanoTime();
-            System.out.println("\n" + sname[i]);
-            System.out.println("Target sequence length = " + l + " nt");
-
-            LowComplexitySequence2 m1 = new LowComplexitySequence2();
-            m1.FindAllSSRs(seq[i].toLowerCase(), telomers, SSRdetection);
-            byte[] ssrmsk = m1.MapBytes();
-            int[] ssr = m1.IntBlocks();
-            ssrglobal = m1.GetTotalRepeats();
-
-            // combined STR blocks in GLOBAL long coordinates (the local ssr stays untouched).
-            ssr2 = concatLong(ssr2, shiftToGlobal(ssr, sz));
-
-            MaskResult fc = new MaskResult();
-            int[] u = fc.ReadMask(seq[i], gap, minlenseq, ssrmsk);
-            repeatslen = fc.getRepeatsLen();
-            gapslen = fc.getGaps();
-            repeatslen = (repeatslen * 100) / (l - gapslen);
-            ssrglobal = (ssrglobal * 100) / (l - gapslen);
-            gaps = (gapslen * 100) / l;
-            System.out.println("Sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
-            System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
-            System.out.println("Sequence gap (bp)=" + (int) gapslen + " (" + String.format("%.4f", gaps) + "%)");
-            maskduration = (System.nanoTime() - startTime) / 1000000000;
-            System.out.println("Masking time taken: " + maskduration + " seconds\n");
-
-            // remember this sequence's own statistics for the individual report
-            repStat[i] = repeatslen;
-            ssrStat[i] = ssrglobal;
-            gapLenStat[i] = gapslen;
-            gapPctStat[i] = gaps;
-
-            // combined masked-repeat blocks (global).
-            u2 = concatLong(u2, shiftToGlobal(u, sz));
-            sz = sz + l;            // long accumulation (no int overflow at >2.1 Gb)
-            seqslen[i] = sz;
-        }
-
-        // Virtual concatenation instead of String.join("", seq): no >2.1 Gb String.
-        SeqStore store = new SeqStore(seqs);
-        long l = store.length();
-
-        // Canonical combined cluster table: index 0 = STR row, then ClusteringMaskingCombined
-        // appends UCRP + the families (ids 3..ncl) — identical layout to RunCombine.
-        ArrayList<long[]> bbL = new ArrayList<>();
-        bbL.add(ssr2);
-
-        System.out.println("\nClustering started...");
-        ClusteringMaskingCombined(store, u2, fst, bbL);
-
-        if (bbL != null) {
-            // Combined report + picture in long coordinates (read through the SeqStore so
-            // SeqShow works across the whole concatenation). The combined picture is SVG
-            // (vector, unlimited size) instead of the former int PNG, which could not
-            // address a >2.1 Gb concatenation — same choice as RunCombine. The pangenome
-            // report is produced too (the canonical layout is compatible with it).
-            SavingGFFLong(ReportFilePath, l, seqslen, bbL, store);
-            SavingSVGLong(ReportFilePath, k, l, iwidth, iheight, seqslen, bbL);
-            SavingPangenomeCombined(ReportFilePath, seqslen, bbL, l);   // pangenome: core / accessory / unique families
-
-            // --- Individual (per-file) reports and pictures ---
-            // Built as exact slices of the COMBINED clustering so that each sequence's
-            // individual report/picture matches its region in the combined one: the same
-            // families keep the same cluster index (hence the same colour, row and
-            // ClusterID) and reference labels; only the blocks are restricted to this
-            // sequence and remapped to its own LOCAL int coordinates (always < 2.1 Gb),
-            // which lets the unchanged int-based savers be reused as-is. refclust stays
-            // the combined one (ordering is preserved). Identical to RunCombine's pass.
-            seq = seqs;                          // individual sequences (for SeqShow)
-            long start = 0;
-            for (int i = 0; i < nseq; i++) {
-                long end = seqslen[i];
-                int li = seqs[i].length();
-
-                ArrayList<int[]> bbLocal = new ArrayList<>(bbL.size());
-                for (long[] z7 : bbL) {
-                    bbLocal.add(sliceBlocksLocalLong(z7, start, end)); // same order/count as combined
-                }
-                bb = bbLocal;
-
-                // restore this sequence's own statistics for the report header
-                repeatslen = repStat[i];
-                ssrglobal = ssrStat[i];
-                gapslen = gapLenStat[i];
-                gaps = gapPctStat[i];
-
-                filePath = filesPath[i];
-                SavingGFF(filesPath[i], i, li, new int[0]);
-                SavingPicture(filesPath[i], k, i, li, iwidth, iheight, new int[0]);
-                SavingSVG(filesPath[i], k, i, li, iwidth, iheight, new int[0]);
-
-                start = end;
-            }
-        }
-    }
 
     public void RunUniquesMaskSaving(int gap, int minLenSeq) throws IOException {
         for (int i = 0; i < nseq; i++) {
@@ -535,23 +445,6 @@ public final class TotalRepeatsSearching {
         System.out.println("Masking time taken: " + maskduration + " seconds\n");
     }
 
-    private void SavingMask2(int n, byte[] c, int x1, int x2) throws IOException {
-        String maskedfile = (nseq == 1) ? (filePath + ".msk") : (filePath + "_" + (n + 1) + ".msk");
-
-        System.out.println("Saving masked file: " + maskedfile);
-        Path out = Path.of(maskedfile);
-        try (OutputStream os = Files.newOutputStream(out)) {
-            os.write(('>' + sname[n] + " TotalRepeats mask\n").getBytes(StandardCharsets.US_ASCII));
-            final int width = 70;
-            int i = x1;
-            while (i < x2) {
-                int end = Math.min(i + width, x2);
-                os.write(c, i, end - i);
-                os.write('\n');
-                i = end;
-            }
-        }
-    }
 
     // ============================================================================
 //  RunCombining — GLOBAL (cross-sequence) repeat masking via maskCombined.
@@ -666,27 +559,7 @@ public final class TotalRepeatsSearching {
 
 // Lowercase the masked-repeat + STR positions over an UPPERCASE copy of seqs[i]
 // and write the per-file .msk, same byte format as the previous RunCombining.
-    private void lowercaseAndSaveMsk(int i, String s, int[] u, int[] ssr) throws IOException {
-        int l = s.length();
-        byte[] ci = s.toUpperCase().getBytes();
-        softMask(ci, u, l);
-        softMask(ci, ssr, l);
-        filePath = filesPath[i];
-        SavingMask2(i, ci, 0, l);
-    }
 
-    private void softMask(byte[] ci, int[] blocks, int l) {
-        for (int j = 0; j + 1 < blocks.length; j += 2) {
-            int from = Math.max(0, blocks[j]);
-            int to = Math.min(l, blocks[j] + Math.abs(blocks[j + 1]));
-            for (int p = from; p < to; p++) {
-                byte bch = ci[p];
-                if (bch >= 'A' && bch < 'Z') {
-                    ci[p] = (byte) (bch + 32);
-                }
-            }
-        }
-    }
 
 // Per-file reports as exact slices of the COMBINED clustering — same families keep
 // the same cluster index/colour/ID; identical to the current RunCombining tail.
@@ -1052,858 +925,91 @@ public final class TotalRepeatsSearching {
         }
     }
 
+
+
+    // ===================================================================
+
+    /**
+     * The renderer for the current state of this run. A fresh instance is built
+     * per figure because {@code bb} and {@code filePath} are reassigned as the
+     * run walks through the input files.
+     */
+    private RepeatFigure figure() {
+        return new RepeatFigure(bb, sname, filePath, nseq);
+    }
+
+    /**
+     * The mask writer for the current file path. Built per file, like the other
+     * helpers, so it sees {@code filePath} as it stands at that moment.
+     */
+    private MaskWriter masks() {
+        return new MaskWriter(filePath, seq, sname, nseq, repeatslen);
+    }
+
     private void SavingMask(int n, int[] m, int[] ssr) throws IOException {
-        String maskedfile = filePath + "_" + (n + 1) + ".msk";
-        if (nseq == 1) {
-            maskedfile = filePath + ".msk";
-        }
-        try (FileWriter fileWriter = new FileWriter(maskedfile)) {
-            System.out.println("Saving masked file: " + maskedfile);
-
-            byte[] c = seq[n].toUpperCase().getBytes();
-// UPPER letter to lower for repeats            
-            for (int j = 0; j < m.length; j += 2) {
-                for (int i = m[j]; i < m[j] + m[j + 1]; i++) {
-                    if (c[i] > 64 && c[i] < 90) {
-                        c[i] = (byte) (c[i] + 32);
-                    }
-                }
-            }
-//  SSR masking
-            for (int j = 0; j < ssr.length; j += 2) {
-                for (int i = ssr[j]; i < ssr[j] + ssr[j + 1]; i++) {
-                    if (c[i] > 64 && c[i] < 90) {
-                        c[i] = (byte) (c[i] + 32);
-                    }
-                }
-            }
-
-            fileWriter.write(">" + sname[n] + " TotalRepeats: Sequence coverage by repeats = " + String.format("%.2f", repeatslen) + "%\n");
-//            fileWriter.write(new String(c));                   
-            String seqStr = new String(c);
-            for (int i = 0; i < seqStr.length(); i += 70) {
-                int end = Math.min(i + 70, seqStr.length());
-                fileWriter.write(seqStr.substring(i, end));
-                fileWriter.write("\n");
-            }
-
-        }
+        masks().writeMask(n, m, ssr);
     }
 
     private void SavingMask3(String maskedfile, int n, int[] m, int[] ssr) throws IOException {
-        if (maskedfile.length() == 0) {
-            maskedfile = filePath + ".msk";
-        } else {
-            maskedfile = maskedfile + ".msk";
-        }
-        try (FileWriter fileWriter = new FileWriter(maskedfile)) {
-            System.out.println("Saving masked file: " + maskedfile);
-
-            byte[] c = seq[n].toUpperCase().getBytes();
-// UPPER letter to lower for repeats            
-            for (int j = 0; j < m.length; j += 2) {
-                for (int i = m[j]; i < m[j] + m[j + 1]; i++) {
-                    if (c[i] > 64 && c[i] < 90) {
-                        c[i] = (byte) (c[i] + 32);
-                    }
-                }
-            }
-//  SSR masking
-            for (int j = 0; j < ssr.length; j += 2) {
-                for (int i = ssr[j]; i < ssr[j] + ssr[j + 1]; i++) {
-                    if (c[i] > 64 && c[i] < 90) {
-                        c[i] = (byte) (c[i] + 32);
-                    }
-                }
-            }
-
-            fileWriter.write(">" + sname[n] + " TotalRepeats: Sequence coverage by repeats = " + String.format("%.2f", repeatslen) + "%\n");
-//            fileWriter.write(new String(c));                   
-            String seqStr = new String(c);
-            for (int i = 0; i < seqStr.length(); i += 70) {
-                int end = Math.min(i + 70, seqStr.length());
-                fileWriter.write(seqStr.substring(i, end));
-                fileWriter.write("\n");
-            }
-
-        }
+        masks().writeMaskTo(maskedfile, n, m, ssr);
     }
 
-    private void SavingSVG(String reportfile, int k, int n, int len, int dw, int dh, int[] seqslen) throws IOException {
-        int maxClusters = 500;
-        int maxImageDimension = 120000;
-        int minImageWidth = 4000;
-        int minImageHeight = 100;
-        int stepPadding = 20;
-        int b = Math.min(bb.size(), maxClusters);
-        int z = calculateClusterStep(b);
-        float dotSize = calculateDotSize(b);
-        int width = calculateWidth(k, len, dw, maxImageDimension, minImageWidth);
-        int height = calculateHeight(b, z, dh, maxImageDimension, minImageHeight, stepPadding);
-
-        SaveSVG(reportfile, k, n, len, b, z, width, height, dotSize, seqslen);
-    }
-
-// Escapes XML-sensitive characters for text nodes/attributes
-    private static String esc(String s) {
-        if (s == null) {
-            return "";
-        }
-        StringBuilder out = new StringBuilder((int) (s.length() * 1.1));
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '&' ->
-                    out.append("&amp;");
-                case '<' ->
-                    out.append("&lt;");
-                case '>' ->
-                    out.append("&gt;");
-                case '"' ->
-                    out.append("&quot;");
-                case '\'' ->
-                    out.append("&apos;");
-                default ->
-                    out.append(c);
-            }
-        }
-        return out.toString();
-    }
-
-// Format integers with thousands separators like your PNG labels
-    private static String formatThousands(int v) {
-        return String.format("%,d", v);
-    }
-
-    private void SaveSVG(String svgfile, int k, int n, int l, int b, int z, int width, int height, float dotSize, int[] seqslen) throws IOException {
-        final double nucleotidesPerPixel = (double) width / l;
-        if (svgfile.length() == 0) {
-            svgfile = filePath + "_" + (n + 1) + ".svg";
-            if (nseq == 1) {
-                svgfile = filePath + ".svg";
-            }
-        } else {
-            svgfile = svgfile + ".svg";
-        }
-
-        System.out.println("Saving SVG " + (width + 100) + "x" + (height + 200) + " : " + svgfile);
-        StringBuilder sb = new StringBuilder(1 << 20); // pre-allocate
-        // SVG header
-        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" ")
-                .append("xmlns:xlink=\"http://www.w3.org/1999/xlink\" ")
-                .append("width=\"").append(width + 100).append("\" ")
-                .append("height=\"").append(height + 200).append("\" ")
-                .append("viewBox=\"0 0 ").append(width + 100).append(" ").append(height + 200).append("\">\n");
-
-        // Background
-        sb.append("  <rect x=\"0\" y=\"0\" width=\"").append(width + 100).append("\" height=\"").append(height + 200).append("\" fill=\"#FFFFFF\"/>\n");
-
-        // Styles (adjustable)
-        sb.append("  <style><![CDATA[\n")
-                .append("    .axis { stroke:#000; stroke-width:1; }\n")
-                .append("    .tick { stroke:#000; stroke-width:1; }\n")
-                .append("    .labelBig { font-family:monospace; font-size:18px; font-weight:bold; fill:#000; }\n")
-                .append("    .labelSmall { font-family:monospace; font-size:8px; fill:#000; }\n")
-                .append("    .labelMed { font-family:monospace; font-size:16px; fill:#000; }\n")
-                .append("    .brown { stroke:#663300; }\n") // Brown
-                .append("    .blue { stroke:#0000FF; }\n")
-                .append("    .red { stroke:#FF0000; }\n")
-                .append("    .darkgreen { stroke:#006600; }\n")
-                .append("  ]]></style>\n");
-
-        // Top ruler line
-        sb.append("  <line class=\"axis\" x1=\"50\" y1=\"55\" x2=\"").append(50 + width).append("\" y2=\"55\"/>\n");
-
-        // Ruler ticks + numeric labels (emulating drawLinesAndLabels)
-        int f = k + 5;
-        int w = width / f;
-        int d = l / f;
-
-        for (int i = 0; i <= f; i++) {
-            int xTick = 50 + i * w;
-            sb.append("  <line class=\"tick\" x1=\"").append(xTick).append("\" y1=\"45\" x2=\"").append(xTick).append("\" y2=\"55\"/>\n");
-            int v = 1 + i * d;
-            if (v > l) {
-                v = l;
-            }
-            // Map cumulative coordinate into per-sequence coordinate if multiple seqs
-            if (seqslen != null && seqslen.length > 0) {
-                for (int j = 1; j < seqslen.length; j++) {
-                    if (v >= seqslen[j - 1] && v <= seqslen[j]) {
-                        v = 1 + v - seqslen[j - 1];
-                        break;
-                    }
-                }
-            }
-            sb.append("  <text class=\"labelMed\" x=\"").append(40 + i * w).append("\" y=\"44\">").append(formatThousands(v)).append("</text>\n");
-        }
-
-        // Sequence boundary ticks and names (top-left area)
-        if (seqslen != null && seqslen.length > 0) {
-            int x1 = 0;
-            for (int i = 0; i < seqslen.length; i++) {
-                int tx = (int) (x1 * nucleotidesPerPixel);
-                int xTick = 50 + tx;
-                sb.append("  <line class=\"tick\" x1=\"").append(xTick).append("\" y1=\"1\" x2=\"").append(xTick).append("\" y2=\"55\"/>\n");
-                sb.append("  <text class=\"labelBig\" x=\"").append(xTick + 15).append("\" y=\"18\">").append(esc(sname[i])).append("</text>\n");
-                sb.append("  <text class=\"labelBig\" x=\"").append(xTick + 5).append("\" y=\"50\">1</text>\n");
-                x1 = seqslen[i];
-            }
-        } else {
-            sb.append("  <line class=\"tick\" x1=\"50\" y1=\"1\" x2=\"50\" y2=\"20\"/>\n");
-            sb.append("  <text class=\"labelBig\" x=\"65\" y=\"18\">").append(esc(sname[n])).append("</text>\n");
-        }
-
-        // Gray/Brown baseline segments at y=60 for each cluster interval (emulating first pass in drawClusters)
-        // And colored cluster segments at per-cluster y (see clusterRowY).
-        for (int i = 0; i < b; i++) {
-            int[] z7 = bb.get(i);
-
-            // baseline (brown)
-            for (int j = 0; j < z7.length - 1; j += 2) {
-                int x1 = 50 + (int) Math.round(z7[j] * nucleotidesPerPixel);
-                int x2;
-                if (z7[j + 1] > 0) {
-                    x2 = 50 + (int) Math.round((z7[j] + z7[j + 1]) * nucleotidesPerPixel);
-                } else {
-                    x2 = 50 + (int) Math.round((z7[j] - z7[j + 1]) * nucleotidesPerPixel);
-                }
-                sb.append("  <line class=\"brown\" x1=\"").append(x1).append("\" y1=\"60\" x2=\"").append(x2).append("\" y2=\"60\" stroke-width=\"").append(dotSize).append("\"/>\n");
-            }
-
-            int y = clusterRowY(i, z);
-            // colored spans
-            for (int j = 0; j < z7.length - 1; j += 2) {
-                int x1 = 50 + (int) Math.round(z7[j] * nucleotidesPerPixel);
-                int x2;
-                String cssClass;
-                if (z7[j + 1] > 0) {
-                    x2 = 50 + (int) Math.round((z7[j] + z7[j + 1]) * nucleotidesPerPixel);
-                    cssClass = (i == 0) ? "darkgreen" : "blue";
-                } else {
-                    x2 = 50 + (int) Math.round((z7[j] - z7[j + 1]) * nucleotidesPerPixel);
-                    cssClass = "red";
-                }
-                sb.append("  <line class=\"").append(cssClass).append("\" x1=\"").append(x1).append("\" y1=\"").append(y).append("\" x2=\"").append(x2).append("\" y2=\"").append(y).append("\" stroke-width=\"").append(dotSize).append("\"/>\n");
-                if (i > 1) {
-                    sb.append("  <text class=\"labelSmall\" x=\"").append(x2 + 1).append("\" y=\"").append(y).append("\">").append(i).append("</text>\n");
-                }
-            }
-        }
-        sb.append("</svg>\n");
-        try (BufferedWriter w1 = new BufferedWriter(new FileWriter(svgfile))) {
-            w1.write(sb.toString());
-        }
-    }
-
-    // ===================================================================
-    //  Long-coordinate combined writers (used only by RunCombine).
-    //  These mirror the int versions above but address the whole virtual
-    //  concatenation with long global coordinates and read sequence through
-    //  the SeqStore, so no >2.1 Gb String is ever built. The per-file
-    //  reports continue to use the unchanged int writers on local slices.
-    // ===================================================================
-    private void SavingGFFLong(String reportfile, long l, long[] h, ArrayList<long[]> bbL, SeqStore store) throws IOException {
-        String b = (sname != null && sname.length > 0) ? sname[0] : "";
-        long duration = (System.nanoTime() - startTime) / 1000000000;
-
-        if (reportfile.length() == 0) {
-            reportfile = filePath + "_1.gff";
-            if (h.length > 0) {
-                reportfile = filePath + ".gff";
-            }
-        } else {
-            reportfile = reportfile + ".gff";
-        }
-
-        try (FileWriter fileWriter = new FileWriter(reportfile); BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
-            System.out.println("Saving report file: " + reportfile);
-            StringBuilder sr = new StringBuilder();
-            sr.append("#TotalRepeats (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi) https://github.com/rkalendar/TotalRepeats\n");
-            sr.append("#kmer=").append(kmerln).append("\n").append("#Minimal repeat block size=").append(minlenseq).append("\n");
-            sr.append("#Sequence length (bp)=").append(l).append("\n");
-            sr.append("#Sequence coverage by repeats=").append(String.format("%.2f", repeatslen)).append("%\n");
-            sr.append("#Short tandem repeat (STR) sequence coverage=").append(String.format("%.2f", ssrglobal)).append("%\n");
-            sr.append("#Sequence gap (bp)=").append((long) gapslen).append(" (").append(String.format("%.4f", gaps)).append("%)\n");
-            sr.append("#Masking time taken: ").append(maskduration).append(" seconds\n");
-            sr.append("#Total duration: ").append(duration).append(" seconds\n");
-            sr.append("#Repeats search for: ");
-
-            if (h.length > 0) {
-                for (String filesPath1 : filesPath) {
-                    sr.append(filesPath1).append("\n");
-                }
-            } else {
-                sr.append(b).append("\n");
-            }
-
-            if (SeqShow) {
-                sr.append("\nSeqid\tRepeat\tClusterID\tStart\tStop\tLength\tStrand\tPhase\tSequence\n");
-            } else {
-                sr.append("\nSeqid\tRepeat\tClusterID\tStart\tStop\tLength\tStrand\tPhase\n");
-            }
-
-            bufferedWriter.write(sr.toString());
-            int k = 0;
-            for (int i = 0; i < bbL.size(); i++) {
-                long[] z7 = bbL.get(i);
-                k++;
-
-                String gf = "CRP";
-                if (k > 1) {
-                    if (refclust != null && k < refclust.length) {
-                        if (refclust[k] > 0) {
-                            gf = refclust[k] + ":" + refsname[refclust[k] - 1];
-                        }
-                    }
-                }
-
-                for (int j = 0; j < z7.length - 1; j += 2) {
-
-                    for (int w = 0; w < h.length; w++) {
-                        if (h[w] > z7[j]) {
-                            b = sname[w];
-                            break;
-                        }
-                    }
-
-                    String s0 = "";
-                    long x = z7[j] + Math.abs(z7[j + 1]) - 1;
-                    if (SeqShow) {
-                        if (x > l) {
-                            s0 = store.substring(z7[j], l);
-                        } else {
-                            s0 = store.substring(z7[j], x);
-                        }
-                        if (flanks > 0) {
-                            String s1 = "";
-                            String s2 = "";
-                            if (z7[j] - flanks > 0) {
-                                s1 = store.substring(z7[j] - flanks, z7[j]).toUpperCase();
-                            } else {
-                                if (z7[j] > 1) {
-                                    long e = z7[1] - 1;     // faithful to the int version's fixed index
-                                    if (e > 1) {
-                                        s1 = store.substring(1, e).toUpperCase();
-                                    }
-                                }
-                            }
-                            if (x + flanks < l) {
-                                s2 = store.substring(x, x + flanks).toUpperCase();
-                            } else {
-                                if (l - x > 0) {
-                                    s2 = store.substring(x, l).toUpperCase();
-                                }
-                            }
-                            s0 = s1 + s0 + s2;
-                        }
-                        if (z7[j + 1] < 0) {
-                            s0 = Dna.ComplementDNA2(s0);
-                        }
-                    }
-                    sr = new StringBuilder();
-                    String type = (k == 1) ? "STR" : (k == 2) ? "UCRP" : gf;
-                    String strand = (z7[j + 1] > 0 || k <= 2) ? "+" : "-";
-                    long end = (strand.equals("+")) ? z7[j + 1] : -z7[j + 1];
-                    sr.append(b)
-                            .append("\t").append(type)
-                            .append("\t").append(k)
-                            .append("\t").append(z7[j] + 1)
-                            .append("\t").append(x + 1)
-                            .append("\t").append(end)
-                            .append("\t").append(strand)
-                            .append("\t").append(s0).append("\n");
-                    bufferedWriter.write(sr.toString());
-                }
-            }
-        }
-    }
-
-    // Long counterpart of formatThousands (the value can exceed int beyond 2.1 Gb).
-    private static String formatThousandsLong(long v) {
-        return String.format("%,d", v);
-    }
-
-    private void SavingSVGLong(String reportfile, int k, long len, int dw, int dh, long[] seqslen, ArrayList<long[]> bbL) throws IOException {
-        int maxClusters = 500;
-        int maxImageDimension = 120000;
-        int minImageWidth = 4000;
-        int minImageHeight = 100;
-        int stepPadding = 20;
-        int b = Math.min(bbL.size(), maxClusters);
-        int z = calculateClusterStep(b);
-        float dotSize = calculateDotSize(b);
-        // width is computed inline in long to avoid the int overflow that
-        // calculateWidth(int l, ...) would hit for a >2.1 Gb concatenation.
-        double rawWidth = (dw > 0) ? dw : k * Math.sqrt((double) len);
-        int width = (int) Math.max(Math.min(rawWidth, maxImageDimension), minImageWidth);
-        int height = calculateHeight(b, z, dh, maxImageDimension, minImageHeight, stepPadding);
-
-        SaveSVGLong(reportfile, k, len, b, z, width, height, dotSize, seqslen, bbL);
-    }
-
-    private void SaveSVGLong(String svgfile, int k, long l, int b, int z, int width, int height, float dotSize, long[] seqslen, ArrayList<long[]> bbL) throws IOException {
-        final double nucleotidesPerPixel = (double) width / l;
-        if (svgfile.length() == 0) {
-            svgfile = filePath + "_1.svg";
-            if (nseq == 1) {
-                svgfile = filePath + ".svg";
-            }
-        } else {
-            svgfile = svgfile + ".svg";
-        }
-
-        System.out.println("Saving SVG " + (width + 100) + "x" + (height + 200) + " : " + svgfile);
-        StringBuilder sb = new StringBuilder(1 << 20); // pre-allocate
-        // SVG header
-        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" ")
-                .append("xmlns:xlink=\"http://www.w3.org/1999/xlink\" ")
-                .append("width=\"").append(width + 100).append("\" ")
-                .append("height=\"").append(height + 200).append("\" ")
-                .append("viewBox=\"0 0 ").append(width + 100).append(" ").append(height + 200).append("\">\n");
-
-        // Background
-        sb.append("  <rect x=\"0\" y=\"0\" width=\"").append(width + 100).append("\" height=\"").append(height + 200).append("\" fill=\"#FFFFFF\"/>\n");
-
-        // Styles (adjustable)
-        sb.append("  <style><![CDATA[\n")
-                .append("    .axis { stroke:#000; stroke-width:1; }\n")
-                .append("    .tick { stroke:#000; stroke-width:1; }\n")
-                .append("    .labelBig { font-family:monospace; font-size:18px; font-weight:bold; fill:#000; }\n")
-                .append("    .labelSmall { font-family:monospace; font-size:8px; fill:#000; }\n")
-                .append("    .labelMed { font-family:monospace; font-size:16px; fill:#000; }\n")
-                .append("    .brown { stroke:#663300; }\n") // Brown
-                .append("    .blue { stroke:#0000FF; }\n")
-                .append("    .red { stroke:#FF0000; }\n")
-                .append("    .darkgreen { stroke:#006600; }\n")
-                .append("  ]]></style>\n");
-
-        // Top ruler line
-        sb.append("  <line class=\"axis\" x1=\"50\" y1=\"55\" x2=\"").append(50 + width).append("\" y2=\"55\"/>\n");
-
-        // Ruler ticks + numeric labels (emulating drawLinesAndLabels)
-        int f = k + 5;
-        int w = width / f;
-        long d = l / f;
-
-        for (int i = 0; i <= f; i++) {
-            int xTick = 50 + i * w;
-            sb.append("  <line class=\"tick\" x1=\"").append(xTick).append("\" y1=\"45\" x2=\"").append(xTick).append("\" y2=\"55\"/>\n");
-            long v = 1 + (long) i * d;
-            if (v > l) {
-                v = l;
-            }
-            // Map cumulative coordinate into per-sequence coordinate if multiple seqs
-            if (seqslen != null && seqslen.length > 0) {
-                for (int j = 1; j < seqslen.length; j++) {
-                    if (v >= seqslen[j - 1] && v <= seqslen[j]) {
-                        v = 1 + v - seqslen[j - 1];
-                        break;
-                    }
-                }
-            }
-            sb.append("  <text class=\"labelMed\" x=\"").append(40 + i * w).append("\" y=\"44\">").append(formatThousandsLong(v)).append("</text>\n");
-        }
-
-        // Sequence boundary ticks and names (top-left area)
-        if (seqslen != null && seqslen.length > 0) {
-            long x1 = 0;
-            for (int i = 0; i < seqslen.length; i++) {
-                int tx = (int) (x1 * nucleotidesPerPixel);
-                int xTick = 50 + tx;
-                sb.append("  <line class=\"tick\" x1=\"").append(xTick).append("\" y1=\"1\" x2=\"").append(xTick).append("\" y2=\"55\"/>\n");
-                sb.append("  <text class=\"labelBig\" x=\"").append(xTick + 15).append("\" y=\"18\">").append(esc(sname[i])).append("</text>\n");
-                sb.append("  <text class=\"labelBig\" x=\"").append(xTick + 5).append("\" y=\"50\">1</text>\n");
-                x1 = seqslen[i];
-            }
-        } else {
-            sb.append("  <line class=\"tick\" x1=\"50\" y1=\"1\" x2=\"50\" y2=\"20\"/>\n");
-            sb.append("  <text class=\"labelBig\" x=\"65\" y=\"18\">").append(esc(sname[0])).append("</text>\n");
-        }
-
-        // Baseline (brown) + colored cluster segments, same layout rules as SaveSVG.
-        for (int i = 0; i < b; i++) {
-            long[] z7 = bbL.get(i);
-
-            // baseline (brown)
-            for (int j = 0; j < z7.length - 1; j += 2) {
-                int x1 = 50 + (int) Math.round(z7[j] * nucleotidesPerPixel);
-                int x2;
-                if (z7[j + 1] > 0) {
-                    x2 = 50 + (int) Math.round((z7[j] + z7[j + 1]) * nucleotidesPerPixel);
-                } else {
-                    x2 = 50 + (int) Math.round((z7[j] - z7[j + 1]) * nucleotidesPerPixel);
-                }
-                sb.append("  <line class=\"brown\" x1=\"").append(x1).append("\" y1=\"60\" x2=\"").append(x2).append("\" y2=\"60\" stroke-width=\"").append(dotSize).append("\"/>\n");
-            }
-
-            int y = clusterRowY(i, z);
-            // colored spans
-            for (int j = 0; j < z7.length - 1; j += 2) {
-                int x1 = 50 + (int) Math.round(z7[j] * nucleotidesPerPixel);
-                int x2;
-                String cssClass;
-                if (z7[j + 1] > 0) {
-                    x2 = 50 + (int) Math.round((z7[j] + z7[j + 1]) * nucleotidesPerPixel);
-                    cssClass = (i == 0) ? "darkgreen" : "blue";
-                } else {
-                    x2 = 50 + (int) Math.round((z7[j] - z7[j + 1]) * nucleotidesPerPixel);
-                    cssClass = "red";
-                }
-                sb.append("  <line class=\"").append(cssClass).append("\" x1=\"").append(x1).append("\" y1=\"").append(y).append("\" x2=\"").append(x2).append("\" y2=\"").append(y).append("\" stroke-width=\"").append(dotSize).append("\"/>\n");
-                if (i > 1) {
-                    sb.append("  <text class=\"labelSmall\" x=\"").append(x2 + 1).append("\" y=\"").append(y).append("\">").append(i).append("</text>\n");
-                }
-            }
-        }
-        sb.append("</svg>\n");
-        try (BufferedWriter w1 = new BufferedWriter(new FileWriter(svgfile))) {
-            w1.write(sb.toString());
-        }
+    private void SavingMask2(int n, byte[] c, int x1, int x2) throws IOException {
+        masks().writeBytes(n, c, x1, x2);
     }
 
     /**
-     * Pangenomic analysis for the combined run. PangenomeAnalysis is now
-     * long-based, so the combined clusters/boundaries are passed straight
-     * through in global long coordinates and the report is produced at any size
-     * (no int-limit restriction). {@code l} is accepted for call-site
-     * uniformity across the combine modes.
+     * Soft-masks {@code s} over the repeat and STR blocks and writes it as this
+     * file's mask. The current file path is repointed first — deliberately, and
+     * left pointing there afterwards, because the combined pangenome report
+     * falls back to it when no explicit report base is given.
      */
-    private void SavingPangenomeCombined(String reportBase, long[] seqslen, ArrayList<long[]> bbL, long l) throws IOException {
-        if (!pangenome || bbL == null || nseq < 2 || seqslen == null || seqslen.length < nseq) {
-            return;
-        }
-        String base = (reportBase == null || reportBase.isEmpty()) ? filePath : reportBase;
-        PangenomeAnalysis pa = new PangenomeAnalysis(bbL, seqslen, sname, refclust, refsname);
-        pa.write(base);
+    private void lowercaseAndSaveMsk(int i, String s, int[] u, int[] ssr) throws IOException {
+        int l = s.length();
+        byte[] ci = s.toUpperCase().getBytes();
+        MaskWriter.softMask(ci, u, l);
+        MaskWriter.softMask(ci, ssr, l);
+        filePath = filesPath[i];
+        SavingMask2(i, ci, 0, l);
+    }
+
+    /**
+     * The annotation writer for the current state of this run. Like
+     * {@link #figure()} it is built per report, so it captures the coverage
+     * statistics as they stand for the sequence being written.
+     */
+    private AnnotationWriter annotations() {
+        return new AnnotationWriter(
+                new AnnotationWriter.Inputs(seq, sname, filesPath, filePath, nseq, bb, refclust, refsname),
+                new AnnotationWriter.Stats(kmerln, minlenseq, flanks, gap, SeqShow,
+                        repeatslen, ssrglobal, gapslen, gaps, maskduration, startTime, pangenome));
     }
 
     private void SavingGFF(String reportfile, int n, int l, int[] h) throws IOException {
-        String b = sname[n];
-        long duration = (System.nanoTime() - startTime) / 1000000000;
-
-        if (reportfile.length() == 0) {
-            reportfile = filePath + "_" + (n + 1) + ".gff";
-            if (h.length > 0) {
-                reportfile = filePath + ".gff";
-            }
-        } else {
-            reportfile = reportfile + ".gff";
-        }
-
-        try (FileWriter fileWriter = new FileWriter(reportfile); BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
-            System.out.println("Saving report file: " + reportfile);
-            StringBuilder sr = new StringBuilder();
-            sr.append("#TotalRepeats (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi) https://github.com/rkalendar/TotalRepeats\n");
-            sr.append("#kmer=").append(kmerln).append("\n").append("#Minimal repeat block size=").append(minlenseq).append("\n");
-            sr.append("#Sequence length (bp)=").append(l).append("\n");
-            sr.append("#Sequence coverage by repeats=").append(String.format("%.2f", repeatslen)).append("%\n");
-            sr.append("#Short tandem repeat (STR) sequence coverage=").append(String.format("%.2f", ssrglobal)).append("%\n");
-            sr.append("#Sequence gap (bp)=").append((int) gapslen).append(" (").append(String.format("%.4f", gaps)).append("%)\n");
-            sr.append("#Masking time taken: ").append(maskduration).append(" seconds\n");
-            sr.append("#Total duration: ").append(duration).append(" seconds\n");
-            sr.append("#Repeats search for: ");
-
-            if (h.length > 0) {
-                for (String filesPath1 : filesPath) {
-                    sr.append(filesPath1).append("\n");
-                }
-            } else {
-                sr.append(b).append("\n");
-            }
-
-            if (SeqShow) {
-                sr.append("\nSeqid\tRepeat\tClusterID\tStart\tStop\tLength\tStrand\tPhase\tSequence\n");
-            } else {
-                sr.append("\nSeqid\tRepeat\tClusterID\tStart\tStop\tLength\tStrand\tPhase\n");
-            }
-
-            bufferedWriter.write(sr.toString());
-            int k = 0;
-            for (int i = 0; i < bb.size(); i++) {
-                int[] z7 = bb.get(i);
-                k++;
-
-                String gf = "CRP";
-                if (k > 1) {
-                    if (refclust != null && k < refclust.length) {
-                        if (refclust[k] > 0) {
-                            gf = refclust[k] + ":" + refsname[refclust[k] - 1];
-                        }
-                    }
-                }
-
-                for (int j = 0; j < z7.length - 1; j += 2) {
-
-                    for (int w = 0; w < h.length; w++) {
-                        if (h[w] > z7[j]) {
-                            b = sname[w];
-                            break;
-                        }
-                    }
-
-                    String s0 = "";
-                    int x = z7[j] + Math.abs(z7[j + 1]) - 1;
-                    if (SeqShow) {
-                        if (x > l) {
-                            s0 = seq[n].substring(z7[j]);
-                        } else {
-                            s0 = seq[n].substring(z7[j], x);
-                        }
-                        if (flanks > 0) {
-                            String s1 = "";
-                            String s2 = "";
-                            if (z7[j] - flanks > 0) {
-                                s1 = seq[n].substring(z7[j] - flanks, z7[j]).toUpperCase();
-                            } else {
-                                if (z7[j] > 1) {
-                                    s1 = seq[n].substring(1, z7[1] - 1).toUpperCase();
-                                }
-                            }
-                            if (x + flanks < l) {
-                                s2 = seq[n].substring(x, x + flanks).toUpperCase();
-                            } else {
-                                if (l - x > 0) {
-                                    s2 = seq[n].substring(x, l).toUpperCase();
-                                }
-                            }
-                            s0 = s1 + s0 + s2;
-                        }
-                        if (z7[j + 1] < 0) {
-                            s0 = Dna.ComplementDNA2(s0);
-                        }
-                    }
-                    sr = new StringBuilder();
-                    String type = (k == 1) ? "STR" : (k == 2) ? "UCRP" : gf;
-                    String strand = (z7[j + 1] > 0 || k <= 2) ? "+" : "-";
-                    int end = (strand.equals("+")) ? z7[j + 1] : -z7[j + 1];
-                    sr.append(b)
-                            .append("\t").append(type)
-                            .append("\t").append(k)
-                            .append("\t").append(z7[j] + 1)
-                            .append("\t").append(x + 1)
-                            .append("\t").append(end)
-                            .append("\t").append(strand)
-                            .append("\t").append(s0).append("\n");
-                    bufferedWriter.write(sr.toString());
-                }
-            }
-        }
+        annotations().writeTable(reportfile, n, l, h);
     }
 
-    private void SavingPicture(String reportfile, int k, int n, int len, int dw, int dh, int[] seqslen) throws IOException {
-        int maxClusters = 500;
-        int maxImageDimension = 120000;
-        int minImageWidth = 4000;
-        int minImageHeight = 100;
-        int stepPadding = 20;
-
-        // Adjust number of clusters `b`
-        int b = Math.min(bb.size(), maxClusters); // Maximum of 1000 clusters
-
-        // Adjust `z` (step between clusters) based on `b`
-        int z = calculateClusterStep(b);
-        // Calculate dot size
-        float dotSize = calculateDotSize(b);
-        //float dotSize =10;//'z;   
-
-        // Calculate width and height
-        int width = calculateWidth(k, len, dw, maxImageDimension, minImageWidth);
-        int height = calculateHeight(b, z, dh, maxImageDimension, minImageHeight, stepPadding);
-
-        try {
-            SaveImage(reportfile, k, n, len, b, z, width, height, dotSize, seqslen);
-        } catch (IOException e) {
-            // Non-fatal: the GFF/mask outputs are already written; report the
-            // image failure clearly on stderr rather than as a stdout success line.
-            System.err.println("ERROR: failed to save image " + reportfile + " — " + e.getMessage());
-        }
+    private void SavingGFFLong(String reportfile, long l, long[] h, ArrayList<long[]> bbL, SeqStore store) throws IOException {
+        annotations().writeTableLong(reportfile, l, h, bbL, store);
     }
 
-    private int calculateClusterStep(int b) {
-        if (b > 500) {
-            return 10;
-        }
-        if (b > 400) {
-            return 11;
-        }
-        if (b > 300) {
-            return 12;
-        }
-        if (b > 200) {
-            return 13;
-        }
-        if (b > 100) {
-            return 14;
-        }
-        return 16;
+    private void SavingPangenomeCombined(String reportBase, long[] seqslen, ArrayList<long[]> bbL, long l) throws IOException {
+        annotations().writePangenome(reportBase, seqslen, bbL, l);
     }
 
-    private int calculateWidth(int k, int l, int dw, double maxImageDimension, double minImageWidth) {
-        double width = k * Math.sqrt(l);
-        if (dw > 0) {
-            width = dw;
-        }
-        return (int) Math.max(Math.min(width, maxImageDimension), minImageWidth);
+    private void SavingSVG(String reportfile, int k, int n, int len, int dw, int dh, int[] seqslen) throws IOException {
+        figure().writeSvg(reportfile, k, n, len, dw, dh, seqslen);
     }
 
-    private int calculateHeight(int b, int z, int dh, int maxImageDimension, int minImageHeight, int stepPadding) {
-        int height = b * z + stepPadding;
-        if (dh > 0) {
-            height = dh;
-        }
-        return Math.max(Math.min(height, maxImageDimension), minImageHeight);
+    private void SavingSVGLong(String reportfile, int k, long len, int dw, int dh, long[] seqslen, ArrayList<long[]> bbL) throws IOException {
+        figure().writeSvgLong(reportfile, k, len, dw, dh, seqslen, bbL);
     }
 
-    private float calculateDotSize(int b) {
-        float dotSize = 20 - (b / 100.0f);
-        return Math.max(12.0f, dotSize);
+    private void SavingPicture(String reportfile, int k, int n, int len, int dw, int dh, int[] seqslen) {
+        figure().writePng(reportfile, k, n, len, dw, dh, seqslen);
     }
 
-    private void SaveImage(String pngfile, int k, int n, int l, int b, int z, int width, int height, float dotSize, int[] seqslen) throws IOException {
-        final int DPI = 1200;
-        final double inchToMeter = 0.0254;
-        double nucleotidesPerPixel = (double) width / l;
 
-        if (pngfile.length() == 0) {
-            pngfile = filePath + "_" + (n + 1) + ".png";
-            if (nseq == 1) {
-                pngfile = filePath + ".png";
-            }
-        } else {
-            pngfile = pngfile + ".png";
-        }
-
-        System.out.println("Saving picture " + (width + 100) + "x" + (height + 200) + " : " + pngfile);
-        BufferedImage image = new BufferedImage(width + 100, height + 200, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2d = image.createGraphics();
-        g2d.setStroke(new BasicStroke(dotSize));
-        g2d.setColor(Color.WHITE);
-        g2d.fillRect(0, 0, width + 100, height + 200);
-        g2d.setColor(Color.BLACK);
-        g2d.setFont(new Font("Monospaced", Font.BOLD, 25));
-
-        drawLinesAndLabels(g2d, k, l, width, seqslen);
-        if (seqslen.length > 0) {
-            int x1 = 0;
-            for (int i = 0; i < seqslen.length; i++) {
-                x1 = (int) (x1 * nucleotidesPerPixel);
-                g2d.drawLine(x1 + 50, 1, x1 + 50, 55);
-                g2d.drawString(sname[i], x1 + 65, 18);
-                g2d.drawString("1", x1 + 55, 50);
-                x1 = seqslen[i];
-            }
-        } else {
-            g2d.drawLine(50, 1, 50, 20);
-            g2d.drawString(sname[n], 65, 18);
-        }
-
-        drawClusters(g2d, b, z, nucleotidesPerPixel);
-        g2d.dispose();
-
-        // PNG writer
-        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("png");
-        if (!writers.hasNext()) {
-            throw new IllegalStateException("No PNG writer found");
-        }
-
-        ImageWriter writer = writers.next();
-        File outputFile = new File(pngfile);
-        try (ImageOutputStream ios = ImageIO.createImageOutputStream(outputFile)) {
-            writer.setOutput(ios);
-            ImageWriteParam param = writer.getDefaultWriteParam();
-
-            IIOMetadata metadata = writer.getDefaultImageMetadata(ImageTypeSpecifier.createFromBufferedImageType(BufferedImage.TYPE_INT_RGB), param);
-            if (metadata.isReadOnly() || !metadata.isStandardMetadataFormatSupported()) {
-                System.err.println("Warning: can't write metadata for DPI");
-            } else {
-                double pixelsPerMeter = DPI / inchToMeter;
-                IIOMetadataNode pHYs_node = new IIOMetadataNode("pHYs");
-                pHYs_node.setAttribute("pixelsPerUnitXAxis", Integer.toString((int) pixelsPerMeter));
-                pHYs_node.setAttribute("pixelsPerUnitYAxis", Integer.toString((int) pixelsPerMeter));
-                pHYs_node.setAttribute("unitSpecifier", "meter");
-                IIOMetadataNode root = new IIOMetadataNode("javax_imageio_png_1.0");
-                root.appendChild(pHYs_node);
-
-                metadata.mergeTree("javax_imageio_png_1.0", root);
-            }
-            writer.write(metadata, new IIOImage(image, null, metadata), param);
-        }
-
-        writer.dispose();
-    }
-
-    private void drawLinesAndLabels(Graphics2D g2d, int k, int l, int width, int[] seqslen) {
-        g2d.drawLine(50, 55, width + 50, 55); // top line (x1, y, x2, y)
-        int f = k + 5;
-        int w = width / f;
-        int d = l / f;
-        for (int i = 0; i <= f; i++) {
-            g2d.drawLine(i * w + 50, 45, i * w + 50, 55);
-            int v = 1 + i * d;
-            if (v > l) {
-                v = l;
-            }
-            for (int j = 1; j < seqslen.length; j++) {
-                if (v >= seqslen[j - 1] && v <= seqslen[j]) {
-                    v = 1 + v - seqslen[j - 1];
-                    break;
-                }
-            }
-            g2d.drawString(String.format("%,d", v), 63 + i * w, 44);
-        }
-    }
-
-    /**
-     * Vertical position of cluster row {@code i} (row spacing {@code z}), shared
-     * by the SVG and PNG renderers so the two output formats lay their rows out
-     * identically. Rows 0 and 1 sit at fixed heights near the top; rows ≥2 step
-     * down by {@code z}. Previously the PNG path used a different formula
-     * (110 / 120 + i*z) than the SVG path (130 / 180 + i*z), so the same run
-     * produced visually different figures in the two formats.
-     */
-    private static int clusterRowY(int i, int z) {
-        return (i == 0) ? 90 : (i == 1) ? 130 : 180 + i * z;
-    }
-
-    private void drawClusters(Graphics2D g2d, int b, int z, double w1) {
-        // Color DarkRed = new Color(153, 0, 0); //https://teaching.csse.uwa.edu.au/units/CITS1001/colorinfo.html
-        Color DarkGreen = new Color(0, 102, 0);
-        Color Brown = new Color(102, 51, 0);
-        g2d.setFont(new Font("Monospaced", Font.PLAIN, 13));
-        for (int i = 0; i < b; i++) {
-            int[] z7 = bb.get(i);
-
-            // Gray lines at height 22
-            for (int j = 0; j < z7.length - 1; j += 2) {
-                int x1 = 50 + (int) (z7[j] * w1);
-                int x2 = (z7[j + 1] > 0) ? 50 + (int) ((z7[j] + z7[j + 1]) * w1) : 50 + (int) ((z7[j] - z7[j + 1]) * w1);
-                g2d.setColor(Brown);
-                g2d.drawLine(x1, 60, x2, 60); // draw dark gray line (x1, y, x2, y)
-            }
-
-            int y = clusterRowY(i, z);
-
-            for (int j = 0; j < z7.length - 1; j += 2) {
-                int x1 = 50 + (int) (z7[j] * w1);
-                int x2 = 50;
-                if (z7[j + 1] > 0) {
-                    x2 = x2 + (int) ((z7[j] + z7[j + 1]) * w1);
-                    g2d.setColor(i == 0 ? DarkGreen : Color.BLUE);
-                } else {
-                    x2 = x2 + (int) ((z7[j] - z7[j + 1]) * w1);
-                    g2d.setColor(Color.RED);
-                }
-                g2d.drawLine(x1, y, x2, y); // draw blue line
-                if (i > 1) {
-                    g2d.drawString(String.valueOf(i), x2 + 10, y);
-                }
-            }
-
-        }
-    }
     private long maskduration = 0;
     private double gaps = 0;
     private double gapslen = 0;
