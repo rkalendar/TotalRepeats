@@ -85,7 +85,7 @@ public class TotalRepeats {
             boolean maskonly = false;      // The process of masking is performed without the use of clustering or annotation.
             boolean seqshow = false;
             boolean fastclustering = true; // Multithreaded clustering: ON by default; disabled by the -normal flag
-            int clusterMode = SequencesClustering.MODE_PROFILE;   // 4-mer ratio profile (-vector) by default; -contain selects k-mer containment
+            int clusterMode = SequencesClustering.MODE_CONTAIN;   // k-mer containment (-contain) by default; -vector selects the 4-mer ratio profile
             boolean readmask = false;       // reading masked FASTA for clustering and annotation
             boolean extupmask = false;      // extraction of the UPPER blocks of the masked chromosome contain unique sequences.
             boolean readgff = false;
@@ -135,11 +135,11 @@ public class TotalRepeats {
             if (flagSet.contains("normal")) { // Force single-threaded clustering. Clustering is multithreaded by default, which significantly accelerates grouping sequences into individual clusters; -normal disables that and uses the single-threaded path.
                 fastclustering = false;
             }
-            if (flagSet.contains("vector")) { // The 4-mer ratio profile (whole-block composition). This is now the DEFAULT; the flag is still accepted so existing command lines keep working. Fast, near-zero memory, and finds copies too diverged to share an exact k-mer — which containment cannot. No effect in -homology (which does not cluster).
-                clusterMode = SequencesClustering.MODE_PROFILE;
-            }
-            if (flagSet.contains("contain")) { // Cluster by asymmetric k-mer containment instead: groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies. Checked after -vector, so -contain wins when both are given.
+            if (flagSet.contains("contain")) { // Cluster by asymmetric k-mer containment: groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies. This is the DEFAULT; the flag is still accepted so existing command lines keep working.
                 clusterMode = SequencesClustering.MODE_CONTAIN;
+            }
+            if (flagSet.contains("vector")) { // Cluster by the 4-mer ratio profile (whole-block composition) instead. Fast, near-zero memory, and finds copies too diverged to share an exact k-mer — which containment cannot. Checked after -contain, so -vector wins when both are given. No effect in -homology (which does not cluster).
+                clusterMode = SequencesClustering.MODE_PROFILE;
             }
             if (flagSet.contains("extunique")) { // -seqlen>100
                 extupmask = true;
@@ -205,11 +205,24 @@ public class TotalRepeats {
                         return;
                     }
                     int k = -1;
+                    int skipped = 0;
                     String[] filelist = new String[files.length];
                     for (File file : files) {
                         if (file.isFile()) {
+                            if (isOwnOutput(file.getName(), readgff, readmask, extupmask, combine)) {
+                                skipped++;   // a report/image this tool wrote earlier: not an input
+                                continue;
+                            }
                             filelist[++k] = file.getAbsolutePath();
                         }
+                    }
+                    if (skipped > 0) {
+                        System.out.println("Skipped " + skipped
+                                + " previously generated output file(s) in the input folder.");
+                    }
+                    if (k < 0) {
+                        System.err.println("No input sequence files in: " + folder.toString());
+                        return;
                     }
 
                     if (combine > 0) {
@@ -358,7 +371,10 @@ public class TotalRepeats {
             "CORE OPTIONS:",
             "  -kmer=<9-21>         K-mer size for repeat detection (default: 19)",
             "  -sln=<int>           Minimum repeat block length in bp (default: 80; can equal kmer)",
-            "  -flangs=<int>        Extend repeat flanks by N nucleotides (default: 0)",
+            "  -gap=<int>           Largest gap in bp bridged when merging repeated k-mers into one",
+            "                       block (default: 2 x kmer)",
+            "  -flangs=<0-1000>     Extend repeat flanks by N nucleotides (default: 0)",
+            "                       (-flanks=<int> is accepted as an alias)",
             "",
             "IMAGE OPTIONS:",
             "  -image=<WxH>         Output image dimensions, e.g. -image=10000x300",
@@ -372,18 +388,19 @@ public class TotalRepeats {
             "  -seqshow             Extract and output repeat sequences (default: off)",
             "  -nossr               Disable SSR (Simple Sequence Repeat) detection (default: on)",
             "  -normal              Use single-threaded repeat classification (default: multithreaded)",
-            "  -vector              Cluster by the 4-mer ratio profile (whole-block composition).",
-            "                       This is now the DEFAULT; the flag is still accepted so that",
-            "                       existing command lines keep working. A symmetric composition",
-            "                       measure: fast, needs almost no memory, and finds copies too",
-            "                       diverged to share an exact k-mer — which containment cannot",
-            "  -contain             Cluster by asymmetric k-mer containment instead. Groups blocks of",
-            "                       very different length (a short element contained in a long one)",
-            "                       and reverse-complement copies. Costs ~8 bytes per distinct k-mer",
-            "                       per block, so a large combined run wants -Xmx; no effect in",
-            "                       -homology mode, which does not cluster",
+            "  -contain             Cluster by asymmetric k-mer containment. This is the DEFAULT;",
+            "                       the flag is still accepted so that existing command lines keep",
+            "                       working. Groups blocks of very different length (a short element",
+            "                       contained in a long one) and reverse-complement copies. Costs",
+            "                       ~8 bytes per distinct k-mer per block, so a large combined run",
+            "                       wants -Xmx; no effect in -homology mode, which does not cluster",
+            "  -vector              Cluster by the 4-mer ratio profile (whole-block composition)",
+            "                       instead. A symmetric composition measure: fast, needs almost no",
+            "                       memory, and finds copies too diverged to share an exact k-mer —",
+            "                       which containment cannot",
             "",
-            "COMPARATIVE / GENOME-WIDE OPTIONS:",
+            "COMPARATIVE / GENOME-WIDE OPTIONS (these four require a FOLDER as input;",
+            "with a single file they are ignored and an ordinary single-file run is performed):",
             "  -collate             Genome-wide analysis: each sequence analyzed individually",
             "  -joint               Pangenome, genome-wide analysis: all sequences analyzed together",
             "  -combinemask         Genome-wide comparative analysis using masking files as input",
@@ -395,9 +412,13 @@ public class TotalRepeats {
             "                       visualisation",
             "  -readgff             Load a GFF file for visualisation",
             "  -extract             Split a single multi-entry FASTA file into individual FASTA files",
+            "  -extunique           Extract the UPPERCASE (unique, non-repetitive) blocks of a masked",
+            "                       sequence into <input>.report; runs closer than -gap are merged and",
+            "                       only runs longer than -sln are kept",
             "  -maskscomp           Compare masking files produced by different software or algorithms",
             "  -lib=<path>          Annotate repeats using a database of known repeats or genes",
-            "  -out=<path>          Path to output folder (default: current folder)",
+            "                       (-ref=<path> is accepted as an alias)",
+            "  -out=<path>          Path to output folder (default: the folder of the input file)",
             "",
             "EXAMPLES:",
             "  # Standard run with SSR and flanking sequences:",
@@ -415,8 +436,8 @@ public class TotalRepeats {
             "  # Analyse all FASTA files in a directory:",
             "  java -jar -Xms16g -Xmx32g /path/to/TotalRepeats.jar /data/genomes/Aegilops_tauschii/",
             "",
-            "  # Pangenome run grouping size-disparate homologous repeats (containment):",
-            "  " + jarMem + " /data/genomes/ -joint -contain",
+            "  # Pangenome run clustering by 4-mer composition profile instead of containment:",
+            "  " + jarMem + " /data/genomes/ -joint -vector",
             "",
             "NOTE: For sequences larger than 2 GB, increase heap memory with -Xmx (e.g. -Xmx64g).",};
 
@@ -462,6 +483,41 @@ public class TotalRepeats {
             }
         }
         return def;
+    }
+
+    /**
+     * True when {@code name} is a file this tool writes and that the CURRENT mode
+     * cannot consume as input. Directory mode writes its results next to the input
+     * unless {@code -out=} is given, so without this filter a second run over the
+     * same folder would re-analyse its own output ({@code a.fasta.gff.gff.gff…}).
+     *
+     * <p>The test is mode-aware, because several of these extensions ARE valid
+     * inputs elsewhere: {@code .gff} feeds {@code -readgff}, and {@code .msk} feeds
+     * {@code -readmask}, {@code -extunique} and {@code -combinemask}. Images and the
+     * pangenome reports are never inputs. Note that {@code .txt} is deliberately not
+     * filtered — plain FASTA input is routinely stored with that extension.
+     */
+    private static boolean isOwnOutput(String name, boolean readgff, boolean readmask,
+            boolean extupmask, int combine) {
+        String n = name.toLowerCase();
+        if (n.endsWith(".png") || n.endsWith(".svg")) {
+            return true;                                  // images: never an input
+        }
+        if (n.endsWith("_pangenome.txt") || n.endsWith("_pangenome.tsv")) {
+            return true;                                  // pangenome reports
+        }
+        if (n.endsWith(".report")) {
+            // -extunique writes the extracted unique blocks as FASTA records under
+            // this extension, so a second pass would happily read them back in.
+            return true;
+        }
+        if (n.endsWith(".gff")) {
+            return !readgff;                              // GFF is input only for -readgff
+        }
+        if (n.endsWith(".msk")) {                         // mask is input for these three
+            return !(readmask || extupmask || combine == 3);
+        }
+        return false;
     }
 
     /** Removes every leading '-' from {@code t} (canonicalises -flag/--flag/flag). */
