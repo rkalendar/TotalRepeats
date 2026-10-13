@@ -4,7 +4,7 @@
 
 [![Java](https://img.shields.io/badge/Java-26+-orange.svg?logo=openjdk)](https://www.oracle.com/java/technologies/downloads/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue.svg)]()
-[![Online Tool](https://img.shields.io/badge/Try%20Online-TotalRepeats-green.svg)](https://primerdigital.com/tools/repeats.html)
+[![Online Tool](https://img.shields.io/badge/Try%20Online-TotalRepeats-green.svg)](https://digitalgens.org/repeats.html)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
 
 ---
@@ -17,6 +17,7 @@
 - [How It Works](#how-it-works)
 - [Requirements](#requirements)
 - [Installation](#installation)
+  - [Running the test suite](#running-the-test-suite)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
   - [Basic Syntax](#basic-syntax)
@@ -28,6 +29,7 @@
   - [Benchmark: sensitivity and speed on simulated genomes](#benchmark-sensitivity-and-speed-on-simulated-genomes)
   - [Choosing a measure](#choosing-a-measure)
   - [Comparing the comparative modes](#comparing-the-comparative-modes)
+  - [Pangenome report](#pangenome-report)
 - [Input/Output Formats](#inputoutput-formats)
 - [Example Workflows](#example-workflows)
 - [Troubleshooting](#troubleshooting)
@@ -64,7 +66,7 @@ Latest additions to TotalRepeats:
 - **`-vector` rebuilt: ~5× more verified homology, with most spurious groupings eliminated.** The composition measure used one similarity threshold at every block length, even though the score chance alone produces varies enormously with length — and with the genome. That was wrong in both directions at once: checked against evidence independent of it (exact 25-mer sharing, adjudicated by Smith-Waterman against a shuffled null), it missed most real homology **and only 52% of what it grouped was real**. It now compares raw 4-mer counts by cosine against a chance floor calibrated per length scale from the run's own data, and matches a long seed window-by-window at the candidate's own scale. On `MF782455` (1.4 Mb; 765 non-SSR blocks, median block length 190 bp; default parameters) this raises clustered blocks from 205 to 436, and members sharing exact 25-mer evidence with their cluster seed from 67 to 354; in a random sample of 50 seed–member pairs adjudicated by Smith-Waterman, the fraction confirmed homologous rose from 52% (26/50) to 98% (49/50). Memory is unchanged. It can now also find copies too diverged to share any exact k-mer, which `-contain` cannot. See [Clustering measures](#clustering-measures).
 - **Comparative analyses are no longer capped at ~2.1 GB.** The `-collate`, `-joint`, and `-combinemask` modes previously failed with `OutOfMemoryError: Requested string length exceeds VM limit` once the *combined* length of all input sequences passed Java's 2³¹−1 byte (≈2.1 GB) hard limit on a single array or `String`. They now concatenate the inputs **virtually** and address them with **64-bit (long) coordinates**, so a joint analysis scales to pangenome-sized data (tens of Gb) without ever materializing a single oversized string. Each individual sequence/chromosome remains capped at ~2.1 GB; the *total* across files is bounded only by available RAM.
 - **Per-file reports in every comparative mode.** `-collate`, `-joint`, and `-combinemask` now each emit an individual annotation table, PNG, and SVG per input file (named after that file), *in addition to* the combined report. Each genome can be inspected on its own while the joint clustering is preserved — the same family keeps the same `ClusterID`, colour, row, and reference label in both the per-file and combined views.
-- **Pangenome analysis — core / accessory / unique — across all comparative modes.** Every combine run now writes a pangenome report classifying each repeat family by how many sequences it occurs in: **core** (present in all), **accessory** (present in some), and **unique** (present in one). It includes the family-frequency spectrum, per-sequence statistics, a pairwise shared-family matrix (Jaccard similarity), and a machine-readable presence/absence matrix. See [`-collate`](#-collate--comparative-analysis).
+- **Pangenome analysis rebuilt (4.1.0).** The pangenome report of `-collate`, `-joint` and `-combinemask` now treats each **input file** as one genome (all chromosomes, contigs and plasmids of a multi-record FASTA together; `-pangroup=record` restores one-genome-per-record), and adds the analyses expected of a pangenome tool: the four-tier **core / soft-core / shell / cloud** classification alongside core / accessory / unique, **rarefaction curves** of pangenome and core size computed *exactly* over all genome orderings, a **Heaps' law** fit that tells an open pangenome from a closed one, **Jaccard** and **Bray–Curtis** distances between genomes with a **UPGMA tree** in Newick format, **presence patterns** (which genome combinations share which families — the input of an UpSet plot), **copy-number variation** (the most variable core families and per-genome family expansions), and a four-panel **SVG figure** (rarefaction, frequency spectrum, per-genome composition, presence/absence map with the tree). New files: `_pangenome_bp.tsv`, `_pangenome_distance.tsv`, `_pangenome.nwk`, `_pangenome.svg`; the existing `_pangenome.tsv` keeps its columns and gains tier, pattern and copy-number statistics. Numbers are always written with a `.` decimal separator, whatever the system locale. Repeat detection, clustering and annotation are unchanged from 4.0.0. See [Pangenome report](#pangenome-report).
 - **Combined image is now SVG.** The joint (cross-file) visualization is written as scalable SVG, which has no pixel-size ceiling and stays sharp at pangenome scale. Per-file images are still produced as both PNG and SVG.
 - **Multithreaded clustering is now the default.** Clustering runs across all CPU cores out of the box; pass `-normal` to force the single-threaded path instead. The multithreaded path is **deterministic and reproducible** — repeated runs on the same input produce identical cluster assignments and `ClusterID`s, independent of how many worker threads are used.
 - **Performance improvements.** Low-complexity/SSR masking and sequence clustering were optimised (k-mer encoding and reduced memory traffic in the inner loops). Cluster assignments and `ClusterID`s are unchanged relative to the previous release on the test sets in `test/`; measured runtimes are reported under [Benchmark](#benchmark-sensitivity-and-speed-on-simulated-genomes).
@@ -81,7 +83,7 @@ Latest additions to TotalRepeats:
 | 📚 **External annotation** | Annotate repeats against Repbase, Dfam/FamDB, or custom species-specific libraries |
 | 📊 **Vector and raster visualization** | PNG and SVG images of repeat landscapes, annotated maps, and comparative views, with adjustable dimensions (`image=`, `imgx=`) |
 | ⚡ **Multithreaded performance** | Parallel processing across all cores for masking, clustering, and annotation (multithreaded by default; `-normal` forces single-threaded); multithreaded clustering is **deterministic** — identical, reproducible results on every run |
-| 🧩 **Pangenome analysis** | Core / accessory / unique repeat-family classification with a presence/absence matrix across genomes — produced by every comparative mode (`-collate`, `-joint`, `-combinemask`) |
+| 🧩 **Pangenome analysis** | Core / soft-core / shell / cloud repeat-family classification, exact rarefaction curves with a Heaps' law openness estimate, Jaccard and Bray–Curtis genome distances with a UPGMA tree, presence patterns, copy-number variation, copy-number and bp matrices and a summary figure — produced by every comparative mode (`-collate`, `-joint`, `-combinemask`) |
 | 🗄️ **Pangenome-scale inputs** | Combined comparative analysis is not limited by the ~2.1 GB single-sequence cap — inputs are concatenated virtually and addressed with 64-bit coordinates |
 
 ---
@@ -177,6 +179,36 @@ conda activate java26
 java -version
 ```
 
+### Running the test suite
+
+The repository carries a self-contained test suite covering the sequence reader, the
+k-mer maps, the virtual-concatenation coordinate arithmetic, mask-block extraction,
+the pangenome statistics, and command-line handling. It needs nothing but a JDK —
+there is no JUnit or other external dependency to install:
+
+```bash
+./run-tests.sh          # Linux/macOS
+run-tests.bat           # Windows
+```
+
+The script compiles `src/` together with `tests/` and runs `TestRunner`, which prints
+each check and exits non-zero if any fails, so it can gate a build or a CI job:
+
+```
+PASSED  276 checks in 0.6 s
+```
+
+| Suite | Checks | Covers |
+|---|---|---|
+| `DnaTest` | 27 | complement / reverse-complement, IUPAC codes, normalisation, shared-table stability |
+| `FastaReaderTest` | 20 | record parsing, IUPAC normalisation, soft-mask-preserving raw mode, unmodifiable accessors |
+| `SeqStoreTest` | 28 | segment boundaries, global-to-local coordinates, substrings spanning segments |
+| `LongIntHashMapTest` | 36 | insertion, tombstones, growth, `retainAtLeast`, `mergeInto` |
+| `LongCountSetTest` | 30 | saturating counts, the bit-49 packing and its k ≤ 21 bound, pruning |
+| `MaskResultTest` | 14 | block extraction, length filtering, STR exclusion, letter-range boundaries |
+| `PangenomeAnalysisTest` | 94 | core / accessory / unique and tier classification, exact rarefaction checked against brute-force enumeration of genome subsets, Heaps' law on open and closed pangenomes, Jaccard / Bray–Curtis, UPGMA on a hand-solved matrix, presence patterns, copy-number statistics, record-to-file grouping |
+| `CliTest` | 27 | lenient integer parsing, token-based option parsing, `-pangroup=`, the directory output filter |
+
 ---
 
 ## Quick Start
@@ -214,7 +246,7 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/genomes/ -collate
 java [JVM flags] -jar TotalRepeats.jar <input_file_or_directory> [options]
 ```
 
-- **Input** can be a single FASTA file or a directory containing multiple genomes. It must be the **first** argument.
+- **Input** can be a single FASTA file or a directory containing multiple genomes. It must be the **first** argument. The comparative modes (`-collate`, `-joint`, `-combinemask`, `-homology`) act only on a **directory**; given a single file they are silently ignored and a normal single-file analysis is performed. When the input is a directory, files that TotalRepeats itself produced are skipped rather than re-analysed, so a folder can be re-run safely after an earlier run wrote its results there. The test is mode-aware: `.msk` files are still read by `-readmask`, `-extunique` and `-combinemask`, and `.gff` files by `-readgff`; images and pangenome reports are never treated as input. The number skipped is reported at the start of the run.
 - **Options** follow the input path and may be given in any order. Each argument is parsed as a single token and matched exactly: names are case-insensitive and a leading dash is optional (`joint`, `-joint`, and `--joint` are equivalent). An unrecognised option is reported on stderr and skipped.
 - **Output folder** is set with `-out=<path>` (default: the input file's folder). There is no positional output argument.
 - No additional dependencies are required.
@@ -248,7 +280,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `sln=N` | Minimum repeat block length (bp) | `80` |
 | `image=WxH` | Output image dimensions (pixels) | Auto |
 | `imgx=N` | Image width scaling factor (range: 1–30; 1 = maximum compression, 20–30 = stretched) | `10` |
-| `flanks=N` (alias `flangs=N`) | Extend each repeat block by N bp on both sides | `0` |
+| `flanks=N` (alias `flangs=N`) | Extend each repeat block by N bp on both sides (range: 0–1000; values outside it are clamped) | `0` |
 | `gap=N` | Maximum gap (bp) when merging adjacent repeated k-mers into one block | `2 × kmer` |
 | `-seqshow` | Include repeat sequences in the annotation table | Off |
 | `-nossr` | Disable simple-sequence-repeat (SSR) detection | On (detection enabled) |
@@ -257,6 +289,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `-vector` | Cluster by 4-mer composition profile, compared by cosine against a chance floor calibrated per length scale from the run's own data; long seeds are matched window-by-window. Requires no per-block k-mer index, and on the sequences tested groups diverged copies that share no exact k-mer. See [Clustering measures](#clustering-measures) | Default measure |
 | `-contain` | Cluster by asymmetric k-mer containment: groups size-disparate homologous blocks (a short element within a longer one) and reverse-complement copies. Builds a per-block k-mer index costing ~8 bytes per distinct k-mer per block, so size `-Xmx` accordingly. No effect in `-homology`. See [Clustering measures](#clustering-measures) | Not selected |
 | `-help` | Show the usage guide and exit (aliases: `--help`, `-h`, `-?`, `/?`, `/h`, `/help`, and others — see [Troubleshooting](#troubleshooting)) | — |
+| `-version` | Print the release identifier (e.g. `TotalRepeats 4.1.0`) and exit (aliases: `--version`, `-v`). The same identifier is printed at the start of every run and written into the header of every annotation table | — |
 
 `-vector` and `-contain` are mutually exclusive; if both are supplied, `-contain` takes precedence. The leading dash is optional and names are case-insensitive: `-kmer=19`, `kmer=19` and `--KMER=19` are equivalent.
 
@@ -264,17 +297,21 @@ When working with large genomes, allocate additional heap memory using JVM flags
 
 | Option | Description |
 |---|---|
-| `-collate` | Comparative analysis — synchronized repeat clustering across multiple files. Produces per-file reports, a combined report, and a pangenome report (see [Comparing the comparative modes](#comparing-the-comparative-modes)) |
-| `-joint` | Comparative analysis where all target sequences are treated as a single combined search space — repeat identification is performed over the whole set, then clustered jointly. Produces per-file reports and a pangenome report (see [Comparing the comparative modes](#comparing-the-comparative-modes)) |
-| `-combinemask` | Comparative analysis with mask-based detection — synchronized clustering across files for masking-mode comparison and pangenome studies. Produces per-file reports, a combined report, and a pangenome report; no per-file masked FASTA |
-| `-homology` | Mask all homologous regions to highlight unique sequences between genomes |
+| `-collate` 📁 | Comparative analysis — synchronized repeat clustering across multiple files. Produces per-file reports, a combined report, and a pangenome report (see [Comparing the comparative modes](#comparing-the-comparative-modes)) |
+| `-joint` 📁 | Comparative analysis where all target sequences are treated as a single combined search space — repeat identification is performed over the whole set, then clustered jointly. Produces per-file reports and a pangenome report (see [Comparing the comparative modes](#comparing-the-comparative-modes)) |
+| `-combinemask` 📁 | Comparative analysis with mask-based detection — synchronized clustering across files for masking-mode comparison and pangenome studies. Produces per-file reports, a combined report, and a pangenome report; no per-file masked FASTA |
+| `-homology` 📁 | Mask all homologous regions to highlight unique sequences between genomes |
+| `-pangroup=<file\|record>` | What one *genome* is in the pangenome report of the three comparative modes: all records of an input file together (`file`, the default — a multi-chromosome assembly stays one genome) or every FASTA record on its own (`record`). See [Pangenome report](#pangenome-report) |
 | `-amask` | Perform masking via pairwise sequence alignment (instead of k-mer-based) |
 | `-readmask` | Import existing mask files for clustering, annotation, and visualization |
 | `-readgff` | Import GFF annotation files for direct visualization |
 | `-extract` | Split a multi-entry FASTA into individual files (one per sequence) |
+| `-extunique` | Extract the unmasked (UPPERCASE) blocks of a masked sequence — the unique, non-repetitive regions left by a previous run (see [`-extunique`](#-extunique--extract-unique-regions-from-a-mask)) |
 | `-maskscomp` | Compare masked outputs from different tools or pipelines |
 | `-out=<path>` | Path to output folder (default: the input file's folder) |
-| `-lib=<path>` | Annotate repeats with an external library (Repbase, Dfam, or custom FASTA) |
+| `-lib=<path>` (alias `-ref=<path>`) | Annotate repeats with an external library (Repbase, Dfam, or custom FASTA) |
+
+> 📁 **These four modes require a directory as input.** Comparative analysis is only triggered when the first argument is a folder; if it is a single file, the flag is ignored without a warning and an ordinary single-file analysis is run — even when that file holds many FASTA records. To compare the records of one multi-entry FASTA, split it first with `-extract` and point TotalRepeats at the resulting folder.
 
 ---
 
@@ -473,7 +510,7 @@ The default (`-vector`) suits typical genome-scale runs, which combine many bloc
 
 ### `-lib=` — External Repeat Library
 
-Annotate detected repeat families against a curated database. TotalRepeats does **not** ship with libraries — download them separately:
+Annotate detected repeat families against a curated database. `-ref=<path>` is accepted as an alias; if both are given, `-lib=` wins. TotalRepeats does **not** ship with libraries — download them separately:
 
 | Source | URL | Notes |
 |---|---|---|
@@ -487,7 +524,7 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar genome.fasta -lib=/path/to/library.re
 
 ### Comparing the comparative modes
 
-All three comparative modes cluster repeats *jointly* across the input files, and all three now produce per-file reports, a combined report, and a pangenome report. They differ mainly in how repeats are detected and in which per-file files are written:
+All three comparative modes cluster repeats *jointly* across the input files, and all three now produce per-file reports, a combined report, and a pangenome report. All three — like `-homology` — require the input path to be a **directory**; passed a single file, they are ignored without a warning. They differ mainly in how repeats are detected and in which per-file files are written:
 
 | Mode | Repeat detection | Combined image | Per-file outputs | Pangenome | Typical use |
 |---|---|---|---|---|---|
@@ -517,24 +554,34 @@ java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/sequences/ -collate
 | `<file>.gff`, `<file>.png`, `<file>.svg` | Per-file annotation and images for each input sequence |
 | `<file>.msk` | Per-file soft-masked FASTA |
 | `<report>.gff`, `<report>.svg` | Combined annotation and image (SVG) across all sequences |
-| `<report>_pangenome.txt` | Pangenome summary (see below) |
-| `<report>_pangenome.tsv` | Repeat-family presence/absence matrix |
+| `<report>_pangenome.txt` | Pangenome summary (see [Pangenome report](#pangenome-report)) |
+| `<report>_pangenome.tsv` | Repeat-family copy-number matrix (families × genomes) with category, tier, presence pattern and copy-number statistics |
+| `<report>_pangenome_bp.tsv` | The same matrix in covered bp |
+| `<report>_pangenome_distance.tsv` | Square Jaccard-distance matrix between genomes |
+| `<report>_pangenome.nwk` | UPGMA tree of the genomes (Newick, with branch lengths) |
+| `<report>_pangenome.svg` | Four-panel pangenome figure |
 
-**Pangenome report.** Using the synchronized clustering, each repeat family (cluster) — `CRP`, `UCRP` and `STR` alike, irrespective of whether it was annotated against an external library — is mapped back to the sequences it occurs in and classified as:
+### Pangenome report
 
-- **core** — present in *all* analysed sequences (shared content);
-- **accessory** (shell) — present in some but not all sequences;
-- **unique** (cloud) — present in a single sequence (differing content).
+Every multi-genome comparative run (`-collate`, `-joint`, `-combinemask`) ends with a pangenome analysis of the jointly clustered repeat families. A **genome** is, by default, one input file: all records of a multi-record FASTA — chromosomes, contigs, plasmids — are counted together, so a folder of assemblies compares assemblies, not chromosomes. Pass `-pangroup=record` to treat every FASTA record as a genome instead (a folder holding a single multi-record file falls back to this automatically, since one file is no pangenome). Each family (`CRP` cluster, with its `ClusterID` as in the `.gff`) is mapped back to the genomes it occurs in, giving a copy-number profile over the genomes; `UCRP` and `STR` content is reported per genome as aggregates. From the profiles the report derives:
 
-`<report>_pangenome.txt` reports the core/accessory/unique breakdown, the family-frequency spectrum (number of families present in exactly *k* sequences), per-sequence statistics (CRP / UCRP / STR content), the genome-specific (unique) families, and a pairwise shared-family matrix with Jaccard similarity. `<report>_pangenome.tsv` is a machine-readable presence/absence matrix — one row per family, one column per sequence — suitable for downstream analysis and plotting. The `ClusterID` column matches the GFF3 `ClusterID`, so the reports cross-reference each other.
+- **Classification.** Each family is **core** (present in *all* genomes), **accessory** (in some) or **unique** (in exactly one). Because these three classes get coarse once the genome count grows, every family also carries the four-tier label used by bacterial pangenome tools: **core** ≥ 99 % of genomes, **soft-core** 95–99 %, **shell** 15–95 %, **cloud** < 15 %.
+- **Family frequency spectrum** — the number (and bp) of families present in exactly *k* genomes: the classic U-shaped pangenome curve.
+- **Rarefaction and openness.** The expected pangenome size and core size when *n* genomes are sampled, for *n* = 1 … *N*. These are computed **exactly** from the frequency spectrum — the average over all *N*! orderings of the genomes — rather than by random permutations, so the curves are reproducible to the last digit. The number of new families contributed by the *n*-th genome is fitted to Heaps' law (Tettelin *et al.* 2008), *n*(*N*) = κ·*N*^−α: **α ≤ 1 marks an open pangenome** (new families keep appearing), **α > 1 a closed one**. The fit needs at least three genomes and is reported as an estimate below five.
+- **Genome distances and tree.** For every genome pair: shared and union family counts, **Jaccard** similarity over all families and over the accessory families alone (core families are shared by definition and only compress the differences), and **Bray–Curtis** dissimilarity over copy numbers, which is sensitive to family expansions that presence/absence cannot see. A **UPGMA** tree built on the Jaccard distance is written in Newick format for any tree viewer, and the square distance matrix as TSV.
+- **Presence patterns.** Families are grouped by the exact set of genomes they occur in (e.g. `1101` over four genomes), with the number of families and bp per pattern — the input of an UpSet plot, and the quickest way to see which genome subsets share lineage-specific repeats.
+- **Copy-number variation.** The core families whose copy number varies most between genomes (coefficient of variation, min/max, fold range), and per-genome **expansions**: families with at least twice the mean copy number of the other genomes and at least three extra copies.
+- **Per-genome summary** — genome length, families present by class, bp of core / accessory / unique content, and `UCRP` / `STR` counts and bp with the percentage of the genome they cover.
 
-The pangenome report is generated automatically for any multi-sequence comparative run (`-collate`, `-joint`, or `-combinemask`).
+`<report>_pangenome.txt` is the human-readable summary of all of the above. `<report>_pangenome.tsv` is a machine-readable matrix with one row per family (plus an `STR` and a `UCRP` aggregate row) and one column per genome holding the copy number; it keeps the column layout of earlier releases and appends `Tier`, `Pattern`, `MinCopies`, `MaxCopies`, `MeanCopies` and `CV`. `<report>_pangenome_bp.tsv` holds the same matrix in covered bp. The figure `<report>_pangenome.svg` shows the rarefaction curves with the Heaps' exponent, the frequency spectrum, the per-genome composition, and a families × genomes presence/absence map under the UPGMA tree (when there are more families than drawable rows, consecutive families are binned and cell opacity shows the fraction present). All numbers use `.` as the decimal separator regardless of the system locale.
+
+> **What counts as a family.** A repeat is detected only where it has at least two copies in the search space — per record in `-collate` and `-combinemask`, across the whole set in `-joint`. Single-copy sequence that two genomes merely share therefore does not form a family and is not part of this pangenome; use `-homology` to mask shared sequence directly.
 
 ### `-combinemask` — Mask-Based Comparative Analysis
 
 Performs pangenome-scale comparative analysis with mask-based detection. Enables synchronized clustering and annotation across assemblies, and supports comparing different masking strategies or parameters.
 
-Like `-collate`, it writes an **individual annotation table + PNG + SVG per input file**, a **combined table + SVG**, and a **pangenome report** (`_pangenome.txt` / `_pangenome.tsv`). It does not write per-file masked FASTA. See [Comparing the comparative modes](#comparing-the-comparative-modes).
+Like `-collate`, it writes an **individual annotation table + PNG + SVG per input file**, a **combined table + SVG**, and the full **pangenome report** (see [Pangenome report](#pangenome-report)). It does not write per-file masked FASTA. See [Comparing the comparative modes](#comparing-the-comparative-modes).
 
 ```bash
 java -Xms16g -Xmx32g -jar TotalRepeats.jar /path/to/sequences/ -combinemask
@@ -591,6 +638,25 @@ Splits a multi-entry FASTA file into separate files (one per sequence record). U
 java -jar TotalRepeats.jar multi_entry.fasta -extract
 ```
 
+### `-extunique` — Extract Unique Regions from a Mask
+
+The inverse of the mask: takes a soft-masked FASTA (a `.msk` file from an earlier run, or any sequence where repeats are lowercase) and writes out the **UPPERCASE** stretches — the unique, non-repetitive sequence.
+
+Neighbouring uppercase runs separated by no more than `gap=` bases are merged, and only runs longer than `sln=` are kept, so both parameters control the result:
+
+```bash
+java -jar TotalRepeats.jar genome.fasta.msk -extunique sln=100 gap=40
+```
+
+The output is a FASTA-like file named `<input>.report` (`<input>_N.report` per record for a multi-entry input). Each extracted region carries its coordinates in the header, 1-based and inclusive:
+
+```
+>12345-67890
+ATCGATCGATCG...
+```
+
+Unlike `-homology`, which computes the masking itself, `-extunique` only reads an existing mask.
+
 ### `-maskscomp` — Compare Masking Tools
 
 Compares masked outputs from different software tools (e.g., TotalRepeats vs. RepeatMasker). Requires a **tab-delimited** control file listing sequence/mask pairs:
@@ -629,7 +695,7 @@ ATCGATCGATCGATCGATCGATCG...
 | **Repeat landscape** | PNG / SVG | Vector and raster visualization of repeat distribution |
 | **Summary statistics** | Text | Genome-wide repeat content, class breakdown, and family counts |
 | **Per-file reports** *(comparative modes)* | Annotation table / PNG / SVG | Individual annotation and images for each input file, alongside the combined output |
-| **Pangenome report** *(combine modes)* | Text + TSV | Core / accessory / unique repeat-family classification and presence/absence matrix |
+| **Pangenome report** *(combine modes)* | Text + TSV + Newick + SVG | Core / soft-core / shell / cloud classification, rarefaction and Heaps' law openness, genome distances with a UPGMA tree, presence patterns, copy-number variation, copy-number and bp matrices, and a four-panel figure (see [Pangenome report](#pangenome-report)) |
 
 ### Repeat Annotation Table
 
@@ -644,10 +710,15 @@ Repeat annotations are written as a tab-delimited table with a header line. The 
 | 5 | **Stop** | End position (1-based, inclusive) |
 | 6 | **Length** | Repeat element length (bp) |
 | 7 | **Strand** | `+` (forward) or `-` (reverse complement) |
-| 8 | **Phase** | Not used |
+| 8 | **Phase** | Header name only — no value is ever written in this field |
 | 9 | **Sequence** | Repeat sequence; written **only** when `-seqshow` is given |
 
-Without `-seqshow` the file has eight columns. The file extension remains `.gff` for compatibility with existing workflows.
+**Parse by position, not by header name.** Data rows always carry seven values followed by the sequence field, so the `Phase` column exists in the header but never in the rows:
+
+- **without `-seqshow`** — the header lists eight names and each row has eight tab-separated fields, the last (`Phase`) empty;
+- **with `-seqshow`** — the header lists nine names but each row still has eight fields, so the repeat sequence occupies field 8, under the `Phase` heading. A parser that maps fields by header name will read the sequence as `Phase`; take the **last** field instead.
+
+The file extension remains `.gff` for compatibility with existing workflows.
 
 ---
 
@@ -762,7 +833,7 @@ java -version
 If multiple Java versions are installed, set `JAVA_HOME` explicitly:
 
 ```bash
-export JAVA_HOME=/path/to/jdk-25
+export JAVA_HOME=/path/to/jdk-26
 export PATH="$JAVA_HOME/bin:$PATH"
 ```
 
@@ -823,7 +894,7 @@ Any organism with a DNA sequence. TotalRepeats operates on nucleotide sequence a
 RepeatMasker relies on a curated library (Repbase/Dfam) and performs homology-based detection — it can only find repeats represented in its database. TotalRepeats detects repeats *de novo*, without prior annotation, although sensitivity falls as copies diverge: under simulation, detection at `kmer=19` recovered few copies beyond ~25% substitution (see [Benchmark](#benchmark-sensitivity-and-speed-on-simulated-genomes)). The approaches are complementary: *de novo* detection for discovery, library-based search for classification. The `-maskscomp` option lets you compare their outputs directly.
 
 **Q: Can I process multiple genomes at once?**
-Yes. Point TotalRepeats at a directory containing FASTA files, and it will process all of them. Add `-collate` (or `-joint` / `-combinemask`) for synchronized cross-genome repeat clustering — each of these produces a per-file report and image for every input, a combined report and image, and a pangenome report (core / accessory / unique families plus a presence/absence matrix). See [Comparing the comparative modes](#comparing-the-comparative-modes).
+Yes. Point TotalRepeats at a directory containing FASTA files, and it will process all of them. Add `-collate` (or `-joint` / `-combinemask`) for synchronized cross-genome repeat clustering — each of these produces a per-file report and image for every input, a combined report and image, and a pangenome report (core / accessory / unique and core / soft-core / shell / cloud families, rarefaction curves with Heaps' law, genome distances and a UPGMA tree, presence patterns, copy-number variation, matrices and a figure). Each input file counts as one genome; `-pangroup=record` compares FASTA records instead. See [Comparing the comparative modes](#comparing-the-comparative-modes) and [Pangenome report](#pangenome-report).
 
 **Q: What is the maximum genome size TotalRepeats can handle?**
 TotalRepeats has been tested on genomes exceeding 20 Gb (e.g., *Pleurodeles waltl*). A single sequence (one FASTA record) is capped at 2 GB by Java's array/`String` limit, but in the comparative modes the *combined* size across files is not — those modes concatenate virtually and use 64-bit coordinates. The practical limiting factor is available RAM, so allocate sufficient heap via `-Xms` / `-Xmx`.
@@ -844,23 +915,25 @@ By default, clustering is multithreaded — the pairwise comparison step runs ac
 **Ruslan Kalendar**
 📧 ruslan.kalendar@helsinki.fi
 
-🌐 **Online version:** (https://digitalgens.org/repeats.html)
+🌐 **Online version:** <https://digitalgens.org/repeats.html>
 💻 **Source code:** <https://github.com/rkalendar/TotalRepeats>
 
 ---
 
 ## Citation
 
-If you use TotalRepeats in your research, please cite the software and the online resource:
+If you use TotalRepeats in your research, please cite the software release you used. The release identifier is printed by `-version` and written into the header of every annotation table, so the version behind any result can always be recovered from the output itself. Machine-readable metadata are in [`CITATION.cff`](CITATION.cff) and [`.zenodo.json`](.zenodo.json).
 
-> Kalendar, R. *TotalRepeats: an integrated genome-wide platform for rapid de novo identification, classification, annotation, comparative analysis, and visualization of repetitive elements* [Computer software]. University of Helsinki. <https://github.com/rkalendar/TotalRepeats>
+> Kalendar, R. (2026). *TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families* (version 4.1.0) [Computer software]. University of Helsinki. <https://github.com/rkalendar/TotalRepeats>. Zenodo: <!-- DOI of the archived release; the 2024 deposit is https://doi.org/10.5281/zenodo.13735264 -->
 
 ```bibtex
-@software{Kalendar_TotalRepeats,
-  author = {Kalendar, Ruslan},
-  title  = {{TotalRepeats: an integrated genome-wide platform for rapid de novo identification, classification, annotation, comparative analysis, and visualization of repetitive elements}},
-  url    = {https://github.com/rkalendar/TotalRepeats},
-  note   = {Online version: (https://digitalgens.org/repeats.html)}
+@software{Kalendar_TotalRepeats_2026,
+  author  = {Kalendar, Ruslan},
+  title   = {{TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families}},
+  version = {4.1.0},
+  year    = {2026},
+  url     = {https://github.com/rkalendar/TotalRepeats},
+  note    = {Online version: https://digitalgens.org/repeats.html}
 }
 ```
 
