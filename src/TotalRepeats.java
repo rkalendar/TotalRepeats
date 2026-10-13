@@ -15,6 +15,11 @@ import java.util.Set;
 
 public class TotalRepeats {
 
+    /** Release identifier, printed by -version, in the help header, at the start of
+     *  every run and in the header of every annotation table, so that any output
+     *  file can be traced to the build that produced it. */
+    public static final String VERSION = "4.1.0";
+
     /** Boolean mode flags, canonical form: leading dashes stripped, lowercased. */
     private static final Set<String> KNOWN_FLAGS = Set.of(
             "amask", "nossr", "normal", "vector", "contain", "extunique",
@@ -23,10 +28,14 @@ public class TotalRepeats {
 
     /** key=value option keys, canonical form: leading dashes stripped, lowercased. */
     private static final Set<String> KNOWN_KEYS = Set.of(
-            "out", "lib", "ref", "kmer", "sln", "gap", "imgx", "flanks", "flangs", "image");
+            "out", "lib", "ref", "kmer", "sln", "gap", "imgx", "flanks", "flangs", "image", "pangroup");
 
     public static void main(String[] args) throws IOException {
         if (args.length > 0) {
+            if (isVersionRequest(args)) {
+                System.out.println("TotalRepeats " + VERSION);
+                return;
+            }
             if (isHelpRequest(args)) { // -help, --help, -h, -?, /?, /h, help, usage, ...
                 printHelp();
                 return;
@@ -85,7 +94,7 @@ public class TotalRepeats {
             boolean maskonly = false;      // The process of masking is performed without the use of clustering or annotation.
             boolean seqshow = false;
             boolean fastclustering = true; // Multithreaded clustering: ON by default; disabled by the -normal flag
-            int clusterMode = SequencesClustering.MODE_CONTAIN;   // k-mer containment (-contain) by default; -vector selects the 4-mer ratio profile
+            int clusterMode = SequencesClustering.MODE_PROFILE;   // 4-mer ratio profile (-vector) by default; -contain selects k-mer containment
             boolean readmask = false;       // reading masked FASTA for clustering and annotation
             boolean extupmask = false;      // extraction of the UPPER blocks of the masked chromosome contain unique sequences.
             boolean readgff = false;
@@ -135,11 +144,11 @@ public class TotalRepeats {
             if (flagSet.contains("normal")) { // Force single-threaded clustering. Clustering is multithreaded by default, which significantly accelerates grouping sequences into individual clusters; -normal disables that and uses the single-threaded path.
                 fastclustering = false;
             }
-            if (flagSet.contains("contain")) { // Cluster by asymmetric k-mer containment: groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies. This is the DEFAULT; the flag is still accepted so existing command lines keep working.
-                clusterMode = SequencesClustering.MODE_CONTAIN;
-            }
-            if (flagSet.contains("vector")) { // Cluster by the 4-mer ratio profile (whole-block composition) instead. Fast, near-zero memory, and finds copies too diverged to share an exact k-mer — which containment cannot. Checked after -contain, so -vector wins when both are given. No effect in -homology (which does not cluster).
+            if (flagSet.contains("vector")) { // The 4-mer ratio profile (whole-block composition). This is now the DEFAULT; the flag is still accepted so existing command lines keep working. Fast, near-zero memory, and finds copies too diverged to share an exact k-mer — which containment cannot. No effect in -homology (which does not cluster).
                 clusterMode = SequencesClustering.MODE_PROFILE;
+            }
+            if (flagSet.contains("contain")) { // Cluster by asymmetric k-mer containment instead: groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies. Checked after -vector, so -contain wins when both are given.
+                clusterMode = SequencesClustering.MODE_CONTAIN;
             }
             if (flagSet.contains("extunique")) { // -seqlen>100
                 extupmask = true;
@@ -173,6 +182,18 @@ public class TotalRepeats {
             }
             if (flagSet.contains("seqshow")) {
                 seqshow = true;
+            }
+            // What one genome is in the pangenome report of a combined run: an input
+            // file (all its records together — the default) or every record on its own.
+            boolean panByFile = true;
+            if (opts.containsKey("pangroup")) {
+                String v = opts.get("pangroup").trim().toLowerCase();
+                switch (v) {
+                    case "file", "genome" -> panByFile = true;
+                    case "record", "seq", "sequence" -> panByFile = false;
+                    default -> System.err.println("Warning: -pangroup=" + v
+                            + " not recognised (use file or record); using file");
+                }
             }
             imaged = clamp(intOpt(opts, imaged, "imgx"), 1, 30);            // matches documented -imgx=<1-30>
             flanksshow = clamp(intOpt(opts, flanksshow, "flanks", "flangs"), 0, 1000);
@@ -226,7 +247,7 @@ public class TotalRepeats {
                     }
 
                     if (combine > 0) {
-                        TotalRepeatsCombinedResult(combine, reffile, filelist, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, clusterMode, ssrdetect, outdir);
+                        TotalRepeatsCombinedResult(combine, reffile, filelist, kmer, seqlen, gap, flanksshow, imaged, seqshow, width, hight, fastclustering, clusterMode, ssrdetect, outdir, panByFile);
                         return;
                     }
 
@@ -336,6 +357,19 @@ public class TotalRepeats {
      * {@code -?}, {@code --?}, {@code /?}, {@code /h}, {@code /help},
      * {@code help}, {@code ?}, {@code -usage}, {@code --usage}, {@code /usage}.
      */
+    private static boolean isVersionRequest(String[] args) {
+        for (String arg : args) {
+            if (arg != null) {
+                switch (arg.trim().toLowerCase()) {
+                    case "-version", "--version", "-v", "/version", "version" -> {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     private static boolean isHelpRequest(String[] args) {
         if (args == null) {
             return false;
@@ -358,7 +392,7 @@ public class TotalRepeats {
         String jarMem = "java -jar -Xms16g -Xmx32g /path/to/TotalRepeats.jar";
 
         String[] lines = {
-            "TotalRepeats (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi)",
+            "TotalRepeats " + VERSION + " (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi)",
             "https://github.com/rkalendar/TotalRepeats",
             "",
             "BASIC USAGE:",
@@ -388,16 +422,16 @@ public class TotalRepeats {
             "  -seqshow             Extract and output repeat sequences (default: off)",
             "  -nossr               Disable SSR (Simple Sequence Repeat) detection (default: on)",
             "  -normal              Use single-threaded repeat classification (default: multithreaded)",
-            "  -contain             Cluster by asymmetric k-mer containment. This is the DEFAULT;",
-            "                       the flag is still accepted so that existing command lines keep",
-            "                       working. Groups blocks of very different length (a short element",
-            "                       contained in a long one) and reverse-complement copies. Costs",
-            "                       ~8 bytes per distinct k-mer per block, so a large combined run",
-            "                       wants -Xmx; no effect in -homology mode, which does not cluster",
-            "  -vector              Cluster by the 4-mer ratio profile (whole-block composition)",
-            "                       instead. A symmetric composition measure: fast, needs almost no",
-            "                       memory, and finds copies too diverged to share an exact k-mer —",
-            "                       which containment cannot",
+            "  -vector              Cluster by the 4-mer ratio profile (whole-block composition).",
+            "                       This is now the DEFAULT; the flag is still accepted so that",
+            "                       existing command lines keep working. A symmetric composition",
+            "                       measure: fast, needs almost no memory, and finds copies too",
+            "                       diverged to share an exact k-mer — which containment cannot",
+            "  -contain             Cluster by asymmetric k-mer containment instead. Groups blocks of",
+            "                       very different length (a short element contained in a long one)",
+            "                       and reverse-complement copies. Costs ~8 bytes per distinct k-mer",
+            "                       per block, so a large combined run wants -Xmx; no effect in",
+            "                       -homology mode, which does not cluster",
             "",
             "COMPARATIVE / GENOME-WIDE OPTIONS (these four require a FOLDER as input;",
             "with a single file they are ignored and an ordinary single-file run is performed):",
@@ -406,6 +440,10 @@ public class TotalRepeats {
             "  -combinemask         Genome-wide comparative analysis using masking files as input",
             "  -homology            Comparative Homology Masking: cross-file analysis of homologous",
             "                       regions and repeats between target sequences (e.g. chromosomes)",
+            "  -pangroup=<file|record>",
+            "                       What one genome is in the pangenome report of -collate / -joint /",
+            "                       -combinemask: all records of an input file together (file, the",
+            "                       default) or every FASTA record on its own (record)",
             "",
             "INPUT / OUTPUT OPTIONS:",
             "  -readmask            Load a masking file (single FASTA entry) for clustering and",
@@ -436,8 +474,8 @@ public class TotalRepeats {
             "  # Analyse all FASTA files in a directory:",
             "  java -jar -Xms16g -Xmx32g /path/to/TotalRepeats.jar /data/genomes/Aegilops_tauschii/",
             "",
-            "  # Pangenome run clustering by 4-mer composition profile instead of containment:",
-            "  " + jarMem + " /data/genomes/ -joint -vector",
+            "  # Pangenome run grouping size-disparate homologous repeats (containment):",
+            "  " + jarMem + " /data/genomes/ -joint -contain",
             "",
             "NOTE: For sequences larger than 2 GB, increase heap memory with -Xmx (e.g. -Xmx64g).",};
 
@@ -503,8 +541,8 @@ public class TotalRepeats {
         if (n.endsWith(".png") || n.endsWith(".svg")) {
             return true;                                  // images: never an input
         }
-        if (n.endsWith("_pangenome.txt") || n.endsWith("_pangenome.tsv")) {
-            return true;                                  // pangenome reports
+        if (n.contains("_pangenome") && (n.endsWith(".txt") || n.endsWith(".tsv") || n.endsWith(".nwk"))) {
+            return true;                                  // pangenome reports, matrices and tree
         }
         if (n.endsWith(".report")) {
             // -extunique writes the extracted unique blocks as FASTA records under
@@ -541,13 +579,17 @@ public class TotalRepeats {
 
     private static void TotalRepeatsCombinedResult(int combine, String reffile, String[] filelist,
             int kmer, int seqlen, int gap, int flanksshow, int imgx, boolean seqshow,
-            int width, int hight, boolean fst, int clusterMode, boolean ssr, String outdir) throws IOException {
+            int width, int hight, boolean fst, int clusterMode, boolean ssr, String outdir,
+            boolean panByFile) throws IOException {
 
         long startTime = System.nanoTime();
 
         List<String> seqs = new ArrayList<>();
         List<String> names = new ArrayList<>();
         List<String> fnames = new ArrayList<>();
+        // For the pangenome report: which input file each record came from.
+        List<Integer> recordFile = new ArrayList<>();
+        List<String> fileLabels = new ArrayList<>();
 
         String combinedFile = getReportFile(filelist, outdir);
         if (combinedFile != null) {
@@ -571,6 +613,10 @@ public class TotalRepeats {
 
                     names.addAll(rf.getNames());
                     seqs.addAll(rf.getSequences());
+                    for (int i = 0; i < rf.getSequenceCount(); i++) {
+                        recordFile.add(fileLabels.size());
+                    }
+                    fileLabels.add(new File(nfile).getName());
 
                     if (rf.getSequenceCount() > 1) {
                         for (int i = 0; i < rf.getSequenceCount(); i++) {
@@ -590,7 +636,7 @@ public class TotalRepeats {
             }
         }
 
-        System.out.println("\nRunning...");
+        System.out.println("\nTotalRepeats " + VERSION + " - running...");
         System.out.println("kmer=" + kmer);
         System.out.println("Repeat block length =" + seqlen);
 
@@ -622,6 +668,10 @@ public class TotalRepeats {
         s2.SetReportFile(combinedFile);
         s2.SetSSRdetection(ssr);
         s2.SetClusterMode(clusterMode);
+        if (panByFile) {
+            s2.SetPangenomeGroups(recordFile.stream().mapToInt(Integer::intValue).toArray(),
+                    fileLabels.toArray(String[]::new));
+        }
 
         Path path = Paths.get(fnms[0]);
         Path parentDir = path.getParent();
@@ -678,7 +728,7 @@ public class TotalRepeats {
                 return;
             }
 
-            System.out.println("\nRunning...");
+            System.out.println("\nTotalRepeats " + VERSION + " - running...");
             System.out.println("kmer=" + kmer);
             System.out.println("Repeat block length =" + seqlen);
             System.out.println("Target file: " + infile);
@@ -745,7 +795,7 @@ public class TotalRepeats {
                 return;
             }
 
-            System.out.println("\nRunning...");
+            System.out.println("\nTotalRepeats " + VERSION + " - running...");
             System.out.println("Target file: " + inputFile);
             if (rf.getSequenceCount() > 1) {
                 System.out.println("Target FASTA sequences = " + rf.getSequenceCount());
@@ -768,7 +818,7 @@ public class TotalRepeats {
         String parentDir = resolveOutputDir(inputFile, outdir);
 
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile)); BufferedWriter report = new BufferedWriter(new FileWriter(parentDir + File.separator + "report.txt"))) {
-            System.out.println("\nRunning...");
+            System.out.println("\nTotalRepeats " + VERSION + " - running...");
             long l = 0;
             long r = 0;
             String line;
@@ -822,7 +872,7 @@ public class TotalRepeats {
     private static void ComparisionMaskFiles(String inputFile, String outdir) {
         String parentDir = resolveOutputDir(inputFile, outdir);
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
-            System.out.println("\nRunning...");
+            System.out.println("\nTotalRepeats " + VERSION + " - running...");
             String line;
             StringBuilder sb = new StringBuilder();
             String saveFile = parentDir + File.separator + "result.txt";
@@ -856,7 +906,7 @@ public class TotalRepeats {
                 return;
             }
 
-            System.out.println("\nRunning...");
+            System.out.println("\nTotalRepeats " + VERSION + " - running...");
             System.out.println("Target file: " + inputFile);
             if (rf.getSequenceCount() > 1) {
                 System.out.println("Target FASTA sequences = " + rf.getSequenceCount());
@@ -896,7 +946,7 @@ public class TotalRepeats {
 
     private static void ReadingGffFile(String inputGFFfile, int imgx, int width, int hight, String outdir) {
         try {
-            System.out.println("\nRunning...");
+            System.out.println("\nTotalRepeats " + VERSION + " - running...");
             System.out.println("GFF file: " + inputGFFfile);
             TotalRepeatsSearching s2 = new TotalRepeatsSearching();
             s2.SetFileName(resolveOutputDir(inputGFFfile, outdir) + File.separator + new File(inputGFFfile).getName());

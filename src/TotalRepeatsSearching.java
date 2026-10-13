@@ -1,8 +1,6 @@
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +29,17 @@ public final class TotalRepeatsSearching {
 
     public void SetPangenome(boolean b) {
         this.pangenome = b;
+    }
+
+    /**
+     * Defines what one genome is for the pangenome report of a combined run.
+     * {@code recordGenome[i]} is the genome (input file) index of sequence record
+     * {@code i}, and {@code genomeNames} names each genome. Pass {@code null} to
+     * treat every record as its own genome.
+     */
+    public void SetPangenomeGroups(int[] recordGenome, String[] genomeNames) {
+        this.panRecordGenome = recordGenome;
+        this.panGenomeNames = genomeNames;
     }
 
     public void SetFileName(String a) {
@@ -982,7 +991,7 @@ public final class TotalRepeatsSearching {
         return new AnnotationWriter(
                 new AnnotationWriter.Inputs(seq, sname, filesPath, filePath, nseq, bb, refclust, refsname),
                 new AnnotationWriter.Stats(kmerln, minlenseq, flanks, gap, SeqShow,
-                        repeatslen, ssrglobal, gapslen, gaps, maskduration, startTime, pangenome));
+                        repeatslen, ssrglobal, gapslen, gaps, maskduration, startTime));
     }
 
     private void SavingGFF(String reportfile, int n, int l, int[] h) throws IOException {
@@ -993,8 +1002,30 @@ public final class TotalRepeatsSearching {
         annotations().writeTableLong(reportfile, l, h, bbL, store);
     }
 
+    /**
+     * Pangenome analysis of the combined clustering. The clusters and record
+     * boundaries are passed in global long coordinates, so the report is
+     * produced at any size. Records are grouped into genomes as configured by
+     * {@link #SetPangenomeGroups}; when that grouping yields fewer than two
+     * genomes (a single multi-record file), every record is treated as a genome
+     * instead, so a one-file run still gets its comparison. {@code l} is
+     * accepted for call-site uniformity across the combine modes.
+     */
     private void SavingPangenomeCombined(String reportBase, long[] seqslen, ArrayList<long[]> bbL, long l) throws IOException {
-        annotations().writePangenome(reportBase, seqslen, bbL, l);
+        if (!pangenome || bbL == null || nseq < 2 || seqslen == null || seqslen.length < nseq) {
+            return;
+        }
+        String base = (reportBase == null || reportBase.isEmpty()) ? filePath : reportBase;
+        PangenomeAnalysis pa;
+        if (panRecordGenome != null && panGenomeNames != null && panGenomeNames.length >= 2) {
+            pa = new PangenomeAnalysis(bbL, seqslen, sname, refclust, refsname, panRecordGenome, panGenomeNames);
+        } else {
+            if (panRecordGenome != null) {
+                System.out.println("Pangenome: all records come from one input file, so each record is treated as a genome.");
+            }
+            pa = new PangenomeAnalysis(bbL, seqslen, sname, refclust, refsname);
+        }
+        pa.write(base);
     }
 
     private void SavingSVG(String reportfile, int k, int n, int len, int dw, int dh, int[] seqslen) throws IOException {
@@ -1038,4 +1069,6 @@ public final class TotalRepeatsSearching {
     private String[] refsname;
     private ArrayList<int[]> bb;
     private boolean pangenome = true;   // generate pangenome (core/accessory/unique) report in combined runs
+    private int[] panRecordGenome;      // record -> genome (input file) index for the pangenome report; null = each record is a genome
+    private String[] panGenomeNames;    // one name per genome when panRecordGenome is set
 }

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 /**
- * Writes the repeat annotation table and the pangenome report for one run.
+ * Writes the repeat annotation table for one run.
  *
  * <p>Extracted from {@code TotalRepeatsSearching}, where these writers read
  * nineteen mutable instance fields of the enclosing class. Those fields were in
@@ -34,7 +34,7 @@ final class AnnotationWriter {
     /** Run parameters and coverage statistics, as printed in the report header. */
     record Stats(int kmerln, int minlenseq, int flanks, int gap, boolean seqShow,
             double repeatslen, double ssrglobal, double gapslen, double gaps,
-            long maskduration, long startTime, boolean pangenome) {
+            long maskduration, long startTime) {
     }
 
     // Unpacked into fields whose names match the originals, so the writer bodies
@@ -59,7 +59,6 @@ final class AnnotationWriter {
     private final double gaps;
     private final long maskduration;
     private final long startTime;
-    private final boolean pangenome;
 
     AnnotationWriter(Inputs in, Stats st) {
         this.seq = in.seq();
@@ -82,7 +81,6 @@ final class AnnotationWriter {
         this.gaps = st.gaps();
         this.maskduration = st.maskduration();
         this.startTime = st.startTime();
-        this.pangenome = st.pangenome();
     }
 
     void writeTable(String reportfile, int n, int l, int[] h) throws IOException {
@@ -101,7 +99,7 @@ final class AnnotationWriter {
         try (FileWriter fileWriter = new FileWriter(reportfile); BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
             System.out.println("Saving report file: " + reportfile);
             StringBuilder sr = new StringBuilder();
-            sr.append("#TotalRepeats (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi) https://github.com/rkalendar/TotalRepeats\n");
+            sr.append("#TotalRepeats " + TotalRepeats.VERSION + " (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi) https://github.com/rkalendar/TotalRepeats\n");
             sr.append("#kmer=").append(kmerln).append("\n").append("#Minimal repeat block size=").append(minlenseq).append("\n");
             sr.append("#Sequence length (bp)=").append(l).append("\n");
             sr.append("#Sequence coverage by repeats=").append(String.format("%.2f", repeatslen)).append("%\n");
@@ -219,7 +217,7 @@ final class AnnotationWriter {
         try (FileWriter fileWriter = new FileWriter(reportfile); BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
             System.out.println("Saving report file: " + reportfile);
             StringBuilder sr = new StringBuilder();
-            sr.append("#TotalRepeats (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi) https://github.com/rkalendar/TotalRepeats\n");
+            sr.append("#TotalRepeats " + TotalRepeats.VERSION + " (2024-2026) by Ruslan Kalendar (ruslan.kalendar@helsinki.fi) https://github.com/rkalendar/TotalRepeats\n");
             sr.append("#kmer=").append(kmerln).append("\n").append("#Minimal repeat block size=").append(minlenseq).append("\n");
             sr.append("#Sequence length (bp)=").append(l).append("\n");
             sr.append("#Sequence coverage by repeats=").append(String.format("%.2f", repeatslen)).append("%\n");
@@ -317,20 +315,5 @@ final class AnnotationWriter {
                 }
             }
         }
-    }
-    /**
-     * Pangenomic analysis for the combined run. PangenomeAnalysis is now
-     * long-based, so the combined clusters/boundaries are passed straight
-     * through in global long coordinates and the report is produced at any size
-     * (no int-limit restriction). {@code l} is accepted for call-site
-     * uniformity across the combine modes.
-     */
-    void writePangenome(String reportBase, long[] seqslen, ArrayList<long[]> bbL, long l) throws IOException {
-        if (!pangenome || bbL == null || nseq < 2 || seqslen == null || seqslen.length < nseq) {
-            return;
-        }
-        String base = (reportBase == null || reportBase.isEmpty()) ? filePath : reportBase;
-        PangenomeAnalysis pa = new PangenomeAnalysis(bbL, seqslen, sname, refclust, refsname);
-        pa.write(base);
     }
 }
