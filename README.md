@@ -157,7 +157,7 @@ Latest additions to TotalRepeats:
 git clone https://github.com/rkalendar/TotalRepeats.git
 cd TotalRepeats
 
-# 2. Confirm Java 26+ is available
+# 2. Confirm Java 25+ is available
 java -version
 
 # 3. Run — no build step required
@@ -451,7 +451,7 @@ Two properties make the comparison between measures controlled. First, repeat **
 
 Scores are pairwise: *recall* is the fraction of truly homologous block pairs placed in one cluster, and *precision* the fraction of pairs placed in one cluster that are truly homologous.
 
-**Runtime** (seconds, wall clock, one run per condition — values are not averaged; 4 CPU cores, JDK 26, default parameters, measured on the current build after the dense-window optimisation described above. `-maskonly` isolates the shared detection stage, so the clustering columns are derived as total − `-maskonly` and are estimates):
+**Runtime** (seconds, wall clock, one run per condition — values are not averaged; 4 CPU cores, JDK 25, default parameters, measured on the current build after the dense-window optimisation described above. `-maskonly` isolates the shared detection stage, so the clustering columns are derived as total − `-maskonly` and are estimates):
 
 | Condition | Blocks | `-maskonly` | `-vector`, total | `-contain`, total | Clustering, `-vector` | Clustering, `-contain` |
 |---|---|---|---|---|---|---|
@@ -824,7 +824,7 @@ The recognised help flags are `-help`, `--help`, `-h`, `-?`, `/?`, `/h`, and `/h
 
 ### Java version errors
 
-Ensure Java 26 or higher is installed and active:
+Ensure Java 25 or higher is installed and active:
 
 ```bash
 java -version
@@ -833,7 +833,7 @@ java -version
 If multiple Java versions are installed, set `JAVA_HOME` explicitly:
 
 ```bash
-export JAVA_HOME=/path/to/jdk-26
+export JAVA_HOME=/path/to/jdk-25
 export PATH="$JAVA_HOME/bin:$PATH"
 ```
 
@@ -924,7 +924,7 @@ By default, clustering is multithreaded — the pairwise comparison step runs ac
 
 If you use TotalRepeats in your research, please cite the software release you used. The release identifier is printed by `-version` and written into the header of every annotation table, so the version behind any result can always be recovered from the output itself. Machine-readable metadata are in [`CITATION.cff`](CITATION.cff) and [`.zenodo.json`](.zenodo.json).
 
-> Kalendar, R. (2026). *TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families* (version 4.1.0) [Computer software]. University of Helsinki. <https://github.com/rkalendar/TotalRepeats>. Zenodo: <!-- DOI of the archived release; the 2024 deposit is https://doi.org/10.5281/zenodo.13735264 -->
+> Kalendar, R. (2026). *TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families* (version 4.1.1) [Computer software]. University of Helsinki. <https://github.com/rkalendar/TotalRepeats>. Zenodo: <!-- DOI of the archived release; the 2024 deposit is https://doi.org/10.5281/zenodo.13735264 -->
 
 ```bibtex
 @software{Kalendar_TotalRepeats_2026,
