@@ -741,7 +741,7 @@ public final class TotalRepeatsSearching {
                 // }
 
                 if (!MaskOnly && bb != null) {
-                    SavingGFF("", 0, l, new int[0]);
+                    SavingGFF("", i, l, new int[0]);
                     SavingPicture("", k, i, l, iwidth, iheight, new int[0]);
                     SavingSVG("", k, i, l, iwidth, iheight, new int[0]);//(int k, int n, int len, int dw, int dh, int[] seqslen)
                 }
@@ -794,7 +794,7 @@ public final class TotalRepeatsSearching {
                 }
 
                 if (!MaskOnly && bb != null) {
-                    SavingGFF("", 0, l, new int[0]);
+                    SavingGFF("", i, l, new int[0]);
                     SavingPicture("", k, i, l, iwidth, iheight, new int[0]);
                     SavingSVG("", k, i, l, iwidth, iheight, new int[0]);//(int k, int n, int len, int dw, int dh, int[] seqslen)
                 }

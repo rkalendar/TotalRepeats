@@ -140,38 +140,32 @@ final class AnnotationWriter {
 
                 for (int j = 0; j < z7.length - 1; j += 2) {
 
+                    // Bounds of the record that holds this block, so that the
+                    // flanks never run into a neighbouring record.
+                    int recStart = 0;
+                    int recEnd = Math.min(l, seq[n].length());
                     for (int w = 0; w < h.length; w++) {
                         if (h[w] > z7[j]) {
                             b = sname[w];
+                            recStart = (w > 0) ? h[w - 1] : 0;
+                            recEnd = Math.min(h[w], recEnd);
                             break;
                         }
                     }
 
                     String s0 = "";
-                    int x = z7[j] + Math.abs(z7[j + 1]) - 1;
+                    int x = z7[j] + Math.abs(z7[j + 1]) - 1;   // last base of the block (0-based)
                     if (SeqShow) {
-                        if (x > l) {
-                            s0 = seq[n].substring(z7[j]);
-                        } else {
-                            s0 = seq[n].substring(z7[j], x);
+                        // [z7[j], stop) is the whole block: Length bases, Start..Stop inclusive
+                        int stop = Math.min(x + 1, recEnd);
+                        if (stop > z7[j]) {
+                            s0 = seq[n].substring(z7[j], stop);
                         }
                         if (flanks > 0) {
-                            String s1 = "";
-                            String s2 = "";
-                            if (z7[j] - flanks > 0) {
-                                s1 = seq[n].substring(z7[j] - flanks, z7[j]).toUpperCase();
-                            } else {
-                                if (z7[j] > 1) {
-                                    s1 = seq[n].substring(1, z7[1] - 1).toUpperCase();
-                                }
-                            }
-                            if (x + flanks < l) {
-                                s2 = seq[n].substring(x, x + flanks).toUpperCase();
-                            } else {
-                                if (l - x > 0) {
-                                    s2 = seq[n].substring(x, l).toUpperCase();
-                                }
-                            }
+                            int fs = Math.max(recStart, z7[j] - flanks);
+                            int fe = Math.min(recEnd, stop + flanks);
+                            String s1 = (fs < z7[j]) ? seq[n].substring(fs, z7[j]).toUpperCase() : "";
+                            String s2 = (fe > stop) ? seq[n].substring(stop, fe).toUpperCase() : "";
                             s0 = s1 + s0 + s2;
                         }
                         if (z7[j + 1] < 0) {
@@ -258,41 +252,33 @@ final class AnnotationWriter {
 
                 for (int j = 0; j < z7.length - 1; j += 2) {
 
+                    // Bounds of the input sequence that holds this block (h holds the
+                    // cumulative global ends), so that the flanks never run into the
+                    // neighbouring sequence of the virtual concatenation.
+                    long recStart = 0;
+                    long recEnd = l;
                     for (int w = 0; w < h.length; w++) {
                         if (h[w] > z7[j]) {
                             b = sname[w];
+                            recStart = (w > 0) ? h[w - 1] : 0;
+                            recEnd = Math.min(h[w], l);
                             break;
                         }
                     }
 
                     String s0 = "";
-                    long x = z7[j] + Math.abs(z7[j + 1]) - 1;
+                    long x = z7[j] + Math.abs(z7[j + 1]) - 1;   // last base of the block (0-based)
                     if (SeqShow) {
-                        if (x > l) {
-                            s0 = store.substring(z7[j], l);
-                        } else {
-                            s0 = store.substring(z7[j], x);
+                        // [z7[j], stop) is the whole block: Length bases, Start..Stop inclusive
+                        long stop = Math.min(x + 1, recEnd);
+                        if (stop > z7[j]) {
+                            s0 = store.substring(z7[j], stop);
                         }
                         if (flanks > 0) {
-                            String s1 = "";
-                            String s2 = "";
-                            if (z7[j] - flanks > 0) {
-                                s1 = store.substring(z7[j] - flanks, z7[j]).toUpperCase();
-                            } else {
-                                if (z7[j] > 1) {
-                                    long e = z7[1] - 1;     // faithful to the int version's fixed index
-                                    if (e > 1) {
-                                        s1 = store.substring(1, e).toUpperCase();
-                                    }
-                                }
-                            }
-                            if (x + flanks < l) {
-                                s2 = store.substring(x, x + flanks).toUpperCase();
-                            } else {
-                                if (l - x > 0) {
-                                    s2 = store.substring(x, l).toUpperCase();
-                                }
-                            }
+                            long fs = Math.max(recStart, z7[j] - flanks);
+                            long fe = Math.min(recEnd, stop + flanks);
+                            String s1 = (fs < z7[j]) ? store.substring(fs, z7[j]).toUpperCase() : "";
+                            String s2 = (fe > stop) ? store.substring(stop, fe).toUpperCase() : "";
                             s0 = s1 + s0 + s2;
                         }
                         if (z7[j + 1] < 0) {

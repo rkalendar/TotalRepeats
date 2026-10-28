@@ -1,3 +1,4 @@
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,7 +21,7 @@ public class MaskResult {
 
     public int[] ReadMask(String seq, int gap, int minLenSeq, byte[] ssrmsk) {
 
-        byte[] b = seq.getBytes();
+        byte[] b = seq.getBytes(StandardCharsets.US_ASCII);
         int n = b.length;
 
         List<Integer> runs = new ArrayList<>();
@@ -30,8 +31,8 @@ public class MaskResult {
 
         for (int i = 0; i < n; i++) {
             byte c = b[i];
-            boolean isUpper = (c > 64 && c < 90); //https://www.rapidtables.com/code/text/ascii-table.html
-            boolean isLower = (c > 96 && c < 122);
+            boolean isUpper = (c >= 65 && c <= 90);   // A–Z (inclusive, matching ReadUpperMask)
+            boolean isLower = (c >= 97 && c <= 122);  // a–z
             if (c == 78 || c == 110) {
                 gapslen++;
             }
@@ -111,7 +112,7 @@ public class MaskResult {
     }
 
     public int[] ReadUpperMask(String seq, int gap, int minLenSeq) {
-        byte[] b = seq.getBytes();
+        byte[] b = seq.getBytes(StandardCharsets.US_ASCII);
         int n = b.length;
 
         List<Integer> runs = new ArrayList<>();
