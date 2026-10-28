@@ -2,7 +2,7 @@
 
 **an integrated genome-wide platform for rapid de novo identification, classification, annotation, comparative analysis, and visualization of repetitive elements**
 
-[![Java](https://img.shields.io/badge/Java-26+-orange.svg?logo=openjdk)](https://www.oracle.com/java/technologies/downloads/)
+[![Java](https://img.shields.io/badge/Java-25+-orange.svg?logo=openjdk)](https://www.oracle.com/java/technologies/downloads/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue.svg)]()
 [![Online Tool](https://img.shields.io/badge/Try%20Online-TotalRepeats-green.svg)](https://digitalgens.org/repeats.html)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
@@ -134,7 +134,7 @@ Latest additions to TotalRepeats:
 
 | Requirement | Details |
 |---|---|
-| **Java** | Version **26** or higher ([download](https://www.oracle.com/java/technologies/downloads/)) |
+| **Java** | Version **25** or higher ([download](https://www.oracle.com/java/technologies/downloads/)) |
 | **OS** | Windows, Linux, or macOS — platform-independent |
 | **RAM** | Depends on genome size (see [Memory Configuration](#memory-configuration)) |
 
@@ -142,7 +142,7 @@ Latest additions to TotalRepeats:
 > ```bash
 > java -version
 > ```
-> If you see a version below 26, update Java or install via [Conda](#option-2-using-conda).
+> If you see a version below 25, update Java or install via [Conda](#option-2-using-conda).
 
 **Setting `JAVA_HOME` / `PATH`:** <https://www.java.com/en/download/help/path.html>
 
@@ -166,14 +166,14 @@ java -jar dist/TotalRepeats.jar genome.fasta -out=/path/to/results/
 
 ### Option 2: Using Conda
 
-If Java 26 is not installed system-wide:
+If Java 25 is not installed system-wide:
 
 ```bash
 # Create a dedicated environment
 conda config --add channels conda-forge
 conda config --set channel_priority strict
-conda create -n java26 openjdk=26
-conda activate java26
+conda create -n java25 openjdk=25
+conda activate java25
 
 # Verify
 java -version
