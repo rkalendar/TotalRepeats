@@ -244,9 +244,9 @@ public final class TotalRepeatsSearching {
                 repeatslen = ms.repeatLength();
                 gapslen = ms.gapsLength();
             }
-            repeatslen = (repeatslen * 100) / (l - gapslen);
-            ssrglobal = (ssrglobal * 100) / (l - gapslen);
-            gaps = (gapslen * 100) / l;
+            repeatslen = percent(repeatslen, l - gapslen);
+            ssrglobal = percent(ssrglobal, l - gapslen);
+            gaps = percent(gapslen, l);
             System.out.println("Sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
             System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
             System.out.println("Sequence gap (bp)=" + (int) gapslen + " (" + String.format("%.4f", gaps) + "%)");
@@ -353,6 +353,10 @@ public final class TotalRepeatsSearching {
             // Buffered ASCII writer for speed and clarity
             try (BufferedWriter w = Files.newBufferedWriter(out, StandardCharsets.US_ASCII)) {
                 w.write(filePath);
+                if (nseq > 1) {     // name the record this report belongs to
+                    w.write(" ");
+                    w.write(sname[i]);
+                }
                 w.write("\n");
                 for (int j = 0; j + 1 < runs.length; j += 2) {
                     int start = runs[j];        // 0-based, inclusive
@@ -428,10 +432,12 @@ public final class TotalRepeatsSearching {
                 }
             }
 
-            // same (integer-division) arithmetic and output format as before
-            repeatslen = (repBp * 100) / (l - gapBp);
-            double gps = (gapBp * 100) / l;
-            double ssrln = (ssrlen[i] * 100) / (l - gapBp);
+            // same (integer-division) arithmetic and output format as before; an
+            // empty or all-gap record reads 0 instead of dividing by zero
+            long eff = l - gapBp;
+            repeatslen = (eff > 0) ? (repBp * 100) / eff : 0;
+            double gps = (l > 0) ? (gapBp * 100) / l : 0;
+            double ssrln = (eff > 0) ? (ssrlen[i] * 100) / eff : 0;
 
             System.out.println(sname[i]);
             System.out.println("Target sequence length = " + l + " nt");
@@ -439,8 +445,9 @@ public final class TotalRepeatsSearching {
             System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrln) + "%");
             System.out.println("Sequence gap (bp)=" + (int) gapBp + " (" + String.format("%.4f", gps) + "%)\n");
 
+            // filesPath[i] already names this record, so no record number is appended
             filePath = filesPath[i];
-            SavingMask(i, u, ssr[i]);
+            SavingMask3("", i, u, ssr[i]);
 
             start = end;
         }
@@ -448,7 +455,7 @@ public final class TotalRepeatsSearching {
         // Optional combined summary (now available from the single masker).
         // Remove these two lines to match the original output exactly.
         long effAll = (sz - gapBpAll > 0) ? (sz - gapBpAll) : sz;
-        System.out.println("Combined coverage by total repeats=" + String.format("%.2f", (repBpAll * 100.0) / effAll) + "%");
+        System.out.println("Combined coverage by total repeats=" + String.format("%.2f", percent(repBpAll, effAll)) + "%");
 
         maskduration = (System.nanoTime() - startTime) / 1000000000;
         System.out.println("Masking time taken: " + maskduration + " seconds\n");
@@ -555,12 +562,20 @@ public final class TotalRepeatsSearching {
     }
 
 // ─── shared private helpers (keep RunCombining short) ─────────────────────────
+    /**
+     * {@code part} as a percentage of {@code whole}. An empty or all-gap record
+     * of a multi-FASTA has nothing to measure against and reads 0, not NaN.
+     */
+    private static double percent(double part, double whole) {
+        return (whole > 0) ? (part * 100) / whole : 0;
+    }
+
     private void printCombinedHeader(long repBp, long ssrBp, long gapBp, long lenAll) {
         long eff = (lenAll - gapBp > 0) ? (lenAll - gapBp) : lenAll;
-        repeatslen = (repBp * 100.0) / eff;
-        ssrglobal = (ssrBp * 100.0) / eff;
+        repeatslen = percent(repBp, eff);
+        ssrglobal = percent(ssrBp, eff);
         gapslen = gapBp;
-        gaps = (gapBp * 100.0) / lenAll;
+        gaps = percent(gapBp, lenAll);
         System.out.println("\nCombined: sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
         System.out.println("Combined: short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
         System.out.println("Combined: sequence gap (bp)=" + gapslen + " (" + String.format("%.4f", gaps) + "%)");
@@ -599,10 +614,10 @@ public final class TotalRepeatsSearching {
                 }
             }
             long eff = (li - gapBp > 0) ? (li - gapBp) : li;
-            repeatslen = (repBp * 100.0) / eff;
-            ssrglobal = (ssrBp * 100.0) / eff;
+            repeatslen = percent(repBp, eff);
+            ssrglobal = percent(ssrBp, eff);
             gapslen = gapBp;
-            gaps = (gapBp * 100.0) / li;
+            gaps = percent(gapBp, li);
 
             System.out.println("\n" + sname[i]);
             System.out.println("Target sequence length = " + li + " nt");
@@ -625,6 +640,25 @@ public final class TotalRepeatsSearching {
         }
     }
 
+    /**
+     * Announces record {@code i} of a single-file run and tells whether it is
+     * long enough to analyse. The label carries the record number that suffixes
+     * its output files, so the statistics printed next can be matched to them;
+     * a record that is too short says so instead of silently leaving a gap in
+     * that numbering.
+     */
+    private boolean startRecord(int i, int l) {
+        if (nseq > 1) {
+            System.out.println("\nSequence " + (i + 1) + " of " + nseq + ": " + sname[i]);
+        }
+        if (l > minlenseq) {
+            return true;
+        }
+        System.out.println("Skipped " + sname[i] + ": " + l + " nt is not longer than the minimal repeat block size ("
+                + minlenseq + " nt); no output is written for it.");
+        return false;
+    }
+
     public void RunThroughMask(int k, boolean fst) throws IOException {
         for (int i = 0; i < nseq; i++) {
             int l = seq[i].length();
@@ -633,7 +667,7 @@ public final class TotalRepeatsSearching {
             gapslen = 0;
             bb = new ArrayList<>();
 
-            if (l > minlenseq) {
+            if (startRecord(i, l)) {
                 startTime = System.nanoTime();
                 System.out.println("Target sequence length = " + l + " nt");
 
@@ -649,9 +683,9 @@ public final class TotalRepeatsSearching {
                 repeatslen = fc.getRepeatsLen();
                 gapslen = fc.getGaps();
 
-                repeatslen = (repeatslen * 100) / (l - gapslen);
-                ssrglobal = (ssrglobal * 100) / (l - gapslen);
-                gaps = (gapslen * 100) / l;
+                repeatslen = percent(repeatslen, l - gapslen);
+                ssrglobal = percent(ssrglobal, l - gapslen);
+                gaps = percent(gapslen, l);
 
                 System.out.println("Sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
                 System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
@@ -701,7 +735,7 @@ public final class TotalRepeatsSearching {
             gapslen = 0;
             bb = new ArrayList<>();
 
-            if (l > minlenseq) {
+            if (startRecord(i, l)) {
                 startTime = System.nanoTime();
                 System.out.println("Target sequence length = " + l + " nt");
 
@@ -719,9 +753,9 @@ public final class TotalRepeatsSearching {
                 int[] u = ms.mask(seq[i], ssrmsk, kmerln, minlenseq);
                 repeatslen += ms.repeatLength();
                 gapslen = ms.gapsLength();
-                repeatslen = (repeatslen * 100) / (l - gapslen);
-                ssrglobal = (ssrglobal * 100) / (l - gapslen);
-                gaps = (gapslen * 100) / l;
+                repeatslen = percent(repeatslen, l - gapslen);
+                ssrglobal = percent(ssrglobal, l - gapslen);
+                gaps = percent(gapslen, l);
 
                 System.out.println("Sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
                 System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");
@@ -757,7 +791,7 @@ public final class TotalRepeatsSearching {
             gapslen = 0;
             bb = new ArrayList<>();
 
-            if (l > minlenseq) {
+            if (startRecord(i, l)) {
                 startTime = System.nanoTime();
                 System.out.println("Target sequence length = " + l + " nt");
 
@@ -775,9 +809,9 @@ public final class TotalRepeatsSearching {
 
                 repeatslen += ms.repeatLength();
                 gapslen = l - ms.noGapsLength();
-                repeatslen = (repeatslen * 100) / (l - gapslen);
-                ssrglobal = (ssrglobal * 100) / (l - gapslen);
-                gaps = (gapslen * 100) / l;
+                repeatslen = percent(repeatslen, l - gapslen);
+                ssrglobal = percent(ssrglobal, l - gapslen);
+                gaps = percent(gapslen, l);
 
                 System.out.println("Sequence coverage by repeats=" + String.format("%.2f", repeatslen) + "%");
                 System.out.println("Short tandem repeat (STR) sequence coverage=" + String.format("%.2f", ssrglobal) + "%");

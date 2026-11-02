@@ -110,8 +110,11 @@ final class MaskWriter {
 
         }
     }
+    // Used by the combined runs, whose file path already names the record
+    // (input file, plus "_i_" for a multi-record one), so the record number
+    // is not appended a second time.
     void writeBytes(int n, byte[] c, int x1, int x2) throws IOException {
-        String maskedfile = (nseq == 1) ? (filePath + ".msk") : (filePath + "_" + (n + 1) + ".msk");
+        String maskedfile = filePath + ".msk";
 
         System.out.println("Saving masked file: " + maskedfile);
         Path out = Path.of(maskedfile);

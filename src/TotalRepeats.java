@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -252,10 +253,13 @@ public class TotalRepeats {
                     }
 
                     if (extract) {
+                        // one name set and one report for the whole folder, so a record
+                        // named like one in an earlier file does not overwrite it
+                        Set<String> used = new HashSet<>();
                         for (String nfile : filelist) {
                             if (nfile != null) {
                                 try {
-                                    ExtractFiles(nfile, outdir);
+                                    ExtractFiles(nfile, outdir, used);
                                 } catch (Exception e) {
                                     System.err.println("Failed to open file: " + nfile + " — " + e.getMessage());
                                 }
@@ -328,7 +332,7 @@ public class TotalRepeats {
                         return;
                     }
                     if (extract) {
-                        ExtractFiles(infile, outdir);
+                        ExtractFiles(infile, outdir, new HashSet<>());
                         return;
                     }
                     if (extupmask) {
@@ -814,38 +818,43 @@ public class TotalRepeats {
         }
     }
 
-    private static void ExtractFiles(String inputFile, String outdir) {
+    /**
+     * Splits {@code inputFile} into one FASTA file per record. {@code used} holds
+     * the file names already written in this run (lower case) and is shared by
+     * every file of a folder run; report.txt starts afresh until the run has
+     * written a record, and is appended to after that.
+     */
+    private static void ExtractFiles(String inputFile, String outdir, Set<String> used) {
         String parentDir = resolveOutputDir(inputFile, outdir);
+        Path input = Paths.get(inputFile);
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile)); BufferedWriter report = new BufferedWriter(new FileWriter(parentDir + File.separator + "report.txt"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile)); BufferedWriter report = new BufferedWriter(new FileWriter(parentDir + File.separator + "report.txt", !used.isEmpty()))) {
             System.out.println("\nTotalRepeats " + VERSION + " - running...");
             long l = 0;
             long r = 0;
+            int n = 0;
             String line;
             BufferedWriter writer = null;
 
             while ((line = reader.readLine()) != null) {
                 if (line.contains(">")) {
                     if (writer != null) {
-                        report.write("Total length (nt)= " + l);
-                        report.newLine();
-                        report.write("Total masked length (nt)= " + r);
-                        report.newLine();
-                        report.write("Masked= " + String.format("%.2f", l > 0 ? (100.0 * r) / l : 0.0) + "%\n");
+                        writeExtractTotals(report, l, r);
                         writer.close();
                     }
-                    String[] s = line.split(">");
-                    if (s.length > 1) {
-                        String[] s2 = s[1].trim().split(" ");
-                        String outputFile = parentDir + File.separator + s2[0] + ".fasta";
-                        writer = new BufferedWriter(new FileWriter(outputFile));
-                        writer.write(line);
-                        writer.newLine();
-                        report.write(line);
-                        report.newLine();
-                        l = 0;
-                        r = 0;
+                    n++;
+                    String id = line.substring(line.indexOf('>') + 1).trim().split("\\s+")[0];
+                    Path outputFile = extractTarget(parentDir, id, n, used, input);
+                    if (!outputFile.getFileName().toString().equals(id + ".fasta")) {
+                        System.out.println("Record " + n + " (" + id + ") saved as " + outputFile.getFileName());
                     }
+                    writer = new BufferedWriter(new FileWriter(outputFile.toFile()));
+                    writer.write(line);
+                    writer.newLine();
+                    report.write(line);
+                    report.newLine();
+                    l = 0;
+                    r = 0;
                 } else {
                     if (writer != null) {
                         writer.write(line);
@@ -857,16 +866,46 @@ public class TotalRepeats {
             }
             if (writer != null) {
                 writer.close();
-                report.write("Total length= " + l);
-                report.newLine();
-                report.write("Total masked length= " + r);
-                report.newLine();
-                report.write("Masked= " + String.format("%.2f", l > 0 ? (100.0 * r) / l : 0.0) + "%\n");
+                writeExtractTotals(report, l, r);
             }
             System.out.println("File(s) processed successfully.");
         } catch (IOException e) {
             System.err.println("Error processing file: " + inputFile + " — " + e.getMessage());
         }
+    }
+
+    /** Length and soft-masked share of one extracted record, as listed in report.txt. */
+    private static void writeExtractTotals(BufferedWriter report, long l, long r) throws IOException {
+        report.write("Total length (nt)= " + l);
+        report.newLine();
+        report.write("Total masked length (nt)= " + r);
+        report.newLine();
+        report.write("Masked= " + String.format("%.2f", l > 0 ? (100.0 * r) / l : 0.0) + "%\n");
+    }
+
+    /**
+     * The file that -extract writes record {@code n} to. Its identifier is made a
+     * valid file name on every platform — NCBI identifiers carry '|', which
+     * aborted the whole extraction on Windows — and unique within the run, so
+     * two records sharing an identifier no longer overwrite each other. It is
+     * never the input file itself, which a record named after its own file
+     * (NC_017844.1 in NC_017844.1.fasta) would otherwise truncate while it is
+     * being read.
+     */
+    private static Path extractTarget(String dir, String id, int n, Set<String> used, Path input) throws IOException {
+        String base = id.replaceAll("[\\\\/:*?\"<>|\\p{Cntrl}]", "_");
+        if (base.isEmpty()) {
+            base = "record_" + n;
+        } else if (base.matches("(?i)con|prn|aux|nul|com[1-9]|lpt[1-9]")) {
+            base = "_" + base;   // device names Windows reserves whatever the extension
+        }
+        Path out = Paths.get(dir, base + ".fasta");
+        for (int k = 2; used.contains(out.getFileName().toString().toLowerCase())
+                || (Files.exists(out) && Files.isSameFile(out, input)); k++) {
+            out = Paths.get(dir, base + "_" + k + ".fasta");
+        }
+        used.add(out.getFileName().toString().toLowerCase());
+        return out;
     }
 
     private static void ComparisionMaskFiles(String inputFile, String outdir) {

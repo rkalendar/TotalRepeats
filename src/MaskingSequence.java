@@ -226,9 +226,10 @@ public class MaskingSequence {
     private void countStrand(LongCountSet map, byte[] bases, int kmer) {
         final int len = bases.length;
 
-        // Initialise the gap counter for the first (kmer-1) bases.
+        // Initialise the gap counter for the first (kmer-1) bases. A sequence
+        // shorter than that (a tiny record of a multi-FASTA) has no k-mer at all.
         int gapCount = 0;
-        for (int i = 0; i < kmer - 1; i++) {
+        for (int i = 0; i < Math.min(kmer - 1, len); i++) {
             if (bases[i] == 4) {
                 gapCount++;
             }
@@ -272,7 +273,7 @@ public class MaskingSequence {
     private void markStrandForward(LongCountSet kmerMap, byte[] bases, byte[] ssrmsk, int[] coverage, int kmer) {
         final int len = bases.length;
         int gapCount = 0;
-        for (int i = 0; i < kmer - 1; i++) {
+        for (int i = 0; i < Math.min(kmer - 1, len); i++) {
             if (bases[i] == 4) {
                 gapCount++;
             }
@@ -308,7 +309,7 @@ public class MaskingSequence {
      */
     private void markStrandReverse(LongCountSet kmerMap, byte[] bases, byte[] ssrmsk, int[] coverage, int len, int kmer) {
         int gapCount = 0;
-        for (int i = 0; i < kmer - 1; i++) {
+        for (int i = 0; i < Math.min(kmer - 1, len); i++) {
             if (bases[i] == 4) {
                 gapCount++;
             }
