@@ -195,19 +195,19 @@ The script compiles `src/` together with `tests/` and runs `TestRunner`, which p
 each check and exits non-zero if any fails, so it can gate a build or a CI job:
 
 ```
-PASSED  276 checks in 0.6 s
+PASSED  297 checks in 3.6 s
 ```
 
 | Suite | Checks | Covers |
 |---|---|---|
 | `DnaTest` | 27 | complement / reverse-complement, IUPAC codes, normalisation, shared-table stability |
-| `FastaReaderTest` | 20 | record parsing, IUPAC normalisation, soft-mask-preserving raw mode, unmodifiable accessors |
+| `FastaReaderTest` | 28 | record parsing, IUPAC normalisation, soft-mask-preserving raw mode, text before the first header, header-less sequences (and prose that is not one), unmodifiable accessors |
 | `SeqStoreTest` | 28 | segment boundaries, global-to-local coordinates, substrings spanning segments |
 | `LongIntHashMapTest` | 36 | insertion, tombstones, growth, `retainAtLeast`, `mergeInto` |
 | `LongCountSetTest` | 30 | saturating counts, the bit-49 packing and its k ≤ 21 bound, pruning |
 | `MaskResultTest` | 14 | block extraction, length filtering, STR exclusion, letter-range boundaries |
 | `PangenomeAnalysisTest` | 94 | core / accessory / unique and tier classification, exact rarefaction checked against brute-force enumeration of genome subsets, Heaps' law on open and closed pangenomes, Jaccard / Bray–Curtis, UPGMA on a hand-solved matrix, presence patterns, copy-number statistics, record-to-file grouping |
-| `CliTest` | 27 | lenient integer parsing, token-based option parsing, `-pangroup=`, the directory output filter |
+| `CliTest` | 40 | lenient integer parsing, token-based option parsing, `-pangroup=`, the directory output filter, per-record outputs of a multi-FASTA (including too-short and empty records), `-extract` file naming |
 
 ---
 
@@ -638,6 +638,8 @@ Splits a multi-entry FASTA file into separate files (one per sequence record). U
 java -jar TotalRepeats.jar multi_entry.fasta -extract
 ```
 
+Each record is written to `<id>.fasta`, where `<id>` is the first word of its header. Characters that are not allowed in file names (such as the `|` of NCBI identifiers) become `_`, and a repeated identifier — or one that would name the input file itself — gets `_2`, `_3`, …, so no record overwrites another; the console lists every record whose file name differs from its identifier. `report.txt` gives each record's length and soft-masked share; a folder run writes one report for all its files.
+
 ### `-extunique` — Extract Unique Regions from a Mask
 
 The inverse of the mask: takes a soft-masked FASTA (a `.msk` file from an earlier run, or any sequence where repeats are lowercase) and writes out the **UPPERCASE** stretches — the unique, non-repetitive sequence.
@@ -679,7 +681,7 @@ NC_017850.1.fasta	NC_017850.1.fasta.msk
 
 ### Input: FASTA
 
-TotalRepeats accepts standard FASTA format or plain-text nucleotide sequences. Multi-entry FASTA files are supported. Each individual sequence (chromosome / record) may be up to 2 GB; in the comparative modes (`-collate`, `-joint`, `-combinemask`) the *pangenome* size across all files is not limited by that cap.
+TotalRepeats accepts standard FASTA format or plain-text nucleotide sequences. A file with no header line is read as one sequence named after the file, provided at least 90% of its letters are nucleotide codes (so a stray text file in an input folder is not analysed as DNA); text before the first header of a FASTA file is ignored. Multi-entry FASTA files are supported: each record is analysed on its own and gets its own outputs, numbered by its position in the file — `<input>_N.gff`, `<input>_N.msk`, `<input>_N.png`, `<input>_N.svg` for record *N* (in the comparative modes, `<file>_N_.gff` and so on). A record not longer than `-sln` is skipped with a message on the console, so its number is absent from the outputs. Each individual sequence (chromosome / record) may be up to 2 GB; in the comparative modes (`-collate`, `-joint`, `-combinemask`) the *pangenome* size across all files is not limited by that cap.
 
 ```
 >sequence_id Optional description
