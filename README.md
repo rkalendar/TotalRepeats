@@ -60,6 +60,8 @@ In addition, the `-homology` mode inverts the search to report **unique (single-
 
 Latest additions to TotalRepeats:
 
+- **Multi-record FASTA files, record by record (4.1.1–4.1.2).** Every record of a multi-entry FASTA gets its own outputs — `<input>_N.gff`, `_N.msk`, `_N.png`, `_N.svg` — with its own name, statistics and sequences; 4.1.1 fixed the annotation tables, which all went to `<input>_1.gff`, and the `-seqshow` sequences, which now run exactly from Start to Stop with flanks that stop at the record boundary. In 4.1.2, records shorter than the k-mer, empty records and all-gap records no longer crash the comparative modes or report `NaN`; text before the first header is ignored; a header-less nucleotide sequence is read as one record; `-extract` writes valid, distinct file names and never overwrites its input; and `-joint` / `-homology` name their masks after the record, as `-collate` does. Repeat detection, masking and clustering are unchanged from 4.1.0. See [Input: FASTA](#input-fasta).
+
 - **More robust command-line parsing.** Options are now parsed token by token and matched exactly, so an input path — or a `-lib=`/`-ref=`/`-out=` value — that happens to contain a mode name (e.g. a folder named `joint_genomes`) no longer accidentally switches on that mode. Flag and option names are case-insensitive and accept an optional leading dash (`joint`, `-joint`, and `--joint` are equivalent), and an unrecognised option now prints a warning instead of being silently ignored.
 - **The 4-mer composition profile (`-vector`) is now the default clustering measure.** It needs almost no additional memory (no per-block k-mer index) and, unlike `-contain`, can group copies that have diverged past sharing any exact k-mer; it is slower than the previous implementation of the measure (see [Cost](#comparing-the-two-measures)). `-vector` is still accepted (it now selects the default); pass `-contain` to cluster by asymmetric k-mer containment instead, which places a short element with the longer repeat that contains it, at a higher memory cost. See [Clustering measures](#clustering-measures).
 
@@ -289,7 +291,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `-vector` | Cluster by 4-mer composition profile, compared by cosine against a chance floor calibrated per length scale from the run's own data; long seeds are matched window-by-window. Requires no per-block k-mer index, and on the sequences tested groups diverged copies that share no exact k-mer. See [Clustering measures](#clustering-measures) | Default measure |
 | `-contain` | Cluster by asymmetric k-mer containment: groups size-disparate homologous blocks (a short element within a longer one) and reverse-complement copies. Builds a per-block k-mer index costing ~8 bytes per distinct k-mer per block, so size `-Xmx` accordingly. No effect in `-homology`. See [Clustering measures](#clustering-measures) | Not selected |
 | `-help` | Show the usage guide and exit (aliases: `--help`, `-h`, `-?`, `/?`, `/h`, `/help`, and others — see [Troubleshooting](#troubleshooting)) | — |
-| `-version` | Print the release identifier (e.g. `TotalRepeats 4.1.0`) and exit (aliases: `--version`, `-v`). The same identifier is printed at the start of every run and written into the header of every annotation table | — |
+| `-version` | Print the release identifier (e.g. `TotalRepeats 4.1.2`) and exit (aliases: `--version`, `-v`). The same identifier is printed at the start of every run and written into the header of every annotation table | — |
 
 `-vector` and `-contain` are mutually exclusive; if both are supplied, `-contain` takes precedence. The leading dash is optional and names are case-insensitive: `-kmer=19`, `kmer=19` and `--KMER=19` are equivalent.
 
@@ -926,13 +928,13 @@ By default, clustering is multithreaded — the pairwise comparison step runs ac
 
 If you use TotalRepeats in your research, please cite the software release you used. The release identifier is printed by `-version` and written into the header of every annotation table, so the version behind any result can always be recovered from the output itself. Machine-readable metadata are in [`CITATION.cff`](CITATION.cff) and [`.zenodo.json`](.zenodo.json).
 
-> Kalendar, R. (2026). *TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families* (version 4.1.1) [Computer software]. University of Helsinki. <https://github.com/rkalendar/TotalRepeats>. Zenodo: <!-- DOI of the archived release; the 2024 deposit is https://doi.org/10.5281/zenodo.13735264 -->
+> Kalendar, R. (2026). *TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families* (version 4.1.2) [Computer software]. University of Helsinki. <https://github.com/rkalendar/TotalRepeats>. Zenodo: <!-- DOI of the archived release; the 2024 deposit is https://doi.org/10.5281/zenodo.13735264 -->
 
 ```bibtex
 @software{Kalendar_TotalRepeats_2026,
   author  = {Kalendar, Ruslan},
   title   = {{TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families}},
-  version = {4.1.0},
+  version = {4.1.2},
   year    = {2026},
   url     = {https://github.com/rkalendar/TotalRepeats},
   note    = {Online version: https://digitalgens.org/repeats.html}
