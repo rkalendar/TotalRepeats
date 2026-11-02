@@ -19,7 +19,7 @@ public class TotalRepeats {
     /** Release identifier, printed by -version, in the help header, at the start of
      *  every run and in the header of every annotation table, so that any output
      *  file can be traced to the build that produced it. */
-    public static final String VERSION = "4.1.0";
+    public static final String VERSION = "4.1.2";
 
     /** Boolean mode flags, canonical form: leading dashes stripped, lowercased. */
     private static final Set<String> KNOWN_FLAGS = Set.of(
