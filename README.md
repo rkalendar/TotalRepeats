@@ -7,7 +7,7 @@
 [![Online Tool](https://img.shields.io/badge/Try%20Online-TotalRepeats-green.svg)](https://digitalgens.org/repeats.html)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
 
-Documentation: this file (English) · [README.ru.md](README.ru.md) (по-русски) · [TotalRepeats_overview.md](TotalRepeats_overview.md) (one-page summary with the workflow figure) · `TotalRepeats_Run_Guide.docx` / `TotalRepeats_Руководство_по_запуску.docx` (the same documentation as Word documents, generated from the Markdown with `tools/md2docx.py`).
+Documentation: this file (English) · [TotalRepeats_overview.md](TotalRepeats_overview.md) (one-page summary with the workflow figure)  
 
 ---
 
