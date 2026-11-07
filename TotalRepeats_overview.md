@@ -1,6 +1,6 @@
 # TotalRepeats — general information and workflow
 
-*Reference summary derived from the application source code (release 4.1.2), for the manuscript, users and reviewers. The companion figure is `TotalRepeats_workflow.svg`.*
+*Reference summary derived from the application source code (release 4.1.3), for the manuscript, users and reviewers. The companion figure is `TotalRepeats_workflow.svg`.*
 
 ## Overview
 

@@ -7,7 +7,7 @@
 [![Online Tool](https://img.shields.io/badge/Try%20Online-TotalRepeats-green.svg)](https://digitalgens.org/repeats.html)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
 
-Documentation: this file · [TotalRepeats_overview.md](TotalRepeats_overview.md) (one-page summary with the workflow figure `TotalRepeats_workflow.svg`) · `TotalRepeats_Run_Guide.docx` (the same documentation as a Word document.
+Documentation: this file · [TotalRepeats_overview.md](TotalRepeats_overview.md) (one-page summary with the workflow figure `TotalRepeats_workflow.svg`) · `TotalRepeats_Run_Guide.docx` (the same documentation as a Word document, generated from this file with `tools/md2docx.py`).
 
 ---
 
@@ -299,7 +299,7 @@ When working with large genomes, allocate additional heap memory using JVM flags
 | `-vector` | Cluster by 4-mer composition profile, compared by cosine against a chance floor calibrated per length scale from the run's own data; long seeds are matched window-by-window. Requires no per-block k-mer index, and on the sequences tested groups diverged copies that share no exact k-mer. See [Clustering measures](#clustering-measures) | Default measure |
 | `-contain` | Cluster by asymmetric k-mer containment: groups size-disparate homologous blocks (a short element within a longer one) and reverse-complement copies. Builds a per-block k-mer index costing ~8 bytes per distinct k-mer per block, so size `-Xmx` accordingly. No effect in `-homology`. See [Clustering measures](#clustering-measures) | Not selected |
 | `-help` | Show the usage guide and exit (aliases: `--help`, `-h`, `-?`, `/?`, `/h`, `/help`, and others — see [Basic Syntax](#basic-syntax)) | — |
-| `-version` | Print the release identifier (e.g. `TotalRepeats 4.1.2`) and exit (aliases: `--version`, `-v`). The same identifier is printed at the start of every run and written into the header of every annotation table | — |
+| `-version` | Print the release identifier (e.g. `TotalRepeats 4.1.3`) and exit (aliases: `--version`, `-v`). The same identifier is printed at the start of every run and written into the header of every annotation table | — |
 
 `-vector` and `-contain` are mutually exclusive; if both are supplied, `-contain` takes precedence. The leading dash is optional and names are case-insensitive: `-kmer=19`, `kmer=19` and `--KMER=19` are equivalent.
 
@@ -934,7 +934,9 @@ By default, clustering is multithreaded — the pairwise comparison step runs ac
 
 ## Release notes
 
-**4.1.2** — Multi-record FASTA files, record by record. Records shorter than the k-mer, empty records and all-gap records no longer crash the comparative modes or report `NaN`; text before the first header is ignored; a header-less nucleotide sequence is read as one record; `-extract` writes valid, distinct file names and never overwrites its input; `-joint` / `-homology` name their masks after the record, as `-collate` does. The annotation table written with `-seqshow` now carries the sequence in its own ninth column, after the (empty) `Phase` column, so the data rows match the header. Repeat detection, masking and clustering are unchanged from 4.1.0.
+**4.1.3** — Consistent annotation table and documentation revised for review. The table written with `-seqshow` now carries the sequence in its own ninth column, after the (empty) `Phase` column, so the data rows match the header. `--help` was rewritten: every mode and option is described, `-version` is listed and the examples match the current modes. The documentation (README, overview, workflow figure, plain-text readme, Word run guide) was brought in line with the code and extended with measured runtimes; the Word guide is now generated from the README with `tools/md2docx.py`. Repeat detection, masking, clustering and the comparative modes are unchanged from 4.1.0.
+
+**4.1.2** — Multi-record FASTA files, record by record. Records shorter than the k-mer, empty records and all-gap records no longer crash the comparative modes or report `NaN`; text before the first header is ignored; a header-less nucleotide sequence is read as one record; `-extract` writes valid, distinct file names and never overwrites its input; `-joint` / `-homology` name their masks after the record, as `-collate` does. Repeat detection, masking and clustering are unchanged from 4.1.0.
 
 **4.1.1** — Every record of a multi-entry FASTA gets its own outputs — `<input>_N.gff`, `_N.msk`, `_N.png`, `_N.svg` — with its own name, statistics and sequences; `-seqshow` sequences run exactly from Start to Stop with flanks that stop at the record boundary.
 
@@ -964,13 +966,13 @@ By default, clustering is multithreaded — the pairwise comparison step runs ac
 
 If you use TotalRepeats in your research, please cite the software release you used. The release identifier is printed by `-version` and written into the header of every annotation table, so the version behind any result can always be recovered from the output itself. Machine-readable metadata are in [`CITATION.cff`](CITATION.cff) and [`.zenodo.json`](.zenodo.json).
 
-> Kalendar, R. (2026). *TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families* (version 4.1.2) [Computer software]. University of Helsinki. <https://github.com/rkalendar/TotalRepeats>. Archived at Zenodo: <https://doi.org/10.5281/zenodo.13735264>
+> Kalendar, R. (2026). *TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families* (version 4.1.3) [Computer software]. University of Helsinki. <https://github.com/rkalendar/TotalRepeats>. Archived at Zenodo: <https://doi.org/10.5281/zenodo.13735264>
 
 ```bibtex
 @software{Kalendar_TotalRepeats_2026,
   author  = {Kalendar, Ruslan},
   title   = {{TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families}},
-  version = {4.1.2},
+  version = {4.1.3},
   year    = {2026},
   url     = {https://github.com/rkalendar/TotalRepeats},
   doi     = {10.5281/zenodo.13735264},

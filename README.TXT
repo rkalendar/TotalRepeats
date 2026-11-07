@@ -1,4 +1,4 @@
-TotalRepeats 4.1.2
+TotalRepeats 4.1.3
 Self-calibrated, alignment-free discovery and pangenome comparison of repeat families.
 An integrated genome-wide platform for rapid de novo identification, classification,
 annotation, comparative (pangenome) analysis and visualization of repetitive elements.
