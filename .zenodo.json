@@ -1,0 +1,20 @@
+{
+  "title": "TotalRepeats: self-calibrated, alignment-free discovery and pangenome comparison of repeat families",
+  "upload_type": "software",
+  "version": "4.1.2",
+  "description": "<p>TotalRepeats is a dependency-free Java platform for de novo repeat discovery, low-complexity and tandem-repeat detection, family-level clustering, custom-library annotation, masking and cross-assembly (pangenome) comparison of repetitive DNA. Repeat copies are assigned to families by a decision level that is calibrated from each input, per length class, on every run, rather than by a fixed sequence-identity cutoff. Multiple assemblies are counted into one shared k-mer table with 64-bit coordinates, so the combined input is not limited to 2.1 Gb, and the output is byte-identical regardless of thread count.</p><p>Release 4.1.2 completes the handling of multi-record FASTA files. Records shorter than the k-mer no longer crash the comparative modes; empty and all-gap records report 0 coverage instead of NaN or a division by zero; text before the first header is ignored instead of being prepended to the first record; a header-less nucleotide sequence is read as one record; -extract writes valid, distinct file names and never overwrites its input; and the masks of -joint and -homology are named after their records, as in -collate. The annotation table written with -seqshow now carries the sequence in its own ninth column after the empty Phase column, so data rows match the header. Repeat detection, masking, clustering and figures are unchanged from 4.1.1. Requires Java 25 or later.</p>",
+  "creators": [
+    {
+      "name": "Kalendar, Ruslan",
+      "affiliation": "Helsinki Institute of Life Science (HiLIFE), University of Helsinki, Finland",
+      "orcid": "0000-0003-3986-2460"
+    }
+  ],
+  "license": "GPL-3.0",
+  "keywords": ["repetitive DNA", "transposable elements", "de novo repeat detection", "alignment-free", "k-mer", "pangenome", "genome annotation", "Java"],
+  "related_identifiers": [
+    { "identifier": "https://github.com/rkalendar/TotalRepeats", "relation": "isSupplementTo", "resource_type": "software" },
+    { "identifier": "10.5281/zenodo.13735264", "relation": "isNewVersionOf", "resource_type": "software" }
+  ],
+  "access_right": "open"
+}
