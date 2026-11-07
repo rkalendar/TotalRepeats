@@ -39,7 +39,7 @@ import java.util.stream.IntStream;
  *
  * The same holds away from that genome. On E. coli MG1655 (NC_000913, 4.6 Mb) -vector goes
  * from 93 blocks at 60% real to 294 at 100% real (100 of 100 sampled pairs confirmed by
- * alignment) — MORE than -contain finds there (210). On a 7.5 Mb fungal chromosome, 384
+ * alignment) — MORE than -contain finds there (210). On a 6.6 Mb fungal chromosome, 384
  * blocks at 50% real to 600 at 88%. Across 42 Mb of E. coli with -collate, 2293 blocks to
  * 5594, in 85 s against the old 62 s.
  *
@@ -93,8 +93,8 @@ public final class SequencesClustering {
     // ── Containment backend tuning (the -contain mode) ──────────────────────────
     // A separate, asymmetric measure for sequences of very different length: a
     // short block is absorbed into a longer seed when most of its canonical
-    // k-mers occur in that seed. Ported from GeneDistance's -contain. The 4-mer
-    // ratio-profile path above is left untouched.
+    // k-mers occur in that seed. Ported from GeneDistance's -contain. It is an
+    // alternative to the composition-profile measure, not a stage of it.
     private static final int CONTAIN_K_MIN = 11;         // odd: a k-mer cannot be its own reverse complement
     private static final int CONTAIN_K_MAX = 24;         // 2*k <= 48 bits, always safe in a long
     private static final double MIN_CONTAINMENT = 0.50;  // share of a block's k-mers that must occur in the seed
@@ -133,7 +133,7 @@ public final class SequencesClustering {
      * (verified = member shares exact 25-mers with its seed):
      *
      * <pre>
-     *          ch3_MG8 (7.5 Mb)              MF782455 (1.4 Mb)
+     *          ch3_MG8 (6.6 Mb)              MF782455 (1.4 Mb)
      *   n      blocks  verified  real        blocks  verified  real     time (ch3_MG8)
      *   192      596     73.4%    369          525     92.7%    416         12 s
      *   384      602     83.9%    421          454     96.1%    370         17 s

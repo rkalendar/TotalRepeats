@@ -183,7 +183,9 @@ final class AnnotationWriter {
                             .append("\t").append(x + 1)
                             .append("\t").append(end)
                             .append("\t").append(strand)
-                            .append("\t").append(s0).append("\n");
+                            .append("\t")                         // Phase: kept for the GFF-like layout, always empty
+                            .append(SeqShow ? "\t" + s0 : "")     // Sequence: column 9, written only with -seqshow
+                            .append("\n");
                     bufferedWriter.write(sr.toString());
                 }
             }
@@ -296,7 +298,9 @@ final class AnnotationWriter {
                             .append("\t").append(x + 1)
                             .append("\t").append(end)
                             .append("\t").append(strand)
-                            .append("\t").append(s0).append("\n");
+                            .append("\t")                         // Phase: kept for the GFF-like layout, always empty
+                            .append(SeqShow ? "\t" + s0 : "")     // Sequence: column 9, written only with -seqshow
+                            .append("\n");
                     bufferedWriter.write(sr.toString());
                 }
             }

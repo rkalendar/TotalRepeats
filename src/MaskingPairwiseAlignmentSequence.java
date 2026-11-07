@@ -4,8 +4,15 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Identifies and masks repeated/low-complexity regions in a DNA sequence using
- * k-mer counting on both the forward strand and its reverse complement.
+ * The {@code -amask} masker: seed-and-extend pairwise comparison instead of
+ * k-mer coverage. Every k-mer that occurs more than once (on either strand) is
+ * a seed; each pair of its occurrences is extended ungapped in both sequences
+ * until more than three consecutive mismatches, and extensions longer than the
+ * minimum block length are masked on both copies (a reverse-complement copy is
+ * mapped back to forward coordinates). Small gaps between masked runs are then
+ * bridged. This is the alignment-like counterpart of {@link MaskingSequence};
+ * it is quadratic in the number of occurrences of a k-mer, so it suits small
+ * inputs and is not the default.
  *
  * <p>Usage:
  * <pre>

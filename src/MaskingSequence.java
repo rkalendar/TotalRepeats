@@ -9,9 +9,15 @@ import java.util.List;
  * repeated k-mers. 4. Extract contiguous blocks with sufficient coverage and
  * length.
  *
- * Uses LongCountSet: a value-less set that packs a "seen >= 2" flag into the
- * count is only ever capped at MIN_COUNT, so one byte per slot suffices and the
- * table is ~25% smaller and more cache-friendly than the int-valued map.
+ * The k-mer table is a {@link LongCountSet}: an open-addressing set of base-5
+ * k-mer codes that packs the only count the masker needs — "seen at least
+ * twice" — into one spare bit of the key, so there is no value array at all.
+ * Each probe touches a single cache line and the table is a third smaller than
+ * the int-valued map. Unique k-mers are dropped before the coverage pass, so
+ * the read phase runs against a small, cache-resident table.
+ *
+ * <p>The pass is a single streaming scan per strand (no threads); the work that
+ * is parallelised in TotalRepeats is the clustering and library annotation.
  */
 public class MaskingSequence {
 

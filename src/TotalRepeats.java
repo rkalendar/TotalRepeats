@@ -91,11 +91,11 @@ public class TotalRepeats {
             int imaged = 10;               // 1...30
             int flanksshow = 0;
             int combine = 0;               // Two or more files analysed simultaneously.
-            boolean amask = false;         // masking is performed by Pairwise Sequence Alignment: Repeater2 based 
+            boolean amask = false;         // -amask: seed-and-extend pairwise masking instead of k-mer coverage
             boolean maskonly = false;      // The process of masking is performed without the use of clustering or annotation.
             boolean seqshow = false;
             boolean fastclustering = true; // Multithreaded clustering: ON by default; disabled by the -normal flag
-            int clusterMode = SequencesClustering.MODE_PROFILE;   // 4-mer ratio profile (-vector) by default; -contain selects k-mer containment
+            int clusterMode = SequencesClustering.MODE_PROFILE;   // 4-mer composition profile (-vector, the default); -contain selects k-mer containment
             boolean readmask = false;       // reading masked FASTA for clustering and annotation
             boolean extupmask = false;      // extraction of the UPPER blocks of the masked chromosome contain unique sequences.
             boolean readgff = false;
@@ -136,7 +136,7 @@ public class TotalRepeats {
                     System.out.println("Reference file found: " + ref.getAbsolutePath());
                 }
             }
-            if (flagSet.contains("amask")) { // Pairwise Sequence Alignment: Repeater2 based 
+            if (flagSet.contains("amask")) { // seed-and-extend pairwise masking (MaskingPairwiseAlignmentSequence)
                 amask = true;
             }
             if (flagSet.contains("nossr")) {
@@ -145,16 +145,16 @@ public class TotalRepeats {
             if (flagSet.contains("normal")) { // Force single-threaded clustering. Clustering is multithreaded by default, which significantly accelerates grouping sequences into individual clusters; -normal disables that and uses the single-threaded path.
                 fastclustering = false;
             }
-            if (flagSet.contains("vector")) { // The 4-mer ratio profile (whole-block composition). This is now the DEFAULT; the flag is still accepted so existing command lines keep working. Fast, near-zero memory, and finds copies too diverged to share an exact k-mer — which containment cannot. No effect in -homology (which does not cluster).
+            if (flagSet.contains("vector")) { // The 4-mer composition profile: cosine of raw 4-mer counts against a chance floor calibrated per run and per length class. This is the DEFAULT; the flag is still accepted so existing command lines keep working. Needs no per-block k-mer index and finds copies too diverged to share an exact k-mer — which containment cannot. No effect in -homology (which does not cluster).
                 clusterMode = SequencesClustering.MODE_PROFILE;
             }
             if (flagSet.contains("contain")) { // Cluster by asymmetric k-mer containment instead: groups size-disparate homologous blocks (a short element inside a long one) and reverse-complement copies. Checked after -vector, so -contain wins when both are given.
                 clusterMode = SequencesClustering.MODE_CONTAIN;
             }
-            if (flagSet.contains("extunique")) { // -seqlen>100
+            if (flagSet.contains("extunique")) { // write the UPPERCASE (unmasked) runs of a soft-masked input, filtered by -sln and -gap
                 extupmask = true;
             }
-            if (flagSet.contains("maskonly")) { // -nsize=0
+            if (flagSet.contains("maskonly")) { // stop after the soft-masked FASTA: no clustering, annotation or figures
                 maskonly = true;
             }
             if (flagSet.contains("readgff")) {
@@ -355,11 +355,10 @@ public class TotalRepeats {
     }
 
     /**
-     * Returns {@code true} if the command line is an explicit request for help
-     * or usage information. Recognised case-insensitively, anywhere in the
-     * argument list: {@code -help}, {@code --help}, {@code -h}, {@code --h},
-     * {@code -?}, {@code --?}, {@code /?}, {@code /h}, {@code /help},
-     * {@code help}, {@code ?}, {@code -usage}, {@code --usage}, {@code /usage}.
+     * Returns {@code true} if the command line asks for the release identifier.
+     * Recognised case-insensitively, anywhere in the argument list:
+     * {@code -version}, {@code --version}, {@code -v}, {@code /version},
+     * {@code version}.
      */
     private static boolean isVersionRequest(String[] args) {
         for (String arg : args) {
@@ -374,6 +373,13 @@ public class TotalRepeats {
         return false;
     }
 
+    /**
+     * Returns {@code true} if the command line is an explicit request for help
+     * or usage information. Recognised case-insensitively, anywhere in the
+     * argument list: {@code -help}, {@code --help}, {@code -h}, {@code --h},
+     * {@code -?}, {@code --?}, {@code /?}, {@code /h}, {@code /help},
+     * {@code help}, {@code ?}, {@code -usage}, {@code --usage}, {@code /usage}.
+     */
     private static boolean isHelpRequest(String[] args) {
         if (args == null) {
             return false;
@@ -405,74 +411,85 @@ public class TotalRepeats {
             "HELP:",
             "  -help, --help, -h, -?, /?, /h    Show this help message and exit",
             "                                  (also shown when no input file is given)",
+            "  -version, --version, -v          Print the release identifier and exit",
+            "",
+            "Options are matched as whole words, case-insensitively; the leading dash is",
+            "optional (-kmer=19, kmer=19 and --KMER=19 are equivalent).",
             "",
             "CORE OPTIONS:",
             "  -kmer=<9-21>         K-mer size for repeat detection (default: 19)",
             "  -sln=<int>           Minimum repeat block length in bp (default: 80; can equal kmer)",
             "  -gap=<int>           Largest gap in bp bridged when merging repeated k-mers into one",
             "                       block (default: 2 x kmer)",
-            "  -flangs=<0-1000>     Extend repeat flanks by N nucleotides (default: 0)",
-            "                       (-flanks=<int> is accepted as an alias)",
+            "  -flanks=<0-1000>     Extend repeat flanks by N nucleotides in -seqshow output",
+            "                       (default: 0; -flangs=<int> is accepted as an alias)",
             "",
             "IMAGE OPTIONS:",
             "  -image=<WxH>         Output image dimensions, e.g. -image=10000x300",
             "                       (default: auto-determined)",
-            "  -imgx=<1-30>         Figure width compression; 1 = max compression, 20 = longest figure",
+            "  -imgx=<1-30>         Figure width scale; 1 = most compressed, 10 = default,",
+            "                       20-30 = stretched for detailed inspection",
             "",
             "ANALYSIS MODES:",
-            "  -maskonly            Generate repeat mask file only; skip classification, annotation,",
-            "                       and visualisation",
-            "  -amask               Mask using pairwise sequence alignment (Repeater2-based)",
-            "  -seqshow             Extract and output repeat sequences (default: off)",
-            "  -nossr               Disable SSR (Simple Sequence Repeat) detection (default: on)",
-            "  -normal              Use single-threaded repeat classification (default: multithreaded)",
-            "  -vector              Cluster by the 4-mer ratio profile (whole-block composition).",
-            "                       This is now the DEFAULT; the flag is still accepted so that",
-            "                       existing command lines keep working. A symmetric composition",
-            "                       measure: fast, needs almost no memory, and finds copies too",
-            "                       diverged to share an exact k-mer — which containment cannot",
+            "  -maskonly            Generate the soft-masked FASTA only; skip clustering, annotation",
+            "                       and figures (uses the least memory)",
+            "  -amask               Mask by seed-and-extend pairwise comparison of repeated k-mer",
+            "                       occurrences instead of k-mer coverage (slower; small inputs)",
+            "  -seqshow             Write each repeat's sequence into the annotation table (default: off)",
+            "  -nossr               Disable short tandem repeat (STR/SSR) detection (default: on)",
+            "  -normal              Use single-threaded clustering (default: multithreaded, deterministic)",
+            "  -vector              Cluster by the 4-mer composition profile: cosine of raw 4-mer",
+            "                       counts against a chance floor calibrated from the run's own",
+            "                       data, per length class; long seeds are matched window by window.",
+            "                       This is the DEFAULT (the flag is accepted for compatibility).",
+            "                       Needs no per-block k-mer index and groups copies too diverged",
+            "                       to share an exact k-mer, which containment cannot",
             "  -contain             Cluster by asymmetric k-mer containment instead. Groups blocks of",
             "                       very different length (a short element contained in a long one)",
             "                       and reverse-complement copies. Costs ~8 bytes per distinct k-mer",
             "                       per block, so a large combined run wants -Xmx; no effect in",
             "                       -homology mode, which does not cluster",
             "",
-            "COMPARATIVE / GENOME-WIDE OPTIONS (these four require a FOLDER as input;",
+            "COMPARATIVE / PANGENOME OPTIONS (these four require a FOLDER as input;",
             "with a single file they are ignored and an ordinary single-file run is performed):",
-            "  -collate             Genome-wide analysis: each sequence analyzed individually",
-            "  -joint               Pangenome, genome-wide analysis: all sequences analyzed together",
-            "  -combinemask         Genome-wide comparative analysis using masking files as input",
-            "  -homology            Comparative Homology Masking: cross-file analysis of homologous",
-            "                       regions and repeats between target sequences (e.g. chromosomes)",
+            "  -collate             Mask each sequence on its own, then cluster all files jointly:",
+            "                       per-file reports + combined report + pangenome report",
+            "  -joint               One shared k-mer table over all files (repeats shared between",
+            "                       files count), then joint clustering; same reports as -collate",
+            "  -combinemask         Joint clustering of previously soft-masked (.msk) inputs;",
+            "                       per-file reports + combined report + pangenome report",
+            "  -homology            Mask every region homologous within or between the files and",
+            "                       keep what is unique (single-copy) to each sequence",
             "  -pangroup=<file|record>",
             "                       What one genome is in the pangenome report of -collate / -joint /",
             "                       -combinemask: all records of an input file together (file, the",
             "                       default) or every FASTA record on its own (record)",
             "",
             "INPUT / OUTPUT OPTIONS:",
-            "  -readmask            Load a masking file (single FASTA entry) for clustering and",
-            "                       visualisation",
-            "  -readgff             Load a GFF file for visualisation",
-            "  -extract             Split a single multi-entry FASTA file into individual FASTA files",
+            "  -readmask            Load a soft-masked FASTA (one or more records) for clustering,",
+            "                       annotation and figures without re-masking",
+            "  -readgff             Load an annotation table written by TotalRepeats and redraw figures",
+            "  -extract             Split a multi-record FASTA file (or a folder of them) into one",
+            "                       FASTA file per record",
             "  -extunique           Extract the UPPERCASE (unique, non-repetitive) blocks of a masked",
             "                       sequence into <input>.report; runs closer than -gap are merged and",
             "                       only runs longer than -sln are kept",
             "  -maskscomp           Compare masking files produced by different software or algorithms",
-            "  -lib=<path>          Annotate repeats using a database of known repeats or genes",
-            "                       (-ref=<path> is accepted as an alias)",
+            "  -lib=<path>          Annotate repeat families against a FASTA library of known repeats",
+            "                       or genes, e.g. Repbase or Dfam (-ref=<path> is accepted as an alias)",
             "  -out=<path>          Path to output folder (default: the folder of the input file)",
             "",
             "EXAMPLES:",
-            "  # Standard run with SSR and flanking sequences:",
-            "  " + jarMem + " <input> -flangs=100 -seqshow",
+            "  # Standard run, with repeat sequences and 100 bp flanks in the table:",
+            "  " + jarMem + " <input> -seqshow -flanks=100",
             "",
-            "  # Custom k-mer, block length, no masking, with flanks:",
-            "  " + jarMem + " <input> -kmer=18 -sln=100 -seqshow -flangs=100",
+            "  # Custom k-mer and block length:",
+            "  " + jarMem + " <input> -kmer=18 -sln=100",
             "",
             "  # Directory input with a reference file:",
             "  " + jarMem + " /data/genomes/T2T-CHM13v2.0/ -ref=/data/test/humsub.ref -out=/data/report/",
             "",
-            "  # Large chromosome (>2 GB) — allocate up to 64 GB RAM:",
+            "  # Large genome assembly: allocate up to 64 GB RAM:",
             "  java -jar -Xms16g -Xmx64g /path/to/TotalRepeats.jar /data/genomes/Viscum_album/ -out=/data/report/",
             "",
             "  # Analyse all FASTA files in a directory:",
@@ -481,7 +498,8 @@ public class TotalRepeats {
             "  # Pangenome run grouping size-disparate homologous repeats (containment):",
             "  " + jarMem + " /data/genomes/ -joint -contain",
             "",
-            "NOTE: For sequences larger than 2 GB, increase heap memory with -Xmx (e.g. -Xmx64g).",};
+            "NOTE: Size the heap (-Xmx) to the input: a single record may be up to 2 GB, and a",
+            "comparative run is limited only by RAM, not by the 2 GB single-sequence cap.",};
 
         for (String line : lines) {
             System.out.println(line);

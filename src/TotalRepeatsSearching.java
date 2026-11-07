@@ -452,8 +452,7 @@ public final class TotalRepeatsSearching {
             start = end;
         }
 
-        // Optional combined summary (now available from the single masker).
-        // Remove these two lines to match the original output exactly.
+        // Combined summary over all sequences.
         long effAll = (sz - gapBpAll > 0) ? (sz - gapBpAll) : sz;
         System.out.println("Combined coverage by total repeats=" + String.format("%.2f", percent(repBpAll, effAll)) + "%");
 
@@ -462,17 +461,13 @@ public final class TotalRepeatsSearching {
     }
 
 
-    // ============================================================================
-//  RunCombining — GLOBAL (cross-sequence) repeat masking via maskCombined.
-// ----------------------------------------------------------------------------
-//  Repeat masking is now ONE pass over all sequences with a shared k-mer map
-//  (MaskingSequence.maskCombined), so repeats shared between different sequences
-//  are detected. STR/SSR detection stays per sequence (intra-sequence, as in
-//  RunCombine). No sequence is ever concatenated, so the total may exceed 2.1 Gb.
-//
-//  MaskingSequences class and no separate ByteStore overload needed — maskCombined
-//  already byte-codes each chunk internally via normalise()/Tables.dx2.
-// ============================================================================
+    /**
+     * The {@code -joint} mode: one shared k-mer table over ALL sequences
+     * ({@link MaskingSequence#maskCombined}), so a repeat whose copies lie in
+     * different files is detected, then joint clustering, per-file reports and
+     * the pangenome report. STR detection stays per sequence. No sequence is
+     * ever concatenated, so the total may exceed 2.1 Gb.
+     */
     public void RunCombining(int k, boolean fst) throws IOException {
         startTime = System.nanoTime();
 
@@ -510,24 +505,6 @@ public final class TotalRepeatsSearching {
         long repBpAll = ms.repeatLength();
         long gapBpAll = ms.gapsLength();
 
-        /*      
-  // ── 2) ONE global repeat masking: shared k-mer map across ALL sequences ──
-    // 'true' = half-kmer sensitivity (matches the single-sequence MaskingSequence).
-    MaskingSequences ms = new MaskingSequences();
-    ArrayList<int[]> rs = ms.mask(seqs, ssrmsk, kmerln, minlenseq, true);
-    long[] rplen = ms.repeatLength();   // per-sequence masked-repeat bp
-    long[] gplen = ms.gapsLength();     // per-sequence gap (N) bp
-    
-    // ── 3) promote per-sequence LOCAL blocks to GLOBAL long coords + aggregate ──
-    long[] u2 = new long[0];
-    long off = 0, repBpAll = 0, gapBpAll = 0;
-    for (int i = 0; i < nseq; i++) {
-        u2 = concatLong(u2, shiftToGlobal(rs.get(i), off));
-        off += seqs[i].length();
-        repBpAll += rplen[i];
-        gapBpAll += gplen[i];
-    }
-         */
         // ── combined header ──
         printCombinedHeader(repBpAll, ssrBpAll, gapBpAll, sz);
 
@@ -581,12 +558,12 @@ public final class TotalRepeatsSearching {
         System.out.println("Combined: sequence gap (bp)=" + gapslen + " (" + String.format("%.4f", gaps) + "%)");
     }
 
-// Lowercase the masked-repeat + STR positions over an UPPERCASE copy of seqs[i]
-// and write the per-file .msk, same byte format as the previous RunCombining.
-
-
-// Per-file reports as exact slices of the COMBINED clustering — same families keep
-// the same cluster index/colour/ID; identical to the current RunCombining tail.
+    /**
+     * Per-file reports as exact slices of the COMBINED clustering: the same
+     * families keep the same cluster index, colour, {@code ClusterID} and
+     * reference label as in the combined report; only the blocks are restricted
+     * to one sequence and remapped to its own local int coordinates.
+     */
     private void savePerFileReports(int k, String[] seqs, long[] seqslen,
             long[] ssr2, long[] u2, ArrayList<long[]> bbL) throws IOException {
         seq = seqs;
@@ -1084,11 +1061,14 @@ public final class TotalRepeatsSearching {
     private int nseq = 0;
     private int iwidth = 0;
     private int iheight = 0;
-    private int minlenseq = 90;      // Minimal repeat block size
-    private int kmerln = 19;         // kmer=12-21
-    private int flanks = 20;
-    private int gap = 21;            // gap between repeat blocks, gap=kmer
-    private final int telomers = 14; // Kmax=11 ->SSR  Kmax=14 -> telomers //=17
+    // Run parameters. The command line always sets them through SetRepeatLen /
+    // SetFlanks (CLI defaults: kmer=19, sln=80, gap=2*kmer, flanks=0); the
+    // initial values here only matter for a caller that skips those setters.
+    private int minlenseq = 90;      // minimal repeat block length, bp (-sln)
+    private int kmerln = 19;         // k-mer length, 9..21 (-kmer)
+    private int flanks = 20;         // flank length added to -seqshow sequences (-flanks)
+    private int gap = 21;            // largest gap bridged between repeated k-mers (-gap), never below kmer
+    private final int telomers = 14; // STR detector: diversity threshold and gap-bridging length (11 -> SSR only, 14 -> SSR + telomeric repeats)
     private boolean SeqShow;
     private boolean SSRdetection = true;
     private boolean MaskOnly;
