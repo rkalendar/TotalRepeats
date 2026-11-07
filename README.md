@@ -1,6 +1,6 @@
 # TotalRepeats
 
-**an integrated genome-wide platform for rapid de novo identification, classification, annotation, comparative analysis, and visualization of repetitive elements**
+**an integrated genome-wide platform for rapid de novo identification, classification, annotation, comparative analysis (pangenome), and visualization of repetitive elements**
 
 [![Java](https://img.shields.io/badge/Java-25+-orange.svg?logo=openjdk)](https://www.oracle.com/java/technologies/downloads/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue.svg)]()
@@ -43,7 +43,7 @@
 
 ## Overview
 
-TotalRepeats is a *de novo* tool for genome-wide identification, classification, annotation, visualization, and comparison of repetitive DNA elements. It detects a broad spectrum of repeat types, including:
+TotalRepeats is a *de novo* tool for the genome-wide identification, classification, annotation, visualization, and pangenomic comparison of repetitive DNA elements. It detects a broad spectrum of repeat types, including:
 
 - **Mobile genetic elements** — retrotransposons (LINEs, SINEs, LTR elements) and DNA transposons
 - **Tandem arrays** — microsatellites (SSRs), minisatellites, telomeric repeats, centromeric satellite DNA
